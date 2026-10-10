@@ -2,6 +2,14 @@
 
 首轮版本：`uagray@0.1.0-beta.0`。发布标签：`beta`。源代码许可证：MIT。当前宿主范围：React 19。
 
+## 线上结果
+
+2026-10-10 已发布至 [npm](https://www.npmjs.com/package/uagray/v/0.1.0-beta.0)。`beta` 标签指向 `0.1.0-beta.0`。
+
+独立项目已改为从 registry 安装，锁文件来源为 `https://registry.npmjs.org/uagray/-/uagray-0.1.0-beta.0.tgz`；完整性与发布前测试的 tarball 一致。线上安装后的类型检查、生产构建和浏览器页面渲染通过。
+
+npm 为首个版本同时生成了 `latest` 标签；移除请求在完成安全验证后仍返回 HTTP 400，因此目前 `latest` 也指向同一 beta 版本。测试安装请明确使用 `uagray@beta`。
+
 ## 已完成的发布前检查
 
 - `npm pack` 清单只包含 `dist/`、README、LICENSE 和 package.json，共 17 个文件，约 25.6 KB。

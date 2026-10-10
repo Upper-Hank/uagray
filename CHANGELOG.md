@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-beta.0
+## 0.1.0-beta.0 · 2026-10-10
 
 首次 npm beta 发布，面向 React 19 的跨项目消费测试。
 
