@@ -9,7 +9,8 @@
     "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite*.config.ts",
     "prepack": "npm run build:lib",
     "dev": "vite",
-    "build:lib": "npm run check && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json"
+    "fonts": "node scripts/build-fonts.mjs",
+    "build:lib": "npm run check && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rm -rf dist/fonts && cp -R fonts dist/fonts"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.3.8",
@@ -18,16 +19,19 @@
     "react-aria-components": "^1.22.0"
   },
   "devDependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@ibm/plex-sans": "^1.1.0",
+    "@ibm/plex-sans-sc": "^1.1.0",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.9.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0",
-    "vitest": "^5.0.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "vitest": "^5.0.3"
   },
   "files": [
     "dist",
@@ -40,7 +44,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./fonts.css": "./dist/fonts/fonts.css"
   },
   "sideEffects": [
     "**/*.css"

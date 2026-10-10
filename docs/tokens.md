@@ -38,9 +38,9 @@ Space 的编号表示阶梯顺序，不表示数值必须是编号乘以 4。用
 
 排版使用两档字重：界面与正文为 regular（400），页面、小节、弹层与状态标题为 medium（500）。控件数值默认 control（13px）/400，状态标题默认 md（16px）/500；标签、按钮、计数与选中目录均为 400。font-weight-button 引用 regular，font-weight-status-title 引用 medium。交互状态不改变字重；正文与 strong 动作不自动加重。同一角色统一消费 Token，不逐组件维护字重补丁。
 
-图标统一 DEFAULT_ICON_WEIGHT=1.25，按现有配置步长 0.25 从 1.5 降一档，继续使用官方 absoluteWeight 适配。hover、按压、选中、焦点和禁用不改变描边；图标详情页的手动 weight 配置用于显式比较，不是交互状态反馈。
+图标统一 DEFAULT_ICON_WEIGHT=1.25，按现有配置步长 0.25 从 1.5 降一档，继续使用官方 absoluteWeight 适配。按钮内图标单独使用 weight=1，让 15px 图标的绝对描边贴近按钮文字。hover、按压、选中、焦点和禁用不改变描边；图标详情页的手动 weight 配置用于显式比较，不是交互状态反馈。
 
-Sans 与 Sans SC 保留 400、450、500 静态字体资源，当前 UI 消费 Regular 400 与 Medium 500，Text 450 暂不消费。中文采用官方 Unicode 分片按需加载，拉丁采用本地 WOFF2；原始文件与授权见 [字体资源](../public/fonts/ibm-plex/README.md)。实际字重必须由对应字体资源支持，不依靠声明连续范围伪装插值能力。
+界面字体由 `uagray/fonts.css` 提供，展示站与组件包使用同一份文件。当前只注册 IBM Plex Sans 与 Sans SC 的 Regular 400、Medium 500，以及 JetBrains Mono 400。中文沿用官方 Unicode 分片，浏览器按 `unicode-range` 下载需要的切片。不注册 Text 450，也不使用 `local()`，避免系统里已安装的副本替换包内文件。授权见 `fonts/licenses/`。实际字重必须由对应字体资源支持，不依靠声明连续范围伪装插值能力。
 
 当前 Button、输入、Tabs、折叠、选择、反馈及新展示布局中的常用字号、间距、圆角和控件高度已消费这些变量。对图标尺寸，`Icon size` 仍是显式接口；几何定位、原生滑块命中范围、弹层定位等必要细节不机械抽成 token。Button、ButtonGroup、Segmented、SearchField、SelectionBar 与 Toast 的 Motion 圆角样式引用 CSS 变量，不再维护独立数值；组合圆角通过现有 Radius 与 Space 的 calc() 派生。布局动画中的实际轮廓仍需视觉验收。
 

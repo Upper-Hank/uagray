@@ -18,6 +18,10 @@ npm 为首个版本同时生成了 `latest` 标签；移除请求在完成安全
 - 独立项目只有一份 React/React DOM，组件 CSS 与 Token 生效。
 - Playwright 操作 Input、Select、Switch 和 Button，结果回传到宿主状态。
 
+## 下次发布
+
+下次版本带上 `uagray/fonts.css`：IBM Plex Sans 与 Sans SC 的 400/500，以及 JetBrains Mono 400。组件样式仍从 `uagray/styles.css` 引入，字体是第二个入口。展示站已改用同一份文件。
+
 ## 下一轮发布准备
 
 仓库待发布版本为 `0.1.0-beta.1`，发布标签为 `v0.1.0-beta.1`，npm dist-tag 为 `beta`。本节记录准备状态，不代表已上线；线上结果仍以上述首轮版本为准。此次迁移说明见 README 与 CHANGELOG，包含 Button 新属性、旧 variant 兼容行为、环境变量与字重变更。

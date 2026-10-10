@@ -29,7 +29,7 @@ src/ui/
   ...
 src/App.tsx                展示与用法示例
 src/app.css                站点重置与展示样式
-public/fonts/              展示站字体；库的字体接入需单独约定
+fonts/                     界面字体；展示站与 uagray/fonts.css 共用
 vite.lib.config.ts         库构建，与展示页构建分离
 tsconfig.lib.json         类型声明输出（文件名以实现为准）
 docs/                      规范、API 与变更说明

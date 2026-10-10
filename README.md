@@ -33,6 +33,7 @@ npm install uagray@beta
 ```tsx
 import { Button, Surface } from "uagray";
 import "uagray/styles.css";
+import "uagray/fonts.css";
 
 <Surface>
   <Button onClick={handleShare}>Share</Button>
@@ -43,7 +44,7 @@ Button 使用 `emphasis="strong | default | quiet"` 与 `tone="neutral | danger"
 
 宿主覆盖主题时，请使用当前环境变量；element、action-surface、reading-surface、object-surface、selected-surface、range-fill、choice-edge、group-hover 与 feedback-*-surface 旧别名已移除。完整环境契约见 [docs/surface-contract.md](docs/surface-contract.md)。
 
-包内字体使用系统回退，宿主可通过 `--ui-font` 和 `--ui-mono` 指定字体，不要求提供 `/fonts/`。展示站单独加载 `public/fonts/`，字体许可证随文件保留。当前声明支持 React 19，React 与 React DOM 由宿主提供；本项目代码采用 MIT 许可证，依赖与字体沿用各自许可证。
+`uagray/fonts.css` 提供界面使用的 IBM Plex Sans、IBM Plex Sans SC（400 与 500）和 JetBrains Mono（400）。组件样式不内嵌这些文件。要换字体，不要引入 `fonts.css`，并覆盖 `--ui-font` 与 `--ui-mono`。展示站使用同一份字体。当前声明支持 React 19，React 与 React DOM 由宿主提供；本项目代码采用 MIT 许可证，字体沿用各自的 SIL Open Font License。
 
 ## 设计与来源
 

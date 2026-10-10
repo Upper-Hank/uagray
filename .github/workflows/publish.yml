@@ -60,7 +60,7 @@ jobs:
               throw new Error(`Unexpected package file: ${file}`);
             }
           }
-          for (const file of ['dist/index.js', 'dist/index.d.ts', 'dist/styles.css']) {
+          for (const file of ['dist/index.js', 'dist/index.d.ts', 'dist/styles.css', 'dist/fonts/fonts.css']) {
             if (!files.includes(file)) throw new Error(`Missing package file: ${file}`);
           }
           fs.appendFileSync(process.env.GITHUB_ENV, `NPM_TARBALL=${pack.filename}\n`);
