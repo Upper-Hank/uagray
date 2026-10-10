@@ -34,7 +34,7 @@ export function OptionsEditor({
         />
       ))}
       <Button
-        size="small"
+        size="sm"
         disabled={value.length >= 8}
         onClick={() => {
           let id = 1;
@@ -121,7 +121,7 @@ function OptionRow({
           onChange={(event) => onChange({ disabled: event.target.checked })}
         />
         <Button
-          size="small"
+          size="sm"
           emphasis="quiet"
           aria-label={`删除 ${name}`}
           onClick={onRemove}

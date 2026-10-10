@@ -44,6 +44,7 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     "summary",
     "valueLabel",
     "directionLabel",
+    "defaultValue",
   ]) {
     if (props[key] === "") delete props[key];
   }
@@ -63,11 +64,10 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
       name = "CopyButton";
       props = {
         text: args.text,
-        label: args.children,
         size: args.size,
-        variant: args.emphasis === "quiet" ? "plain" : "soft",
+        emphasis: args.emphasis,
       };
-      children = undefined;
+      children = string("children");
     } else if (args.action === "share") {
       name = "ShareButton";
       props = { url: args.url };
@@ -86,16 +86,14 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     state("value", "onValueChange");
   }
   if (entry.id === "textarea") props["aria-label"] = "多行输入示例";
-  if (["input", "textarea", "search"].includes(entry.id))
-    state("value", "onChange");
-  if (entry.id === "search") expressions.onChange = "setValue";
+  if (["input", "textarea"].includes(entry.id)) state("value", "onChange");
+  if (entry.id === "search") state("value", "onValueChange");
   if (["checkbox", "radio", "switch"].includes(entry.id))
     state("checked", "onChange");
   if (entry.id === "radio") props.name = "choice";
   if (["select", "segments", "tabs"].includes(entry.id)) {
     const key = entry.id === "tabs" ? "items" : "options";
-    state("value", entry.id === "select" ? "onValueChange" : "onChange");
-    if (entry.id !== "select") expressions.onChange = "setValue";
+    state("value", "onValueChange");
     delete props[key];
     helpers.push(
       `const ${key} = ${JSON.stringify(choiceItems(args[key]), null, 2)};`,
@@ -150,10 +148,10 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     rawChildren = true;
   }
   if (entry.id === "empty-state") {
-    delete props.action;
-    if (args.action) {
+    delete props.showActions;
+    if (args.showActions) {
       imports.add("Button");
-      expressions.action = '<Button icon="plus">添加文件</Button>';
+      expressions.actions = '<Button icon="plus">添加文件</Button>';
     }
   }
   if (entry.id === "button-group") {

@@ -63,7 +63,7 @@
   color: var(--ui-disabled);
   cursor: default;
 }
-.ui-button--small {
+.ui-button--sm {
   --ui-button-radius: var(--ui-radius-sm);
   height: var(--ui-size-control-sm);
   gap: var(--ui-space-3);
@@ -111,12 +111,12 @@
   border-radius: var(--ui-group-radius);
 }
 /* The group owns the fill; its ordinary actions only show local feedback. */
-.ui-button-group--soft > .ui-button:not(.ui-button--strong) {
+.ui-button-group--contained > .ui-button:not(.ui-button--strong) {
   --ui-control: transparent;
   --ui-control-hover: var(--ui-overlay-hover);
 }
-.ui-button-group:has(> .ui-button--small):not(
-    :has(> :is(.ui-button--default, .ui-external))
+.ui-button-group:has(> .ui-button--sm):not(
+    :has(> :is(.ui-button--md, .ui-external))
   ) {
   --ui-group-child-radius: var(--ui-radius-sm);
 }
@@ -321,7 +321,7 @@
 .ui-surface--raised.ui-surface--physical {
   box-shadow: var(--ui-shadow);
 }
-.ui-icon-button.ui-button--small {
+.ui-icon-button.ui-button--sm {
   width: var(--ui-size-control-sm);
   height: var(--ui-size-control-sm);
 }

@@ -85,21 +85,51 @@ export type TabItem = {
   disabled?: boolean;
 };
 export function Tabs({
+  "aria-label": ariaLabel,
   label,
   items,
   value,
+  defaultValue,
+  onValueChange,
   onChange,
 }: {
-  label: string;
   items: readonly TabItem[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  /** @deprecated Use `onValueChange`. */
+  onChange?: (value: string) => void;
+} & (
+  | {
+      "aria-label": string;
+      /** @deprecated Use `aria-label`. */
+      label?: string;
+    }
+  | {
+      "aria-label"?: undefined;
+      /** @deprecated Use `aria-label`. */
+      label: string;
+    }
+)) {
+  const name = ariaLabel ?? label;
+  const [uncontrolled, setUncontrolled] = useState(
+    () => defaultValue ?? items.find((item) => !item.disabled)?.value ?? "",
+  );
+  const selectedValue = value !== undefined ? value : uncontrolled;
+  const select = (next: string) => {
+    if (value === undefined) setUncontrolled(next);
+    if (onValueChange) onValueChange(next);
+    else onChange?.(next);
+  };
   const id = useId();
   const selected = items.findIndex(
-    (item) => item.value === value && !item.disabled,
+    (item) => item.value === selectedValue && !item.disabled,
   );
-  const { ref: list, bounds } = useSelectionIndicator(value, selected, items);
+  const { ref: list, bounds } = useSelectionIndicator(
+    selectedValue,
+    selected,
+    items,
+  );
   const tabbable =
     selected >= 0 ? selected : items.findIndex((item) => !item.disabled);
   const { reduced, transition } = useUiMotion();
@@ -108,7 +138,7 @@ export function Tabs({
       <motion.div
         className="ui-tab-list ui-selection-track"
         role="tablist"
-        aria-label={label}
+        aria-label={name}
         ref={list}
         layout={reduced ? false : true}
         transition={transition}
@@ -127,7 +157,7 @@ export function Tabs({
             disabled={item.disabled}
             tabIndex={index === tabbable ? 0 : -1}
             onClick={() => {
-              if (item.value !== value) onChange(item.value);
+              if (item.value !== selectedValue) select(item.value);
             }}
             onKeyDown={(event) => {
               const enabled = items
@@ -152,7 +182,7 @@ export function Tabs({
                         (enabled.indexOf(index) + direction + enabled.length) %
                           enabled.length
                       ];
-              onChange(items[next].value);
+              select(items[next].value);
               list.current
                 ?.querySelectorAll<HTMLButtonElement>("button")
                 [next]?.focus();
@@ -188,7 +218,8 @@ export function SelectionBar({
   busy = false,
   children,
   actions,
-  tone = "plain",
+  variant,
+  tone,
 }: {
   count: number;
   total?: number;
@@ -197,14 +228,17 @@ export function SelectionBar({
   onClear?: () => void;
   onDone?: () => void;
   actions?: ReactNode;
-  tone?: "plain" | "soft";
+  variant?: "contained" | "plain";
+  /** @deprecated Use `variant`. `soft` maps to `contained`. */
+  tone?: "soft" | "plain";
   busy?: boolean;
   children?: ReactNode;
 }) {
+  const resolved = variant ?? (tone === "soft" ? "contained" : "plain");
   const { reduced, transition } = useUiMotion();
   return (
     <motion.div
-      className={`ui-selection-bar ui-selection-bar--${tone}`}
+      className={`ui-selection-bar ui-selection-bar--${resolved}`}
       role="group"
       aria-label="批量操作"
       aria-busy={busy}
@@ -224,7 +258,7 @@ export function SelectionBar({
         <>
           {onSelectAll && (
             <Button
-              size="small"
+              size="sm"
               onClick={onSelectAll}
               disabled={busy || total === 0}
             >
@@ -232,17 +266,13 @@ export function SelectionBar({
             </Button>
           )}
           {onClear && (
-            <Button
-              size="small"
-              onClick={onClear}
-              disabled={busy || count === 0}
-            >
+            <Button size="sm" onClick={onClear} disabled={busy || count === 0}>
               清空
             </Button>
           )}
           {children}
           {onDone && (
-            <Button size="small" onClick={onDone} disabled={busy}>
+            <Button size="sm" onClick={onDone} disabled={busy}>
               完成
             </Button>
           )}

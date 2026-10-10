@@ -45,18 +45,22 @@ export function Layout({
   children,
   className,
   label,
+  "aria-label": ariaLabel,
 }: {
   children: ReactNode;
   className?: string;
+  "aria-label"?: string;
+  /** @deprecated Use `aria-label`. */
   label?: string;
 }) {
+  const name = ariaLabel ?? label;
   const { reduced, transition } = useUiMotion();
   return (
     <LayoutGroup>
       <motion.div
         className={className}
-        role={label ? "group" : undefined}
-        aria-label={label}
+        role={name ? "group" : undefined}
+        aria-label={name}
         layout={reduced ? false : true}
         transition={transition}
       >

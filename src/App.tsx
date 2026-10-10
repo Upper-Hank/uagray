@@ -105,10 +105,10 @@ export default function App() {
           </div>
           <div className="workbench-actions">
             <SegmentedControl
-              label="展示分类"
+              aria-label="展示分类"
               value={category}
               options={categoryOptions}
-              onChange={changeCategory}
+              onValueChange={changeCategory}
             />
             <ThemeToggle />
           </div>
@@ -125,10 +125,10 @@ export default function App() {
             <Badge>{entries.length} 项</Badge>
           </div>
           <SearchField
-            label="搜索目录"
+            aria-label="搜索目录"
             placeholder={`搜索${section.label}`}
             value={query}
-            onChange={setQuery}
+            onValueChange={setQuery}
           />
           <nav
             ref={directoryRef}
@@ -149,8 +149,8 @@ export default function App() {
           {!results.length && (
             <EmptyState
               title="没有匹配条目"
-              action={
-                <Button size="small" onClick={() => setQuery("")}>
+              actions={
+                <Button size="sm" onClick={() => setQuery("")}>
                   清空搜索
                 </Button>
               }

@@ -56,7 +56,7 @@ function ContextColumn({
 function PlainGroup() {
   const [value, setValue] = useState("portrait");
   return (
-    <ButtonGroup label="版式" tone="plain">
+    <ButtonGroup aria-label="版式" variant="plain">
       {[
         ["portrait", "竖版"],
         ["landscape", "横版"],
@@ -78,9 +78,9 @@ function Search() {
   const [value, setValue] = useState("");
   return (
     <SearchField
-      label="搜索"
+      aria-label="搜索"
       value={value}
-      onChange={setValue}
+      onValueChange={setValue}
       placeholder="搜索组件"
     />
   );
@@ -90,9 +90,9 @@ function Segments() {
   const [value, setValue] = useState("week");
   return (
     <SegmentedControl
-      label="周期"
+      aria-label="周期"
       value={value}
-      onChange={setValue}
+      onValueChange={setValue}
       options={[
         { value: "day", label: "日" },
         { value: "week", label: "周" },
@@ -109,7 +109,10 @@ const sections: Section[] = [
   {
     title: "按钮",
     rows: [
-      { label: "strong", render: () => <Button emphasis="strong">提交</Button> },
+      {
+        label: "strong",
+        render: () => <Button emphasis="strong">提交</Button>,
+      },
       {
         label: "default",
         render: () => (
@@ -147,7 +150,7 @@ const sections: Section[] = [
       {
         label: "操作组",
         render: () => (
-          <ButtonGroup label="编辑">
+          <ButtonGroup aria-label="编辑">
             <Button>撤销</Button>
             <Button>重做</Button>
             <Button emphasis="strong">完成</Button>
@@ -252,7 +255,11 @@ const sections: Section[] = [
         label: "导航",
         height: 112,
         render: () => (
-          <NavigationCard direction="next" title="下一节" href="#context-matrix" />
+          <NavigationCard
+            direction="next"
+            title="下一节"
+            href="#context-matrix"
+          />
         ),
       },
     ],

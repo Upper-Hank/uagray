@@ -43,14 +43,14 @@ describe("keyboard interactions", () => {
       const [value, setValue] = useState("a");
       return (
         <SegmentedControl
-          label="Filter"
+          aria-label="Filter"
           options={[
             { value: "a", label: "A" },
             { value: "b", label: "B", disabled: true },
             { value: "c", label: "C" },
           ]}
           value={value}
-          onChange={setValue}
+          onValueChange={setValue}
         />
       );
     }
@@ -76,9 +76,9 @@ describe("keyboard interactions", () => {
         <>
           <input aria-label="Other input" />
           <SearchField
-            label="Search"
+            aria-label="Search"
             value={value}
-            onChange={setValue}
+            onValueChange={setValue}
             shortcut
           />
         </>

@@ -72,9 +72,10 @@ export type DialogProps = {
   footer?: ReactNode;
   dismissible?: boolean;
   closeLabel?: string;
+  /** @deprecated Use the Drawer component. */
   variant?: "dialog" | "drawer";
 };
-export function Dialog({
+function DialogFrame({
   open,
   onOpenChange,
   title,
@@ -84,7 +85,7 @@ export function Dialog({
   dismissible = true,
   closeLabel = "关闭",
   variant = "dialog",
-}: DialogProps) {
+}: Omit<DialogProps, "variant"> & { variant?: "dialog" | "drawer" }) {
   const id = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const controls = useAnimationControls();
@@ -142,7 +143,7 @@ export function Dialog({
         <div className="ui-dialog-heading">
           <h2 id={`${id}-title`}>{title}</h2>
           <IconButton
-            label={closeLabel}
+            aria-label={closeLabel}
             icon="close"
             onClick={() => onOpenChange(false)}
             disabled={!dismissible}
@@ -159,8 +160,16 @@ export function Dialog({
     </motion.dialog>
   );
 }
+export function Dialog({ variant, ...props }: DialogProps) {
+  return (
+    <DialogFrame
+      {...props}
+      variant={variant === "drawer" ? "drawer" : "dialog"}
+    />
+  );
+}
 export function Drawer(props: Omit<DialogProps, "variant">) {
-  return <Dialog {...props} variant="drawer" />;
+  return <DialogFrame {...props} variant="drawer" />;
 }
 export function ConfirmDialog({
   open,
@@ -169,7 +178,8 @@ export function ConfirmDialog({
   description,
   onConfirm,
   busy = false,
-  danger = true,
+  tone,
+  danger,
   confirmLabel = "确认删除",
   cancelLabel = "取消",
 }: {
@@ -179,10 +189,13 @@ export function ConfirmDialog({
   description?: string;
   onConfirm: () => void;
   busy?: boolean;
+  tone?: "neutral" | "danger";
+  /** @deprecated Use `tone`. `true` maps to `"danger"`. */
   danger?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
 }) {
+  const resolvedTone = tone ?? (danger ? "danger" : "neutral");
   return (
     <Dialog
       open={open}
@@ -197,7 +210,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             emphasis="strong"
-            tone={danger ? "danger" : "neutral"}
+            tone={resolvedTone}
             onClick={onConfirm}
             disabled={busy}
           >

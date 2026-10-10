@@ -47,7 +47,7 @@ export function ThemeToggle() {
   }
   return (
     <IconButton
-      label={theme === "dark" ? "切换为浅色" : "切换为暗色"}
+      aria-label={theme === "dark" ? "切换为浅色" : "切换为暗色"}
       icon={theme === "dark" ? "sun" : "moon"}
       onClick={toggle}
       aria-pressed={theme === "dark"}

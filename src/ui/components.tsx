@@ -18,6 +18,14 @@ import {
 const cx = (...classes: (string | undefined | false)[]) =>
   classes.filter(Boolean).join(" ");
 export type ButtonEmphasis = "strong" | "default" | "quiet";
+type ButtonSize = "md" | "sm";
+/** @deprecated Use `"md"` or `"sm"`. */
+type LegacyButtonSize = "default" | "small";
+function resolveButtonSize(
+  size: ButtonSize | LegacyButtonSize = "md",
+): ButtonSize {
+  return size === "small" || size === "sm" ? "sm" : "md";
+}
 type LegacyButtonVariant = "soft" | "plain" | "white" | "dark" | "danger";
 const legacyButtonVariants: Record<
   LegacyButtonVariant,
@@ -32,7 +40,8 @@ const legacyButtonVariants: Record<
 export type ButtonProps = ComponentPropsWithRef<"button"> & {
   icon?: IconName;
   count?: number;
-  size?: "default" | "small";
+  /** `"md"` or `"sm"`. `"default"` and `"small"` are deprecated aliases. */
+  size?: ButtonSize | LegacyButtonSize;
   /** Importance of the action. Its fill comes from the surrounding surface. */
   emphasis?: ButtonEmphasis;
   tone?: "neutral" | "danger";
@@ -42,7 +51,7 @@ export type ButtonProps = ComponentPropsWithRef<"button"> & {
 export function Button({
   icon,
   count,
-  size = "default",
+  size = "md",
   emphasis,
   tone,
   variant,
@@ -56,6 +65,7 @@ export function Button({
   const legacy = variant ? legacyButtonVariants[variant] : undefined;
   const resolvedEmphasis = emphasis ?? legacy?.[0] ?? "default";
   const resolvedTone = tone ?? legacy?.[1] ?? "neutral";
+  const resolvedSize = resolveButtonSize(size);
   return (
     <MotionButton
       ref={ref}
@@ -67,7 +77,7 @@ export function Button({
         type,
         className: cx(
           "ui-button",
-          `ui-button--${size}`,
+          `ui-button--${resolvedSize}`,
           resolvedEmphasis !== "default" && `ui-button--${resolvedEmphasis}`,
           resolvedTone === "danger" && "ui-button--danger",
           className,
@@ -87,37 +97,83 @@ export function Button({
     </MotionButton>
   );
 }
+type IconButtonProps = Omit<ButtonProps, "children" | "icon" | "aria-label"> & {
+  icon: IconName;
+} & (
+    | {
+        "aria-label": string;
+        /** @deprecated Use `aria-label`. */
+        label?: string;
+      }
+    | {
+        "aria-label"?: undefined;
+        /** @deprecated Use `aria-label`. */
+        label: string;
+      }
+  );
 export function IconButton({
+  "aria-label": ariaLabel,
   label,
   icon,
   ...props
-}: Omit<ButtonProps, "children" | "icon"> & { label: string; icon: IconName }) {
+}: IconButtonProps) {
+  const name = ariaLabel ?? label;
   return (
     <Button
       {...props}
       icon={icon}
-      aria-label={label}
-      title={label}
+      aria-label={name}
+      title={name}
       className={cx("ui-icon-button", props.className)}
     />
   );
 }
+type GroupVariant = "contained" | "plain";
+/** @deprecated Use `variant`. `soft` maps to `contained`. */
+type LegacyGroupTone = "soft" | "plain";
+function resolveGroupVariant(
+  variant: GroupVariant | undefined,
+  tone: LegacyGroupTone | undefined,
+  fallback: GroupVariant,
+): GroupVariant {
+  if (variant) return variant;
+  if (tone === "plain") return "plain";
+  if (tone === "soft") return "contained";
+  return fallback;
+}
+type ButtonGroupProps = {
+  children: ReactNode;
+  variant?: GroupVariant;
+  /** @deprecated Use `variant`. `soft` maps to `contained`. */
+  tone?: LegacyGroupTone;
+} & (
+  | {
+      "aria-label": string;
+      /** @deprecated Use `aria-label`. */
+      label?: string;
+    }
+  | {
+      "aria-label"?: undefined;
+      /** @deprecated Use `aria-label`. */
+      label: string;
+    }
+);
 export function ButtonGroup({
+  "aria-label": ariaLabel,
   label,
   children,
-  tone = "soft",
-}: {
-  label: string;
-  children: ReactNode;
-  tone?: "soft" | "plain";
-}) {
+  variant,
+  tone,
+}: ButtonGroupProps) {
   const { reduced, transition } = useUiMotion();
+  const name = ariaLabel ?? label;
+  const resolved = resolveGroupVariant(variant, tone, "contained");
   return (
     <LayoutGroup>
       <motion.div
         role="group"
-        aria-label={label}
-        className={`ui-button-group ui-button-group--${tone}`}
+        aria-label={name}
+        className={`ui-button-group ui-button-group--${resolved}`}
         layout={reduced ? false : true}
         transition={transition}
         style={{ borderRadius: "var(--ui-group-radius)" }}
@@ -136,23 +192,60 @@ export type SegmentOption = {
   count?: number;
   disabled?: boolean;
 };
+type ValueChangeProps = {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  /** @deprecated Use `onValueChange`. */
+  onChange?: (value: string) => void;
+};
+type RequiredAriaLabel =
+  | {
+      "aria-label": string;
+      /** @deprecated Use `aria-label`. */
+      label?: string;
+    }
+  | {
+      "aria-label"?: undefined;
+      /** @deprecated Use `aria-label`. */
+      label: string;
+    };
+function emitValue(
+  next: string,
+  onValueChange?: (value: string) => void,
+  onChange?: (value: string) => void,
+) {
+  if (onValueChange) onValueChange(next);
+  else onChange?.(next);
+}
 export function SegmentedControl({
+  "aria-label": ariaLabel,
   label,
   options,
   value,
+  defaultValue,
+  onValueChange,
   onChange,
 }: {
-  label: string;
   options: SegmentOption[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
+} & ValueChangeProps &
+  RequiredAriaLabel) {
+  const name = ariaLabel ?? label;
+  const [uncontrolled, setUncontrolled] = useState(
+    () =>
+      defaultValue ?? options.find((option) => !option.disabled)?.value ?? "",
+  );
+  const selected = value !== undefined ? value : uncontrolled;
+  const select = (next: string) => {
+    if (value === undefined) setUncontrolled(next);
+    emitValue(next, onValueChange, onChange);
+  };
   const { reduced, transition } = useUiMotion();
   const activeIndex = options.findIndex(
-    (option) => option.value === value && !option.disabled,
+    (option) => option.value === selected && !option.disabled,
   );
   const { ref: group, bounds } = useSelectionIndicator(
-    value,
+    selected,
     activeIndex,
     options,
   );
@@ -167,7 +260,7 @@ export function SegmentedControl({
       style={{ borderRadius: "var(--ui-selection-radius)" }}
       className="ui-segments ui-selection-track"
       role="radiogroup"
-      aria-label={label}
+      aria-label={name}
       ref={group}
     >
       <SelectionIndicator bounds={bounds} />
@@ -178,11 +271,11 @@ export function SegmentedControl({
           type="button"
           key={option.value}
           role="radio"
-          aria-checked={value === option.value}
+          aria-checked={selected === option.value}
           disabled={option.disabled}
           tabIndex={index === tabIndex ? 0 : -1}
           onClick={() => {
-            if (option.value !== value) onChange(option.value);
+            if (option.value !== selected) select(option.value);
           }}
           onKeyDown={(event) => {
             const enabled = options
@@ -205,7 +298,7 @@ export function SegmentedControl({
                   : enabled[
                       (position + direction + enabled.length) % enabled.length
                     ];
-            onChange(options[next].value);
+            select(options[next].value);
             group.current
               ?.querySelectorAll<HTMLButtonElement>("button")
               [next]?.focus();
@@ -232,18 +325,26 @@ export function SegmentedControl({
   );
 }
 export function SearchField({
+  "aria-label": ariaLabel,
   label,
   value,
+  defaultValue,
+  onValueChange,
   onChange,
   placeholder,
   shortcut = false,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
   placeholder?: string;
   shortcut?: boolean;
-}) {
+} & ValueChangeProps &
+  RequiredAriaLabel) {
+  const name = ariaLabel ?? label;
+  const [uncontrolled, setUncontrolled] = useState(defaultValue ?? "");
+  const current = value !== undefined ? value : uncontrolled;
+  const commit = (next: string) => {
+    if (value === undefined) setUncontrolled(next);
+    emitValue(next, onValueChange, onChange);
+  };
   const { reduced, transition } = useUiMotion();
   const keyboard = useKeyboardFocus();
   const ref = useRef<HTMLInputElement>(null);
@@ -279,14 +380,14 @@ export function SearchField({
       <input
         type="search"
         ref={ref}
-        aria-label={label}
-        value={value}
+        aria-label={name}
+        value={current}
         placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => commit(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             e.preventDefault();
-            onChange("");
+            commit("");
           }
         }}
       />
@@ -303,7 +404,7 @@ export function ExternalLinks({
     <nav
       className={cx(
         "ui-external-links",
-        links.length > 1 && "ui-button-group ui-button-group--soft",
+        links.length > 1 && "ui-button-group ui-button-group--contained",
       )}
       aria-label="External links"
     >
@@ -323,23 +424,28 @@ export function ExternalLinks({
     </nav>
   );
 }
+type SurfaceVariant = "soft" | "raised";
 export type SurfaceProps = ComponentPropsWithRef<"div"> & {
-  tone?: "soft" | "raised";
+  variant?: SurfaceVariant;
+  /** @deprecated Use `variant`. */
+  tone?: SurfaceVariant;
   treatment?: "tonal" | "defined" | "physical";
 };
 export function Surface({
   children,
   className,
-  tone = "soft",
+  variant,
+  tone,
   treatment = "tonal",
   ...props
 }: SurfaceProps) {
+  const surface = variant ?? tone ?? "soft";
   return (
     <div
       {...props}
       className={cx(
         "ui-surface",
-        tone === "raised" && "ui-surface--raised",
+        surface === "raised" && "ui-surface--raised",
         `ui-surface--${treatment}`,
         className,
       )}
@@ -401,17 +507,26 @@ export function ShowcaseCard({
 }
 export function CopyButton({
   text,
-  label = "Copy",
+  children,
+  label,
   icon = "copy",
-  size = "small",
-  variant = "soft",
+  size = "sm",
+  emphasis,
+  variant,
 }: {
   text: string;
-  label?: string;
+  children?: ReactNode;
+  /** @deprecated Use `children`. */
+  label?: ReactNode;
   icon?: IconName;
-  size?: "default" | "small";
+  size?: ButtonSize | LegacyButtonSize;
+  emphasis?: ButtonEmphasis;
+  /** @deprecated Use `emphasis`. `soft` maps to `default`, `plain` maps to `quiet`. */
   variant?: "soft" | "plain";
 }) {
+  const idle = children ?? label ?? "Copy";
+  const resolvedEmphasis =
+    emphasis ?? (variant === "plain" ? "quiet" : "default");
   const [status, setStatus] = useState<
     "idle" | "pending" | "success" | "error"
   >("idle");
@@ -438,8 +553,8 @@ export function CopyButton({
   }
   return (
     <Button
-      size={size}
-      emphasis={variant === "plain" ? "quiet" : "default"}
+      size={resolveButtonSize(size)}
+      emphasis={resolvedEmphasis}
       icon={status === "success" ? "check" : icon}
       onClick={copy}
       disabled={status === "pending"}
@@ -452,23 +567,31 @@ export function CopyButton({
             ? "Copy failed"
             : status === "pending"
               ? "Copying…"
-              : label}
+              : idle}
       </span>
     </Button>
   );
 }
 export function ShareButton({ url }: { url: string }) {
-  return <CopyButton text={url} label="Share" icon="share" size="default" />;
+  return (
+    <CopyButton text={url} icon="share" size="md">
+      Share
+    </CopyButton>
+  );
 }
 export function ExpandableCode({
   code,
-  label = "Show full text",
+  expandLabel,
+  label,
   collapsedHeight = 210,
 }: {
   code: string;
+  expandLabel?: string;
+  /** @deprecated Use `expandLabel`. */
   label?: string;
   collapsedHeight?: number;
 }) {
+  const toggleLabel = expandLabel ?? label ?? "Show full text";
   const { reduced, transition } = useUiMotion();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
@@ -485,7 +608,7 @@ export function ExpandableCode({
   return (
     <section className="ui-code" aria-label="Expandable text">
       <div className="ui-code-copy">
-        <CopyButton text={code} variant="plain" />
+        <CopyButton text={code} emphasis="quiet" />
       </div>
       <motion.div
         id={id}
@@ -499,13 +622,13 @@ export function ExpandableCode({
       </motion.div>
       <div className="ui-code-toggle">
         <Button
-          size="small"
+          size="sm"
           emphasis="quiet"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls={id}
         >
-          {expanded ? "Show less" : label}
+          {expanded ? "Show less" : toggleLabel}
           <span className={cx("ui-chevron", expanded && "ui-chevron--up")}>
             <Icon name="down" size={12} />
           </span>
@@ -525,7 +648,7 @@ export function Pager({
   return (
     <nav
       aria-label="Page navigation"
-      className="ui-button-group ui-button-group--soft ui-pager"
+      className="ui-button-group ui-button-group--contained ui-pager"
     >
       {(["previous", "next"] as const).map((direction) => {
         const item = direction === "previous" ? previous : next;
@@ -543,7 +666,7 @@ export function Pager({
         ) : (
           <IconButton
             key={direction}
-            label={`${direction} unavailable`}
+            aria-label={`${direction} unavailable`}
             icon={icon}
             disabled
           />

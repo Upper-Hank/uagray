@@ -100,7 +100,7 @@ const items = (key: string, exampleValue: ChoiceItem[]): Control => ({
 const disabled = bool("disabled");
 const label = text("label", "名称");
 const content = text("children", "内容");
-const size = choice("size", "default", ["default", "small"]);
+const size = choice("size", "md", ["md", "sm"]);
 const tone = choice("tone", "neutral", ["neutral", "success", "danger"]);
 const icon = choice("icon", "plus", iconNames);
 const feedbackIcon = (exampleValue = "auto"): Control => ({
@@ -116,11 +116,11 @@ const options = items("options", [
   { value: "2", label: "组件" },
 ]);
 const componentDefaults: Record<string, Record<string, Value>> = {
-  buttons: { emphasis: "default", tone: "neutral", size: "default" },
-  "icon-button": { emphasis: "default", tone: "neutral", size: "default" },
-  "button-group": { tone: "soft" },
+  buttons: { emphasis: "default", tone: "neutral", size: "md" },
+  "icon-button": { emphasis: "default", tone: "neutral", size: "md" },
+  "button-group": { variant: "contained" },
   search: { shortcut: false },
-  "color-picker": { label: "颜色", disabled: false },
+  "color-picker": { "aria-label": "颜色", disabled: false },
   "number-input": { step: 1 },
   textarea: { rows: 3, resizable: true },
   fields: { required: false },
@@ -128,37 +128,36 @@ const componentDefaults: Record<string, Record<string, Value>> = {
   dialog: { dismissible: true },
   drawer: { dismissible: true },
   "confirm-dialog": {
-    danger: true,
+    tone: "neutral",
     busy: false,
     confirmLabel: "确认删除",
     cancelLabel: "取消",
   },
-  badge: { tone: "neutral", variant: "soft" },
+  badge: { tone: "neutral", emphasis: "default" },
   alert: { tone: "neutral" },
   toast: { tone: "neutral", duration: 4200 },
   progress: { max: 100 },
-  "empty-state": { icon: "grid" },
   upload: { multiple: false, disabled: false, buttonLabel: "选择文件" },
-  selection: { busy: false, tone: "plain" },
-  text: { label: "Show full text", collapsedHeight: 210 },
-  surface: { tone: "soft", treatment: "tonal" },
+  selection: { busy: false, variant: "plain" },
+  text: { expandLabel: "Show full text", collapsedHeight: 210 },
+  surface: { variant: "soft", treatment: "tonal" },
   icons: { size: 18, weight: DEFAULT_ICON_WEIGHT, absoluteWeight: true },
 };
 const requiredProps: Record<string, string[]> = {
-  segments: ["label", "options", "value"],
-  "button-group": ["label", "children"],
-  "icon-button": ["label", "icon"],
-  search: ["label", "value"],
+  segments: ["aria-label", "options"],
+  "button-group": ["aria-label", "children"],
+  "icon-button": ["aria-label", "icon"],
+  search: ["aria-label"],
   fields: ["label"],
   select: ["options"],
-  tabs: ["label", "items", "value"],
+  tabs: ["aria-label", "items"],
   disclosure: ["title", "children"],
   dialog: ["open", "title"],
   drawer: ["open", "title"],
   "confirm-dialog": ["open", "title"],
   badge: ["children"],
   alert: ["children"],
-  toast: ["open", "message"],
+  toast: ["open", "children"],
   "empty-state": ["title"],
   selection: ["count"],
   text: ["code"],
@@ -171,8 +170,8 @@ const requiredProps: Record<string, string[]> = {
 const callbackContracts: Record<string, string[]> = {
   "color-picker": ["onValueChange(value: string)"],
   "number-input": ["onValueChange(value: number)"],
-  segments: ["onChange(value: string)"],
-  search: ["onChange(value: string)"],
+  segments: ["onValueChange(value: string)"],
+  search: ["onValueChange(value: string)"],
   input: ["onChange(event: ChangeEvent<HTMLInputElement>)"],
   textarea: ["onChange(event: ChangeEvent<HTMLTextAreaElement>)"],
   select: ["onValueChange(value: string)"],
@@ -183,7 +182,7 @@ const callbackContracts: Record<string, string[]> = {
     "onValueChange(value: number)",
     "formatValue(value: number): string",
   ],
-  tabs: ["onChange(value: string)"],
+  tabs: ["onValueChange(value: string)"],
   disclosure: ["onOpenChange(open: boolean)"],
   dialog: ["onOpenChange(open: boolean)"],
   drawer: ["onOpenChange(open: boolean)"],
@@ -197,7 +196,7 @@ const exampleKeys: Record<string, string[]> = {
   buttons: ["action", "text", "url", "showCount"],
   slider: ["unit"],
   progress: ["indeterminate"],
-  "empty-state": ["action"],
+  "empty-state": ["showActions"],
   navigation: ["previous", "next"],
   showcase: ["externalLabel", "externalHref"],
   links: ["label", "href", "icon"],
@@ -314,7 +313,7 @@ export function normalizeArgs(entry: ComponentEntry, args: Args): Args {
 }
 export const componentEntries: ComponentEntry[] = [
   entry("color-picker", "ColorPicker", "Color picker", [
-    text("label", "颜色"),
+    text("aria-label", "颜色"),
     text("value", "#3765D6"),
     disabled,
   ]),
@@ -327,13 +326,15 @@ export const componentEntries: ComponentEntry[] = [
     bool("readOnly"),
   ]),
   entry("segments", "SegmentedControl", "Segmented control", [
-    text("label", "分类"),
+    text("aria-label", "分类"),
     options,
     choice("value", "0", ["0", "1", "2"]),
+    text("defaultValue", ""),
   ]),
   entry("search", "SearchField", "Search field", [
-    text("label", "搜索"),
+    text("aria-label", "搜索"),
     value,
+    text("defaultValue", ""),
     text("placeholder", ""),
     bool("shortcut", true),
   ]),
@@ -351,7 +352,7 @@ export const componentEntries: ComponentEntry[] = [
     text("url", "https://example.com"),
   ]),
   entry("icon-button", "IconButton", "Icon button", [
-    text("label", "添加"),
+    text("aria-label", "添加"),
     icon,
     size,
     choice("emphasis", "default", ["strong", "default", "quiet"]),
@@ -359,8 +360,8 @@ export const componentEntries: ComponentEntry[] = [
     disabled,
   ]),
   entry("button-group", "ButtonGroup", "Button group", [
-    choice("tone", "soft", ["soft", "plain"]),
-    text("label", "成组操作"),
+    choice("variant", "contained", ["contained", "plain"]),
+    text("aria-label", "成组操作"),
     text("children", "添加\n取消"),
   ]),
   entry("input", "Input", "Input", [
@@ -420,7 +421,8 @@ export const componentEntries: ComponentEntry[] = [
     disabled,
   ]),
   entry("tabs", "Tabs", "Tabs", [
-    text("label", "内容切换"),
+    text("aria-label", "内容切换"),
+    text("defaultValue", ""),
     items("items", [
       { value: "0", label: "项目", content: "" },
       { value: "1", label: "文件", content: "" },
@@ -452,14 +454,14 @@ export const componentEntries: ComponentEntry[] = [
     text("description", "此操作无法撤销。"),
     text("confirmLabel", "确认删除"),
     text("cancelLabel", "取消"),
-    bool("danger", true),
+    choice("tone", "danger", ["neutral", "danger"]),
     bool("busy"),
     bool("open"),
   ]),
   entry("badge", "Badge", "Badge", [
     content,
     tone,
-    choice("variant", "soft", ["soft", "plain", "white"]),
+    choice("emphasis", "default", ["default", "quiet"]),
     feedbackIcon("none"),
   ]),
   entry("alert", "Alert", "Alert", [
@@ -469,7 +471,7 @@ export const componentEntries: ComponentEntry[] = [
     feedbackIcon(),
   ]),
   entry("toast", "Toast", "Toast", [
-    text("message", "设置已保存"),
+    text("children", "设置已保存"),
     feedbackIcon(),
     tone,
     number("duration", 4200, 0, 10000, 100),
@@ -484,9 +486,9 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("empty-state", "EmptyState", "Empty state", [
     text("title", "还没有文件"),
-    feedbackIcon("grid"),
+    feedbackIcon("auto"),
     text("description", ""),
-    bool("action"),
+    bool("showActions"),
   ]),
   entry("upload", "FileDropzone", "File dropzone", [
     text("label", ""),
@@ -497,7 +499,7 @@ export const componentEntries: ComponentEntry[] = [
     disabled,
   ]),
   entry("selection", "SelectionBar", "Selection bar", [
-    choice("tone", "plain", ["plain", "soft"]),
+    choice("variant", "plain", ["contained", "plain"]),
     text("summary", ""),
     number("count", 0, 0, 10),
     number("total", 10, 0, 100),
@@ -509,7 +511,7 @@ export const componentEntries: ComponentEntry[] = [
       "A small interface, quiet by design.\n\n" +
         "Use space to establish hierarchy.\n".repeat(10),
     ),
-    text("label", "Show full prompt"),
+    text("expandLabel", "Show full prompt"),
     number("collapsedHeight", 180, 80, 320),
   ]),
   entry("navigation", "Pager", "Page navigation", [
@@ -537,7 +539,7 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("surface", "Surface", "Surface", [
     content,
-    choice("tone", "soft", ["soft", "raised"]),
+    choice("variant", "soft", ["soft", "raised"]),
     choice("treatment", "tonal", ["tonal", "defined", "physical"]),
   ]),
   entry("icons", "Icon", "Icon", [
@@ -548,7 +550,7 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("keycap", "Keycap", "Keycap", [text("children", "/")]),
   entry("layout", "Layout", "Layout", [
-    text("label", "布局"),
+    text("aria-label", "布局"),
     text("children", "生成预览"),
   ]),
   entry("shell", "PageShell", "Page shell", [

@@ -492,11 +492,8 @@
   color: var(--ui-tone-text);
   font: var(--ui-font-weight-regular) var(--ui-font-size-sm) var(--ui-font);
 }
-.ui-badge--plain {
+.ui-badge--quiet {
   background: transparent;
-}
-.ui-badge--white {
-  background: var(--ui-raised);
 }
 .ui-alert {
   display: flex;
@@ -658,7 +655,7 @@
   padding: 0;
   background: transparent;
 }
-.ui-selection-bar--soft {
+.ui-selection-bar--contained {
   padding: var(--ui-space-2);
   background: var(--ui-control);
 }
@@ -670,11 +667,11 @@
   font-size: var(--ui-font-size-control);
   color: var(--ui-body);
 }
-.ui-selection-bar--soft > span {
+.ui-selection-bar--contained > span {
   padding-inline: var(--ui-padding-control);
   margin-right: 0;
 }
-.ui-selection-bar--soft > .ui-button:not(.ui-button--strong) {
+.ui-selection-bar--contained > .ui-button:not(.ui-button--strong) {
   --ui-control: transparent;
   --ui-control-hover: var(--ui-overlay-hover);
 }

@@ -284,9 +284,9 @@ it("moves tabs past disabled items and retains hidden panel state", () => {
     const [tab, setTab] = useState("a");
     return (
       <Tabs
-        label="代码"
+        aria-label="代码"
         value={tab}
-        onChange={setTab}
+        onValueChange={setTab}
         items={[
           {
             value: "a",
@@ -365,6 +365,7 @@ it("blocks dismissal and confirmation while a confirm operation is busy", () => 
       onOpenChange={close}
       title="删除？"
       description="删除文件"
+      tone="danger"
       busy
       onConfirm={confirm}
     />,
@@ -430,7 +431,11 @@ it("rejects multiple dropped files in single mode and ignores disabled drops", (
 it("pauses toast dismissal for focus even after pointer leaves", () => {
   vi.useFakeTimers();
   const change = vi.fn();
-  render(<Toast open onOpenChange={change} message="已保存" duration={1000} />);
+  render(
+    <Toast open onOpenChange={change} duration={1000}>
+      已保存
+    </Toast>,
+  );
   const toast = screen.getByRole("status");
   fireEvent.pointerEnter(toast);
   fireEvent.focus(screen.getByRole("button"));
@@ -602,18 +607,18 @@ it("does not repeat selection callbacks when the current selector item is clicke
   render(
     <>
       <Tabs
-        label="内容"
+        aria-label="内容"
         value="a"
-        onChange={onTab}
+        onValueChange={onTab}
         items={[
           { value: "a", label: "当前内容", content: "A" },
           { value: "b", label: "其他内容", content: "B" },
         ]}
       />
       <SegmentedControl
-        label="模式"
+        aria-label="模式"
         value="a"
-        onChange={onSegment}
+        onValueChange={onSegment}
         options={[
           { value: "a", label: "当前模式" },
           { value: "b", label: "其他模式" },

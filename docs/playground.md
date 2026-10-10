@@ -1,6 +1,6 @@
 # 组件 API 调试契约
 
-2026-10-10 修订并实施，同日纳入公开展示站。调试源码在 `src/`，组件包不包含这些页面。公共组件 Props 与事件名称保持原契约。
+2026-10-10 修订并实施，同日纳入公开展示站。调试源码在 `src/`，组件包不包含这些页面。公共组件属性名以 [API 规范](api-contract.md) 为准。
 
 ## 布局与表面
 
@@ -50,4 +50,4 @@ args 是已提交配置的唯一来源。实例交互回写 args，配置修改�
 
 本轮本地类型检查通过，16 项配置交互测试通过；37 个默认示例与 CopyButton/ShareButton 两个分支的生成代码，使用真实公共组件源码完成 TypeScript 校验。
 
-浏览器视觉与窄屏布局未验收；未启动浏览器工具或大规模兜底检查。调研来源及方案见 [API 调试优化方案](api-playground-plan.md)，公共 API 中仍待讨论的事项见 [API 规范草案](api-contract.md)。ColorPicker 契约见 [color-picker.md](color-picker.md)。
+浏览器视觉与窄屏布局未验收；未启动浏览器工具或大规模兜底检查。调研来源及方案见 [API 调试优化方案](api-playground-plan.md)，组件属性名见 [API 规范](api-contract.md)。ColorPicker 契约见 [color-picker.md](color-picker.md)。

@@ -23,25 +23,25 @@
 
 字段组件保留 React 19 原生元素属性与 ref。其余组合组件只开放必要的契约，使用 `React.ComponentProps<typeof Component>` 获取完整类型，不引入重复 props 模型。
 
-| 导出             | 主要属性与约定                                                                                                                                                                                |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Field            | `label, id?, hint?, error?, required?, children, className?`；内部一个主输入，Field 管理关联 ID，自定义 ID 设在 Field 上                                                                      |
-| Input / Textarea | 原生 input/textarea 属性与 ref；继承 Field 的 ID、required、aria-invalid、描述；也可独立使用并传 label 关联                                                                                   |
-| Select           | `options: {value,label,disabled?}[]`，`value/defaultValue/onValueChange`，`name/required/disabled/placeholder` 与 trigger button 属性/ref；由 Radix Select 管理浮层；不实现 searchable 或多选 |
-| Checkbox / Radio | `label` + 原生 input 属性/ref；Radio 的同组项共享 `name`；支持 checked/defaultChecked                                                                                                         |
-| Switch           | `label` + 原生 input 属性/ref；`checked/defaultChecked/onChange`，内部原生 checkbox，role=switch                                                                                              |
-| Slider           | `label, variant?: track/filled, value?/defaultValue?, min?, max?, step?, onValueChange?, formatValue?` + 原生 input 属性/ref；输出 number，调用方保证 min ≤ max                               |
-| Tabs             | `label, items: {value,label,content,disabled?}[], value, onChange`；受控，方向键/Home/End，隐藏面板保持挂载                                                                                   |
-| Disclosure       | `title, open?/defaultOpen?, onOpenChange?, children`；闭合内容 inert + aria-hidden，保持输入状态                                                                                              |
-| Dialog / Drawer  | `open, onOpenChange, title, description?, children, footer?, dismissible?, closeLabel?`；受控，原生 showModal/close，Escape/遮罩关闭                                                          |
-| ConfirmDialog    | `open, onOpenChange, title, description?, onConfirm, busy?, danger?, confirmLabel?, cancelLabel?`；默认危险操作；busy 禁用关闭/取消/确认，异步完成和错误由宿主管理                            |
-| Badge / Alert    | `tone: neutral/success/danger`（默认 neutral）、children；Alert 可传 title，危险反馈 role=alert，其余 role=status                                                                             |
-| Toast            | `open, onOpenChange, message, tone?, duration?`；默认 4200ms，≤0 手动关闭；悬停和焦点分别暂停，离开后重新计时；一次使用一个提示，队列交给宿主                                                 |
-| Progress         | `label?, valueLabel?, value?, max?`；省略 value 表示不确定进度，原生 progress，数值限定在范围内                                                                                               |
-| EmptyState       | `title, description?, action?`；宿主提供下一步操作                                                                                                                                            |
-| FileDropzone     | `label?, buttonLabel?, accept?, multiple?, disabled?, maxSize?, onFiles, onReject?, name?`；maxSize 单位字节，不合格整批拒绝；输入重置以支持重复选择，以回调文件为准而非表单文件值            |
-| SelectionBar     | `count, total?, summary?, onSelectAll?, onClear?, onDone?, busy?, children?, actions?`；默认不固定定位，不拥有选中集合；busy 禁用自身操作，宿主同时禁用 children 中的业务动作                 |
-| Layout           | `children, className?, label?`；布局同步容器，className 提供 flex/grid 等布局；不自动添加业务布局                                                                                             |
+| 导出             | 主要属性与约定                                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field            | `label, id?, hint?, error?, required?, children, className?`；内部一个主输入，Field 管理关联 ID，自定义 ID 设在 Field 上                                                                                |
+| Input / Textarea | 原生 input/textarea 属性与 ref；继承 Field 的 ID、required、aria-invalid、描述；也可独立使用并传 label 关联                                                                                             |
+| Select           | `options: {value,label,disabled?}[]`，`value/defaultValue/onValueChange`，`name/required/disabled/placeholder` 与 trigger button 属性/ref；由 Radix Select 管理浮层；不实现 searchable 或多选           |
+| Checkbox / Radio | `label` + 原生 input 属性/ref；Radio 的同组项共享 `name`；支持 checked/defaultChecked                                                                                                                   |
+| Switch           | `label` + 原生 input 属性/ref；`checked/defaultChecked/onChange`，内部原生 checkbox，role=switch                                                                                                        |
+| Slider           | `label, variant?: track/filled, value?/defaultValue?, min?, max?, step?, onValueChange?, formatValue?` + 原生 input 属性/ref；输出 number，调用方保证 min ≤ max                                         |
+| Tabs             | `aria-label, items: {value,label,content,disabled?}[], value/defaultValue, onValueChange`；可受控或非受控，方向键/Home/End，隐藏面板保持挂载                                                            |
+| Disclosure       | `title, open?/defaultOpen?, onOpenChange?, children`；闭合内容 inert + aria-hidden，保持输入状态                                                                                                        |
+| Dialog / Drawer  | `open, onOpenChange, title, description?, children, footer?, dismissible?, closeLabel?`；受控，原生 showModal/close，Escape/遮罩关闭                                                                    |
+| ConfirmDialog    | `open, onOpenChange, title, description?, onConfirm, busy?, tone?: neutral/danger, confirmLabel?, cancelLabel?`；默认 neutral，删除确认显式传 danger；busy 禁用关闭/取消/确认，异步完成和错误由宿主管理 |
+| Badge / Alert    | `tone: neutral/success/danger`（默认 neutral）、children；Badge 用 `emphasis: default/quiet`；Alert 可传 title，危险反馈 role=alert，其余 role=status                                                   |
+| Toast            | `open, onOpenChange, children, tone?, duration?`；默认 4200ms，≤0 手动关闭；悬停和焦点分别暂停，离开后重新计时；一次使用一个提示，队列交给宿主                                                          |
+| Progress         | `label?, valueLabel?, value?, max?`；省略 value 表示不确定进度，原生 progress，数值限定在范围内                                                                                                         |
+| EmptyState       | `title, description?, actions?`；图标默认隐藏；宿主提供下一步操作                                                                                                                                       |
+| FileDropzone     | `label?, buttonLabel?, accept?, multiple?, disabled?, maxSize?, onFiles, onReject?, name?`；maxSize 单位字节，不合格整批拒绝；输入重置以支持重复选择，以回调文件为准而非表单文件值                      |
+| SelectionBar     | `count, total?, summary?, onSelectAll?, onClear?, onDone?, busy?, children?, actions?`；默认不固定定位，不拥有选中集合；busy 禁用自身操作，宿主同时禁用 children 中的业务动作                           |
+| Layout           | `children, className?, aria-label?`；布局同步容器，className 提供 flex/grid 等布局；不自动添加业务布局                                                                                                  |
 
 最小用法与真实状态示例见展示站详情页及 `src/playground.tsx`。当前展示为左目录、右实践，目录链接与实际交互区域分开。
 

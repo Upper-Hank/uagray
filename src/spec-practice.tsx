@@ -64,7 +64,7 @@ export function SpecPractice({ id }: { id: string }) {
     setSaved((current) => ({ ...current, [key]: value }));
   const [editingProject, setEditingProject] = useState(false);
   const orientation = (
-    <ButtonGroup label="示例版式" tone="plain">
+    <ButtonGroup aria-label="示例版式" variant="plain">
       <Button
         emphasis="quiet"
         aria-pressed={layoutFormat === "portrait"}
@@ -83,7 +83,7 @@ export function SpecPractice({ id }: { id: string }) {
   );
   const whiteTools = (
     <Surface
-      tone="raised"
+      variant="raised"
       treatment="physical"
       className="ui-tool-surface ui-toolbar-row spec-tools"
     >
@@ -105,7 +105,7 @@ export function SpecPractice({ id }: { id: string }) {
           title="反馈作用于当前动作"
           demo={
             <div className="spec-demo-stack">
-              <ButtonGroup label="操作反馈">
+              <ButtonGroup aria-label="操作反馈">
                 <Button
                   icon="plus"
                   onClick={() => setItemCount((current) => current + 1)}
@@ -145,9 +145,9 @@ export function SpecPractice({ id }: { id: string }) {
           title="选择是持续状态"
           demo={
             <SegmentedControl
-              label="示例分类"
+              aria-label="示例分类"
               value={format}
-              onChange={setFormat}
+              onValueChange={setFormat}
               options={[
                 { value: "portrait", label: "全部", count: 8 },
                 { value: "landscape", label: "收藏", count: 3 },
@@ -203,7 +203,7 @@ export function SpecPractice({ id }: { id: string }) {
           title="沿操作轴组织工具"
           demo={
             <Surface
-              tone="raised"
+              variant="raised"
               treatment="physical"
               className="ui-tool-surface ui-toolbar-row spec-tools spec-tools--slider"
             >
@@ -236,7 +236,7 @@ export function SpecPractice({ id }: { id: string }) {
             <Surface className="spec-workspace">
               <Layout
                 className="ui-toolbar-row spec-tools"
-                label="布局变化示例"
+                aria-label="布局变化示例"
               >
                 <Button onClick={() => setExpanded(!expanded)}>
                   {expanded ? "收起完整项目名称" : "展开名称"}
@@ -320,7 +320,7 @@ export function SpecPractice({ id }: { id: string }) {
             </section>
             <section className="spec-hierarchy">
               <h3>对象</h3>
-              <Surface tone="raised" className="spec-object">
+              <Surface variant="raised" className="spec-object">
                 设计稿
               </Surface>
             </section>
@@ -329,7 +329,7 @@ export function SpecPractice({ id }: { id: string }) {
               <div className="spec-spatial">
                 <div className="spec-spatial-content" aria-hidden="true" />
                 <Surface
-                  tone="raised"
+                  variant="raised"
                   treatment="physical"
                   className="spec-spatial-overlay"
                 >
@@ -384,7 +384,7 @@ export function SpecPractice({ id }: { id: string }) {
         title="表面由环境与对象共同决定"
         demo={
           <div className="spec-contexts">
-            <Surface tone="raised" className="spec-context">
+            <Surface variant="raised" className="spec-context">
               <span>白底</span>
               <Badge tone="success">已完成</Badge>
             </Surface>
@@ -408,14 +408,18 @@ export function SpecPractice({ id }: { id: string }) {
         title="底色、描边与阴影分别决策"
         demo={
           <div className="spec-patterns">
-            <Surface tone="raised" className="spec-pattern">
+            <Surface variant="raised" className="spec-pattern">
               <span>色差识别</span>
             </Surface>
-            <Surface tone="raised" treatment="defined" className="spec-pattern">
+            <Surface
+              variant="raised"
+              treatment="defined"
+              className="spec-pattern"
+            >
               <span>独立边界</span>
             </Surface>
             <Surface
-              tone="raised"
+              variant="raised"
               treatment="physical"
               className="spec-pattern"
             >
@@ -436,7 +440,7 @@ export function SpecPractice({ id }: { id: string }) {
         code="P05"
         title="保留最小充分对比"
         demo={
-          <Surface tone="raised" className="spec-document-row">
+          <Surface variant="raised" className="spec-document-row">
             <div className="spec-document-identity">
               {editingProject ? (
                 <Input
@@ -510,9 +514,9 @@ export function SpecPractice({ id }: { id: string }) {
         title="交互反馈跟随行为语义"
         demo={
           <SegmentedControl
-            label="项目范围"
+            aria-label="项目范围"
             value={format}
-            onChange={setFormat}
+            onValueChange={setFormat}
             options={[
               { value: "portrait", label: "全部", count: 8 },
               { value: "landscape", label: "收藏", count: 3 },
@@ -525,8 +529,7 @@ export function SpecPractice({ id }: { id: string }) {
           是短暂反馈，选中是持续状态，焦点标记键盘位置。动作、值选择与内容导航可以有不同的反馈模型。
         </p>
         <p>
-          胶囊选择器移动共享指示块，主标签变深，计数保持常态色；字重与 1.25
-          图标描边全程不变。
+          胶囊选择器移动共享指示块，主标签变深，计数保持常态色；字重与图标描边全程不变。
         </p>
       </Rule>
       <Rule
@@ -545,7 +548,8 @@ export function SpecPractice({ id }: { id: string }) {
         }
       >
         <p>
-          同一操作行中的提交、预览和取消分别声明 strong、default 和 quiet，颜色由所在环境给出。
+          同一操作行中的提交、预览和取消分别声明 strong、default 和
+          quiet，颜色由所在环境给出。
         </p>
         <p>
           避免一个页面处处强调；改变字号、颜色或边界前，先确定强调的对象和范围。
@@ -555,9 +559,9 @@ export function SpecPractice({ id }: { id: string }) {
         code="P10"
         title="扩展经过组合与成本检验"
         demo={
-          <Surface tone="raised" treatment="defined" className="spec-editor">
+          <Surface variant="raised" treatment="defined" className="spec-editor">
             {editableName("extension")}
-            <ButtonGroup label="编辑操作" tone="plain">
+            <ButtonGroup aria-label="编辑操作" variant="plain">
               <Button onClick={() => save("extension", true)}>
                 {saved.extension ? "已保存" : "保存"}
               </Button>

@@ -4,19 +4,33 @@ import { useUiMotion } from "./motion";
 import { Icon, type IconName } from "./icons";
 import { IconButton } from "./components";
 export type FeedbackTone = "neutral" | "success" | "danger";
+function badgeEmphasis(
+  emphasis: "default" | "quiet" | undefined,
+  variant: "soft" | "plain" | "white" | undefined,
+) {
+  if (emphasis) return emphasis;
+  if (variant === "plain") return "quiet";
+  return "default";
+}
 export function Badge({
   children,
   tone = "neutral",
-  variant = "soft",
+  emphasis,
+  variant,
   icon,
 }: {
   children: ReactNode;
   tone?: FeedbackTone;
+  emphasis?: "default" | "quiet";
+  /** @deprecated Use `emphasis`. `plain` maps to `quiet`; `soft` and `white` map to `default`. */
   variant?: "soft" | "plain" | "white";
   icon?: IconName | false;
 }) {
+  const resolved = badgeEmphasis(emphasis, variant);
   return (
-    <span className={`ui-badge ui-badge--${variant} ui-tone--${tone}`}>
+    <span
+      className={`ui-badge${resolved === "quiet" ? " ui-badge--quiet" : ""} ui-tone--${tone}`}
+    >
       {icon && <Icon name={icon} size={14} />}
       {children}
     </span>
@@ -87,25 +101,30 @@ export function Progress({
 export function EmptyState({
   title,
   description,
+  actions,
   action,
-  icon = "grid",
+  icon,
 }: {
   title: string;
   description?: string;
+  actions?: ReactNode;
+  /** @deprecated Use `actions`. */
   action?: ReactNode;
   icon?: IconName | false;
 }) {
+  const slot = actions ?? action;
   return (
     <div className="ui-empty-state">
-      {icon && <Icon name={icon} size={24} />}
+      {icon ? <Icon name={icon} size={24} /> : null}
       <h3>{title}</h3>
       {description && <p>{description}</p>}
-      {action}
+      {slot}
     </div>
   );
 }
 export function Toast({
   open,
+  children,
   message,
   onOpenChange,
   tone = "neutral",
@@ -113,12 +132,15 @@ export function Toast({
   icon,
 }: {
   open: boolean;
-  message: string;
+  children?: ReactNode;
+  /** @deprecated Use `children`. */
+  message?: ReactNode;
   onOpenChange: (open: boolean) => void;
   tone?: FeedbackTone;
   duration?: number;
   icon?: IconName | false;
 }) {
+  const content = children ?? message;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const paused = hovered || focused;
@@ -133,7 +155,7 @@ export function Toast({
     if (!open || paused || duration <= 0) return;
     const timer = setTimeout(() => onOpenChange(false), duration);
     return () => clearTimeout(timer);
-  }, [open, paused, duration, message, onOpenChange]);
+  }, [open, paused, duration, content, onOpenChange]);
   return (
     <AnimatePresence>
       {open && (
@@ -174,10 +196,10 @@ export function Toast({
             layout={reduced ? false : "position"}
             transition={transition}
           >
-            {message}
+            {content}
           </motion.span>
           <IconButton
-            label="关闭提示"
+            aria-label="关闭提示"
             icon="close"
             emphasis="quiet"
             onClick={() => onOpenChange(false)}

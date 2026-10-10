@@ -334,7 +334,7 @@ it("only enables field focus indicators through Tab navigation, never typing or 
   render(
     <>
       <Input aria-label="输入" />
-      <SearchField label="搜索" value="" onChange={() => {}} />
+      <SearchField aria-label="搜索" value="" onValueChange={() => {}} />
     </>,
   );
   const input = screen.getByLabelText("输入");

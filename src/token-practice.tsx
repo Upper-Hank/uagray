@@ -217,7 +217,7 @@ export function TokenPractice({ id }: { id: string }) {
             <code>{name}</code>
             <span>{values[name] || "读取样式…"}</span>
           </div>
-          <CopyButton text={`var(${name})`} />
+          <CopyButton text={`var(${name})`} emphasis="quiet" />
         </div>
       ))}
     </div>

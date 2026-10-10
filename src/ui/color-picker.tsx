@@ -23,6 +23,8 @@ type EyeDropperConstructor = new () => {
   open: (options: { signal: AbortSignal }) => Promise<{ sRGBHex: string }>;
 };
 export type ColorPickerProps = {
+  "aria-label"?: string;
+  /** @deprecated Use `aria-label`. */
   label?: string;
   value?: string;
   defaultValue?: string;
@@ -38,13 +40,15 @@ function serialize(color: Color) {
 
 /** A shared HSB color model preserves hue even when saturation or brightness is zero. */
 export function ColorPicker({
-  label = "颜色",
+  "aria-label": ariaLabel,
+  label,
   value,
   defaultValue = "#525252",
   onValueChange,
   disabled = false,
   className = "",
 }: ColorPickerProps) {
+  const name = ariaLabel ?? label ?? "颜色";
   const [color, setColor] = useState(() =>
     parseColor(normalizeHex(value ?? defaultValue) ?? "#525252").toFormat(
       "hsb",
@@ -127,12 +131,12 @@ export function ColorPicker({
   const channelColor = format === "hex" ? color : color.toFormat(format);
   const channels = format === "hex" ? [] : channelColor.getColorChannels();
   return (
-    <Surface tone="raised" className={`ui-color-picker ${className}`}>
+    <Surface variant="raised" className={`ui-color-picker ${className}`}>
       <AriaColorPicker value={color} onChange={commit}>
         <fieldset disabled={disabled} className="ui-color-picker-fields">
-          <legend className="ui-sr-only">{label}</legend>
+          <legend className="ui-sr-only">{name}</legend>
           <ColorArea
-            aria-label={`${label}饱和度与明度`}
+            aria-label={`${name}饱和度与明度`}
             colorSpace="hsb"
             xChannel="saturation"
             yChannel="brightness"
@@ -144,7 +148,7 @@ export function ColorPicker({
           <div className="ui-color-picker-sliders">
             <IconButton
               icon="eyedropper"
-              label={Dropper ? "吸管取色" : "当前浏览器不支持吸管取色"}
+              aria-label={Dropper ? "吸管取色" : "当前浏览器不支持吸管取色"}
               emphasis="quiet"
               disabled={disabled || !Dropper || picking}
               onClick={sample}
@@ -186,7 +190,7 @@ export function ColorPicker({
             />
             {format === "hex" ? (
               <Field
-                label={`${label} HEX`}
+                label={`${name} HEX`}
                 error={
                   invalid ? "请输入 3、4、6 或 8 位 HEX 颜色。" : undefined
                 }

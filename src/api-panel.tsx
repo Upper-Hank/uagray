@@ -75,13 +75,13 @@ export function ApiPanel({
           options.length <= 3 &&
           options.every((option) => option.label.length <= 12) ? (
           <SegmentedControl
-            label={label}
+            aria-label={label}
             value={String(value ?? "")}
             options={options.map((option) => ({
               ...option,
               disabled: disabled || option.disabled,
             }))}
-            onChange={(next) => patch(field.key, next)}
+            onValueChange={(next) => patch(field.key, next)}
           />
         ) : (
           <Select
@@ -162,7 +162,7 @@ export function ApiPanel({
     <Surface
       id={id}
       hidden={hidden}
-      tone="raised"
+      variant="raised"
       className="api-panel"
       role="group"
       aria-label="API 配置"
@@ -170,7 +170,7 @@ export function ApiPanel({
       <header className="api-panel-header">
         <h2>配置</h2>
         <Button
-          size="small"
+          size="sm"
           emphasis="default"
           onClick={() => {
             setResetKey((key) => key + 1);

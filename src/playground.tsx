@@ -83,7 +83,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "color-picker":
       node = (
         <ColorPicker
-          label={s("label")}
+          aria-label={s("aria-label")}
           value={s("value")}
           disabled={b("disabled")}
           onValueChange={(value) => patch("value", value)}
@@ -93,21 +93,23 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "segments":
       node = (
         <SegmentedControl
-          label={s("label")}
+          aria-label={s("aria-label")}
           options={choices("options")}
           value={s("value")}
-          onChange={(value) => patch("value", value)}
+          defaultValue={s("defaultValue") || undefined}
+          onValueChange={(value) => patch("value", value)}
         />
       );
       break;
     case "search":
       node = (
         <SearchField
-          label={s("label")}
+          aria-label={s("aria-label")}
           value={s("value")}
+          defaultValue={s("defaultValue") || undefined}
           placeholder={s("placeholder")}
           shortcut={b("shortcut")}
-          onChange={(value) => patch("value", value)}
+          onValueChange={(value) => patch("value", value)}
         />
       );
       break;
@@ -116,10 +118,11 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
         buttonsAction === "copy" ? (
           <CopyButton
             text={s("text")}
-            label={s("children")}
-            variant={s("emphasis") === "quiet" ? "plain" : "soft"}
+            emphasis={s("emphasis") as ButtonProps["emphasis"]}
             size={s("size") as ButtonProps["size"]}
-          />
+          >
+            {s("children")}
+          </CopyButton>
         ) : buttonsAction === "share" ? (
           <ShareButton url={s("url")} />
         ) : (
@@ -138,7 +141,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "icon-button":
       node = (
         <IconButton
-          label={s("label")}
+          aria-label={s("aria-label")}
           icon={s("icon") as IconName}
           size={s("size") as ButtonProps["size"]}
           emphasis={s("emphasis") as ButtonProps["emphasis"]}
@@ -149,7 +152,10 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "button-group":
       node = (
-        <ButtonGroup label={s("label")} tone={s("tone") as "soft" | "plain"}>
+        <ButtonGroup
+          aria-label={s("aria-label")}
+          variant={s("variant") as "contained" | "plain"}
+        >
           {lines(s("children")).map((label, i) => (
             <Button key={i}>{label}</Button>
           ))}
@@ -279,9 +285,10 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "tabs":
       node = (
         <Tabs
-          label={s("label")}
+          aria-label={s("aria-label")}
           value={s("value")}
-          onChange={(value) => patch("value", value)}
+          defaultValue={s("defaultValue") || undefined}
+          onValueChange={(value) => patch("value", value)}
           items={choices("items").map((item) => ({
             ...item,
             content: item.content || null,
@@ -337,7 +344,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
             onOpenChange={(open) => patch("open", open)}
             onConfirm={() => patch("open", false)}
             busy={b("busy")}
-            danger={b("danger")}
+            tone={s("tone") as "neutral" | "danger"}
             confirmLabel={s("confirmLabel")}
             cancelLabel={s("cancelLabel")}
           />
@@ -349,7 +356,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
         <Badge
           icon={feedbackIcon}
           tone={s("tone") as FeedbackTone}
-          variant={s("variant") as "soft" | "plain" | "white"}
+          emphasis={s("emphasis") as "default" | "quiet"}
         >
           {s("children")}
         </Badge>
@@ -373,7 +380,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <Toast
             open={b("open")}
             onOpenChange={(open) => patch("open", open)}
-            message={s("message")}
+            children={s("children")}
             icon={feedbackIcon}
             tone={s("tone") as FeedbackTone}
             duration={n("duration")}
@@ -397,8 +404,8 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           title={s("title")}
           icon={feedbackIcon}
           description={s("description") || undefined}
-          action={
-            b("action") ? <Button icon="plus">添加文件</Button> : undefined
+          actions={
+            b("showActions") ? <Button icon="plus">添加文件</Button> : undefined
           }
         />
       );
@@ -427,7 +434,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <SelectionBar
           summary={s("summary") || undefined}
-          tone={s("tone") as "plain" | "soft"}
+          variant={s("variant") as "contained" | "plain"}
           count={n("count")}
           total={n("total")}
           busy={b("busy")}
@@ -441,7 +448,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <ExpandableCode
           code={s("code")}
-          label={s("label")}
+          expandLabel={s("expandLabel")}
           collapsedHeight={n("collapsedHeight")}
         />
       );
@@ -495,7 +502,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <Surface
           className="surface-demo"
-          tone={s("tone") as SurfaceProps["tone"]}
+          variant={s("variant") as SurfaceProps["variant"]}
           treatment={s("treatment") as SurfaceProps["treatment"]}
         >
           {s("children")}
@@ -517,7 +524,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "layout":
       node = (
-        <Layout className="example-row" label={s("label")}>
+        <Layout className="example-row" aria-label={s("aria-label")}>
           <Button>{s("children")}</Button>
         </Layout>
       );
@@ -544,7 +551,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <h1 id="practice-title">{entry.title}</h1>
         </header>
         <Surface
-          tone="raised"
+          variant="raised"
           className="practice-layout"
           role="group"
           aria-label="Preview"
@@ -552,9 +559,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <div className="practice-toolbar">
             <h2 className="practice-toolbar-title">预览</h2>
             <SegmentedControl
-              label="画布环境"
+              aria-label="画布环境"
               value={canvasBackground}
-              onChange={(value) =>
+              onValueChange={(value) =>
                 setCanvasBackground(value as "base" | "gray" | "white")
               }
               options={[
@@ -614,7 +621,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       <Disclosure
         title="用法"
         className="usage-code"
-        actions={<CopyButton text={code} variant="plain" />}
+        actions={<CopyButton text={code} emphasis="quiet" />}
       >
         <pre
           className="usage-source ui-scroll-area"
