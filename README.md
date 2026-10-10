@@ -37,6 +37,8 @@ import "uagray/styles.css";
 
 ## 设计与来源
 
+页面 Logo 使用 `src/assets/uagray-logo.svg` 完整字标；favicon 使用 `public/favicon.svg` 简短标记。两份 SVG 均作为展示站资产纳入仓库，不进入组件包。
+
 设计研究最初参考 [anish’s lab](https://lab.anishfn.ink/)，不将参考站整体视觉宣称为原创。后续依据 Uagray 的设计原则和实际需求独立展开。图标采用 `@uplus-icon/react`，布局与交互动效使用 Framer Motion。
 
 视觉准则见 [docs/visual-language.md](docs/visual-language.md)，组件契约见 [docs/design-system.md](docs/design-system.md)，Token 契约见 [docs/tokens.md](docs/tokens.md)。源码范围及构建约定见 [docs/source-boundary.md](docs/source-boundary.md)。历史展示与案例文档是开发记录，不代表相关功能已对外开放。
