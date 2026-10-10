@@ -1,25 +1,24 @@
 # Uagray Token 契约
 
-视觉资源遵循 [视觉准则 v0.1](visual-language.md)：Base/Muted/White/Dark 是资源角色，Tonal/Defined/Physical 是边界处理，不构成颜色等级或递归嵌套规则。现有 raised 变量名保留兼容，其白色值不自动表示空间抬升。Fill、Border、Shadow 按职责分别判断；当前 shadow 组合值不代表永远绑定这三种资源。常驻描边只允许白底强调对象；灰底三类常态表面与 tone/组合决策见 [表面实施契约](surface-contract.md)，下表记录环境默认值，具体选择仍由任务与组合契约决定。
+视觉资源遵循 [视觉准则 v0.1](visual-language.md)：Base/Muted/White/Dark 是资源角色，Tonal/Defined/Physical 是边界处理，不构成颜色等级或递归嵌套规则。现有 raised 变量名保留兼容，其白色值不自动表示空间抬升。Fill、Border、Shadow 按职责分别判断；当前 shadow 组合值不代表永远绑定这三种资源。常驻描边只允许白底强调对象；环境色模型与 tone/组合决策见 [环境色与表面契约](surface-contract.md)。
 
 Token 的唯一值来源是 `src/ui/tokens.css`。基础值定义尺度，语义别名表达用途；保留现有变量名作为兼容别名。展示页 `src/token-practice.tsx` 只登记分类和变量名，读取实际 CSS 计算值，不维护第二份色值或尺寸表。
 
 表面使用 background / surface / control / raised，浅色值为 #fbfbfb / #f2f2f2 / #ececec / #fff。surface 与 control 保留有限差异；大区域的视觉重量与控件不同，限制灰阶数量不意味着取消这种差异。dark 同样保留通用承载、独立分离表面的相对关系。颜色由当前承载关系与任务决定，不能据组件名称推断底色。
 
-以下为 v0.1 本轮实施后的资源消费。灰环境只提供对比资源，不给子项自动增加边缘或阴影。
+环境契约（2026-10-10）：组件只读取下列变量，环境容器负责重新指向；完整规则见 [环境色与表面契约](surface-contract.md)。
 
-| 资源                                              | 浅页面 / 白容器            | 灰 Surface / Showcase                             |
-| ------------------------------------------------- | -------------------------- | ------------------------------------------------- |
-| element / element-hover（编辑与选择标记）         | control / control-hover    | raised / raised                                   |
-| action-surface / action-surface-hover（普通动作） | control / control-hover    | raised / background                               |
-| selected-surface                                  | 组件自己定义，不随环境改写 | 组件自己定义，不随环境改写                        |
-| range-track / range-fill                          | 独立轨道与 filled 进度资源 | 同一资源，不翻白                                  |
-| 状态 surface / text                               | tone 成对定义              | feedback-success/danger-surface 使用 on-gray 配对 |
-| switch-surface / thumb                            | track / thumb              | 保持控件语义                                      |
+| 变量                           | 页面                                       | 灰色区域（Surface）                     | 白色层（Surface raised、Dialog、Toast、菜单、ColorPicker） |
+| ------------------------------ | ------------------------------------------ | --------------------------------------- | ---------------------------------------------------------- |
+| control / control-hover        | control-on-background（#ececec / #e4e4e4） | control-on-surface（#e4e4e4 / #dbdbdb） | control-on-raised（#f2f2f2 / #e8e8e8）                     |
+| selected                       | 同 control                                 | 同 control                              | 同 control                                                 |
+| success-fill / danger-fill     | success / danger-surface                   | *-surface-on-gray                       | success / danger-surface                                   |
+| region / region-hover          | surface / surface-hover                    | raised / raised-hover                   | surface / surface-hover                                    |
+| region-control*、region-*-fill | 区块内部的环境值，按区块填充推导           | 同左                                    | 同左                                                       |
 
-白 Surface、Dialog、Toast、Select 菜单、代码与颜色编辑器重置编辑/动作资源，形成可预测的有限环境。Disclosure 默认共享基底，不声明新环境。共同操作组内部动作常态透明，局部反馈；选择、进度、状态和边界仍由各自组件负责。宿主背景不能自动推断职责；按实际对象声明资源，而非复制递归翻色规则。
+区块（Disclosure、Code、FileDropzone、ShowcaseCard、NavigationCard）读取 region，并把 region-* 值应用为子项的 control / selected / _-fill。range-track 与 Slider filled 进度使用 track，跨环境不变；switch-surface / thumb 保持控件语义。旧别名 element、action-surface、reading-surface、object-surface、selected-surface、range-fill、choice-edge、group-hover、feedback-_-surface 已删除，宿主不得再覆盖。
 
-border-soft 在满足白底强调条件时表达对象边缘，也可表达不围合控件的内容分隔；preview-border 是兼容别名。不得用于灰底或透明对象常驻轮廓。边缘与阴影服务于分离和识别，不因白底自动出现；白按钮、选中滑块、键帽和菜单保留明确的实体处理；静态 API 配置区只使用描边。Surface 的 treatment 将这些处理与 tone 分开。action / on-action、danger-action / on-danger 表达明确操作状态。Badge 当前消费状态前景与背景，Alert/Toast 当前复用中性表面；这些现状不能替代灰底中的实际辨识检查。Button 图标与文案共享 currentColor；size 不改变颜色；plain 与共同操作组的内部表面按组合职责使用。完整约束见 [设计规范](design-system.md)。
+border-soft 在满足白底强调条件时表达对象边缘，也可表达不围合控件的内容分隔；preview-border 是兼容别名。不得用于灰底或透明对象常驻轮廓。边缘与阴影服务于分离和识别，不因白底自动出现；选中滑块、键帽和菜单按分离职责使用实体处理；普通按钮不再提供固定白底样式；静态 API 配置区只使用描边。Surface 的 treatment 将这些处理与 tone 分开。action / on-action、danger-action / on-danger 表达明确操作状态。Badge 与 Alert 消费环境配对的状态前景与填充；Toast 建立白色层环境。Button 图标与文案共享 currentColor；size 不改变颜色；plain 与共同操作组的内部表面按组合职责使用。完整约束见 [设计规范](design-system.md)。
 
 滚动条由 scrollbar-thumb / scrollbar-thumb-hover 语义色与 size-scrollbar（8px）控制，亮暗主题只切换语义色。`src/ui/scrollbars.css` 统一适配 Textarea、Dialog/Drawer 和显式添加 ui-scroll-area 的滚动容器，使用透明轨道、圆角滑块，悬停或容器内聚焦时加强滑块颜色；优先使用原生 thin 滚动条，WebKit 回退使用尺寸 Token。高对比模式保留系统滚动条颜色。展示页侧栏与主内容的隐藏滚动条规则继续独立生效，不覆盖宿主页面全部元素。
 
@@ -35,11 +34,11 @@ Space 的编号表示阶梯顺序，不表示数值必须是编号乘以 4。用
 
 嵌套组合遵循等距圆角：外圆角 = 内圆角 + 实际 inset。独立组件消费语义圆角，组合按实际轮廓用 calc() 派生，允许得到 28px 等非基础档位，不为派生尺寸新增 token。普通动作组默认 12px + 4px = 16px，小动作组及选择轨道为 8px + 4px = 12px；API 工具区为 12px + 12px = 24px；教学展示直接消费 surface 与 radius-surface，不预设内层画布。完整适用边界见 [等距圆角契约](design-system.md#等距圆角契约)。
 
-排版保留基础尺度和语义角色，UI 字重全部统一 450。控件数值默认 control（13px）/450，状态标题默认 md（16px）/450；标签、按钮、计数、页面/弹层标题与选中目录也统一 450。font-weight-medium 保留兼容名称但引用 regular，font-weight-button 同样引用 regular。交互状态不改变字重；文本强调仅在用户明确允许的场景使用更大字重。字号、前景和布局负责必要层级，组件不各自维护字重补丁。
+排版使用两档字重：界面与正文为 regular（400），页面、小节、弹层与状态标题为 medium（500）。控件数值默认 control（13px）/400，状态标题默认 md（16px）/500；标签、按钮、计数与选中目录均为 400。font-weight-button 引用 regular，font-weight-status-title 引用 medium。交互状态不改变字重；正文与 strong 动作不自动加重。同一角色统一消费 Token，不逐组件维护字重补丁。
 
 图标统一 DEFAULT_ICON_WEIGHT=1.25，按现有配置步长 0.25 从 1.5 降一档，继续使用官方 absoluteWeight 适配。hover、按压、选中、焦点和禁用不改变描边；图标详情页的手动 weight 配置用于显式比较，不是交互状态反馈。
 
-Sans 与 Sans SC 当前加载 400、450、500 静态字体，常规使用官方 Text 450。中文 Text 采用 216 个官方 Unicode 分片按需加载，拉丁采用本地 WOFF2；原始文件与授权见 [字体资源](../public/fonts/ibm-plex/README.md)。已验证所有新增文件的 OS/2 字重标记为 450，不依靠浏览器合成或匹配 500。缺失的其他字重仍按 [浏览器匹配规则](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-weight) 处理。
+Sans 与 Sans SC 保留 400、450、500 静态字体资源，当前 UI 消费 Regular 400 与 Medium 500，Text 450 暂不消费。中文采用官方 Unicode 分片按需加载，拉丁采用本地 WOFF2；原始文件与授权见 [字体资源](../public/fonts/ibm-plex/README.md)。实际字重必须由对应字体资源支持，不依靠声明连续范围伪装插值能力。
 
 当前 Button、输入、Tabs、折叠、选择、反馈及新展示布局中的常用字号、间距、圆角和控件高度已消费这些变量。对图标尺寸，`Icon size` 仍是显式接口；几何定位、原生滑块命中范围、弹层定位等必要细节不机械抽成 token。Button、ButtonGroup、Segmented、SearchField、SelectionBar 与 Toast 的 Motion 圆角样式引用 CSS 变量，不再维护独立数值；组合圆角通过现有 Radius 与 Space 的 calc() 派生。布局动画中的实际轮廓仍需视觉验收。
 
@@ -88,12 +87,12 @@ padding-control 属于控件内容/命中范围，padding-panel 属于区域；�
 
 工具行落实上述职责：共同底座 inset 使用 space-2，信息、字段与普通动作单元横向内容留白使用 padding-control，单元间距使用 gap-control。通过 ui-toolbar-row / ui-toolbar-info / ui-toolbar-field 明确消费位置；不改变独立按钮的留白，也不把工具行契约推广为所有容器的 padding。API 配置白工具区外缘使用 space-5，浅灰参数单元内侧使用 padding-control，参数名与控件间和单元之间使用 gap-control；单元最小高度使用 size-control-lg。配置形成等宽列，内部输入透明，长文本按需展开。
 
-胶囊选择器是表面继承的明确例外：选择底座直接消费 control、选中滑块直接消费 raised，Tabs 与 Segmented 共用这些值，不消费随父级翻转的 selected-surface。ui-tool-surface 按控件圆角与 space-2 推导紧凑工具圆角；API 的 space-5 留白由宿主推导对应外圆角。独立悬浮工具通过 Surface treatment="physical" 消费 shadow；静态配置采用 defined 描边，普通动作不因承载颜色获得阴影。edge 与 elevation 分开定义，shadow 是 Physical 组合的便利值。
+胶囊选择器的轨道消费环境 control，选中滑块为白色层 raised，Tabs 与 Segmented 共用这些值。ui-tool-surface 按控件圆角与 space-2 推导紧凑工具圆角；API 的 space-5 留白由宿主推导对应外圆角。独立悬浮工具通过 Surface treatment="physical" 消费 shadow；静态配置采用 defined 描边，普通动作不因承载颜色获得阴影。edge 与 elevation 分开定义，shadow 是 Physical 组合的便利值。
 
 轻量文字 muted 浅色使用 #696969，焦点消费相同角色；用于浅灰控件上的小字辨识，不改变文字重量。普通操作前景为 #404040，hover 为 #171717。
 
 案例阅读角色新增 font-size-reading-title（22px）、font-size-reading-lead（15px）与 line-height-reading（1.625）。正文继续消费 body（14px），信息列表消费 control（13px），图注消费 sm（12px）。主标题与小节/简介独立分配，不修改通用 xl 尺度或控件字号。
 
-### 灰环境反馈与对象资源
+### 状态底配对
 
-reading-surface 在浅页面使用 surface，在灰承载中使用 control。feedback-success/danger-surface 在灰环境引用 success/danger-surface-on-gray，浅色分别为 #e0e9e2 / #f0dddd，深色分别为 #2c4032 / #482e2e；语义前景保持对应 tone。Badge variant 可按职责显式采用 plain 或 white。object-surface 供独立展示/导航对象在灰环境使用 raised，白环境使用 surface。已撤销 selector-tool-surface/inset 与自动工具外壳；选择轨道直接使用 control，与外灰 surface 保持深一级对比，选中块使用 raised。以上新增值尚未完成实际视觉校准。
+状态底在灰环境与页面区块中引用 success/danger-surface-on-gray，浅色分别为 #e0e9e2 / #f0dddd，深色分别为 #2c4032 / #482e2e；语义前景保持对应 tone。Badge variant 可按职责显式采用 plain 或 white。三种环境与区块的填充差已在环境矩阵中经浏览器测量（浅色与深色）。

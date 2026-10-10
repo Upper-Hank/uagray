@@ -179,7 +179,7 @@ export function Toast({
           <IconButton
             label="关闭提示"
             icon="close"
-            variant="plain"
+            emphasis="quiet"
             onClick={() => onOpenChange(false)}
           />
         </motion.div>

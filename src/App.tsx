@@ -12,6 +12,7 @@ import { tokenGroups, TokenPractice } from "./token-practice";
 import { ComponentPreview } from "./component-preview";
 import { componentEntries } from "./component-examples";
 import { specEntries, SpecPractice } from "./spec-practice";
+import { ContextMatrix } from "./context-matrix";
 import "./app.css";
 type Category = "spec" | "token" | "component";
 const pieces = [
@@ -171,6 +172,8 @@ export default function App() {
             <TokenPractice key={piece.id} id={piece.id} />
           ) : component ? (
             <ComponentPreview key={component.id} entry={component} />
+          ) : piece.id === "context-matrix" ? (
+            <ContextMatrix />
           ) : (
             spec && <SpecPractice key={spec.id} id={spec.id} />
           )}

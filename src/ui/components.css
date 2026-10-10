@@ -41,7 +41,7 @@
   padding: 0 var(--ui-padding-control);
   border: 0;
   border-radius: var(--ui-button-radius);
-  background: var(--ui-action-surface);
+  background: var(--ui-control);
   color: var(--ui-button-text);
   font-size: var(--ui-font-size-control);
   font-weight: var(--ui-font-weight-button);
@@ -53,7 +53,7 @@
     scale var(--ui-fast) ease-out;
 }
 .ui-button:hover:not(:disabled) {
-  background: var(--ui-action-surface-hover);
+  background: var(--ui-control-hover);
   color: var(--ui-text);
 }
 .ui-button:active:not(:disabled) {
@@ -71,27 +71,23 @@
   border-radius: var(--ui-radius-sm);
   font-size: var(--ui-font-size-sm);
 }
-.ui-button--plain {
+.ui-button--quiet {
   background: transparent;
 }
-.ui-button--plain:hover:not(:disabled) {
+.ui-button--quiet:hover:not(:disabled) {
   background: var(--ui-overlay-hover);
 }
-.ui-button--white {
-  background: var(--ui-raised);
-  box-shadow: var(--ui-shadow);
-}
-.ui-button--white:hover:not(:disabled) {
-  background: var(--ui-raised);
-  color: var(--ui-text);
-}
-.ui-button--dark {
+.ui-button--strong {
   background: var(--ui-action);
   color: var(--ui-on-action);
 }
-.ui-button--dark:hover:not(:disabled) {
+.ui-button--strong:hover:not(:disabled) {
   background: var(--ui-action-hover);
   color: var(--ui-on-action);
+}
+.ui-button--strong:disabled {
+  background: var(--ui-control);
+  color: var(--ui-disabled);
 }
 .ui-icon-button {
   display: inline-flex;
@@ -110,8 +106,13 @@
   align-items: center;
   gap: var(--ui-space-1);
   padding: var(--ui-space-2);
-  background: var(--ui-action-surface);
+  background: var(--ui-control);
   border-radius: var(--ui-group-radius);
+}
+/* The group owns the fill; its ordinary actions only show local feedback. */
+.ui-button-group--soft > .ui-button:not(.ui-button--strong) {
+  --ui-control: transparent;
+  --ui-control-hover: var(--ui-overlay-hover);
 }
 .ui-button-group:has(> .ui-button--small):not(:has(> .ui-button--default)) {
   --ui-group-child-radius: var(--ui-radius-sm);
@@ -126,19 +127,12 @@
 }
 .ui-button-group--plain .ui-button[aria-pressed="true"],
 .ui-button-group--plain .ui-button[aria-pressed="true"]:hover:not(:disabled) {
-  background: var(--ui-control);
+  background: var(--ui-selected);
   color: var(--ui-text);
   box-shadow: none;
 }
-.ui-button-group:not(.ui-button-group--plain) > .ui-button--soft {
-  background: transparent;
-}
-.ui-button-group:not(.ui-button-group--plain)
-  .ui-button--soft:hover:not(:disabled),
 .ui-external:hover {
-  background: var(--ui-group-hover);
-}
-.ui-external:hover {
+  background: var(--ui-overlay-hover);
   color: var(--ui-text);
 }
 .ui-external {
@@ -212,7 +206,7 @@
   height: var(--ui-size-control);
   min-height: var(--ui-size-control);
   padding: 0 var(--ui-space-3) 0 14px;
-  background: var(--ui-element);
+  background: var(--ui-control);
   border-radius: var(--ui-radius-control);
   color: var(--ui-muted);
   transition:
@@ -220,7 +214,7 @@
     color var(--ui-fast) ease-out;
 }
 .ui-search:hover {
-  background: var(--ui-element-hover);
+  background: var(--ui-control-hover);
 }
 .ui-search[data-keyboard-focus]:focus-within {
   outline: 1px solid var(--ui-focus-outline);
@@ -256,34 +250,52 @@
   font: var(--ui-font-weight-regular) var(--ui-font-size-sm) var(--ui-font);
   color: var(--ui-muted);
 }
-/* Environment supplies contrast resources; it does not add edges or elevation. */
-.ui-surface:not(.ui-surface--raised),
-.ui-showcase,
-.ui-dropzone {
-  --ui-reading-surface: var(--ui-control);
-  --ui-choice-edge: inset 0 0 0 1px var(--ui-border-soft);
-  --ui-feedback-success-surface: var(--ui-success-surface-on-gray);
-  --ui-feedback-danger-surface: var(--ui-danger-surface-on-gray);
-  --ui-element: var(--ui-raised);
-  --ui-element-hover: var(--ui-raised);
-  --ui-action-surface: var(--ui-raised);
-  --ui-action-surface-hover: var(--ui-background);
+/*
+ * Contexts re-point the contract declared on :root. They never add edges
+ * or elevation; a fill is always one step from the background it sits on.
+ */
+.ui-surface:not(.ui-surface--raised) {
+  --ui-control: var(--ui-control-on-surface);
+  --ui-control-hover: var(--ui-control-hover-on-surface);
+  --ui-selected: var(--ui-control-on-surface);
+  --ui-success-fill: var(--ui-success-surface-on-gray);
+  --ui-danger-fill: var(--ui-danger-surface-on-gray);
+  --ui-region: var(--ui-raised);
+  --ui-region-hover: var(--ui-raised-hover);
+  --ui-region-control: var(--ui-control-on-raised);
+  --ui-region-control-hover: var(--ui-control-hover-on-raised);
+  --ui-region-success-fill: var(--ui-success-surface);
+  --ui-region-danger-fill: var(--ui-danger-surface);
 }
 .ui-surface--raised,
 .ui-dialog,
 .ui-toast,
 .ui-select-menu,
 .ui-color-picker {
-  --ui-reading-surface: var(--ui-surface);
-  --ui-choice-edge: none;
-  --ui-feedback-success-surface: var(--ui-success-surface);
-  --ui-feedback-danger-surface: var(--ui-danger-surface);
-  --ui-element: var(--ui-control);
-  --ui-element-hover: var(--ui-control-hover);
-  --ui-action-surface: var(--ui-control);
-  --ui-action-surface-hover: var(--ui-control-hover);
+  --ui-control: var(--ui-control-on-raised);
+  --ui-control-hover: var(--ui-control-hover-on-raised);
+  --ui-selected: var(--ui-control-on-raised);
+  --ui-success-fill: var(--ui-success-surface);
+  --ui-danger-fill: var(--ui-danger-surface);
+  --ui-region: var(--ui-surface);
+  --ui-region-hover: var(--ui-surface-hover);
+  --ui-region-control: var(--ui-control-on-surface);
+  --ui-region-control-hover: var(--ui-control-hover-on-surface);
+  --ui-region-success-fill: var(--ui-success-surface-on-gray);
+  --ui-region-danger-fill: var(--ui-danger-surface-on-gray);
 }
-.ui-surface {
+/* Regions fill with --ui-region and become the context of their children. */
+.ui-disclosure,
+.ui-code,
+.ui-dropzone,
+.ui-showcase,
+.ui-navigation-card {
+  --ui-control: var(--ui-region-control);
+  --ui-control-hover: var(--ui-region-control-hover);
+  --ui-selected: var(--ui-region-control);
+  --ui-success-fill: var(--ui-region-success-fill);
+  --ui-danger-fill: var(--ui-region-danger-fill);
+}.ui-surface {
   background: var(--ui-surface);
   border-radius: var(--ui-radius-surface);
 }
@@ -316,7 +328,7 @@
 .ui-showcase {
   position: relative;
   display: block;
-  background: var(--ui-object-surface);
+  background: var(--ui-region);
   border-radius: var(--ui-radius-surface);
   color: var(--ui-body);
   overflow: hidden;
@@ -326,7 +338,7 @@
   text-decoration: none;
 }
 .ui-showcase--external:hover {
-  background: var(--ui-control-hover);
+  background: var(--ui-region-hover);
 }
 .ui-showcase-link {
   display: block;
@@ -376,7 +388,7 @@
   align-items: center;
   padding: 5px 10px;
   border-radius: var(--ui-radius-control);
-  background: var(--ui-control-hover);
+  background: var(--ui-control);
   border-radius: var(--ui-radius-full);
   font-size: var(--ui-font-size-sm);
   opacity: 0;
@@ -396,7 +408,7 @@
 .ui-code {
   position: relative;
   border-radius: var(--ui-radius-card);
-  background: var(--ui-reading-surface);
+  background: var(--ui-region);
   overflow: hidden;
 }
 .ui-code-copy {
@@ -426,8 +438,8 @@
   height: 96px;
   background: linear-gradient(
     to top,
-    var(--ui-reading-surface),
-    color-mix(in srgb, var(--ui-reading-surface) 90%, transparent),
+    var(--ui-region),
+    color-mix(in srgb, var(--ui-region) 90%, transparent),
     transparent
   );
   pointer-events: none;
@@ -454,13 +466,13 @@
   min-height: 88px;
   padding: var(--ui-space-6);
   border-radius: var(--ui-radius-card);
-  background: var(--ui-object-surface);
+  background: var(--ui-region);
   color: var(--ui-text);
   text-decoration: none;
   transition: background var(--ui-fast);
 }
 .ui-navigation-card:hover {
-  background: var(--ui-surface-hover);
+  background: var(--ui-region-hover);
 }
 .ui-navigation-card > svg {
   color: var(--ui-muted);
@@ -622,17 +634,21 @@
 .ui-button-content > svg {
   color: inherit;
 }
-.ui-button--danger {
+.ui-button--danger.ui-button--strong {
   background: var(--ui-danger-action);
   color: var(--ui-on-danger);
 }
-.ui-button--danger:hover:not(:disabled) {
+.ui-button--danger.ui-button--strong:hover:not(:disabled) {
   background: var(--ui-danger-hover);
   color: var(--ui-on-danger);
 }
-.ui-button--danger:disabled {
-  background: var(--ui-surface-hover);
-  color: var(--ui-muted);
+.ui-button--danger.ui-button--strong:disabled {
+  background: var(--ui-control);
+  color: var(--ui-disabled);
+}
+.ui-button--danger:not(.ui-button--strong),
+.ui-button--danger:not(.ui-button--strong):hover:not(:disabled) {
+  color: var(--ui-danger);
 }
 
 .ui-button-count {
@@ -642,8 +658,7 @@
   line-height: 1;
   color: var(--ui-muted);
 }
-.ui-button--dark .ui-button-count,
-.ui-button--danger .ui-button-count {
+.ui-button--strong .ui-button-count {
   color: inherit;
   opacity: 0.75;
 }
@@ -679,11 +694,4 @@
 /* Tool geometry is independent of its Surface treatment. */
 .ui-tool-surface {
   border-radius: calc(var(--ui-radius-control) + var(--ui-space-2));
-}
-
-.ui-surface:not(.ui-surface--raised) {
-  --ui-object-surface: var(--ui-raised);
-}
-.ui-surface--raised {
-  --ui-object-surface: var(--ui-surface);
 }

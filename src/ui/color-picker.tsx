@@ -145,7 +145,7 @@ export function ColorPicker({
             <IconButton
               icon="eyedropper"
               label={Dropper ? "吸管取色" : "当前浏览器不支持吸管取色"}
-              variant="plain"
+              emphasis="quiet"
               disabled={disabled || !Dropper || picking}
               onClick={sample}
             />

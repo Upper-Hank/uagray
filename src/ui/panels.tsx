@@ -29,7 +29,7 @@ export function Disclosure({
     <div className={`ui-disclosure ${className}`}>
       <div className="ui-disclosure-heading">
         <Button
-          variant="plain"
+          emphasis="quiet"
           className="ui-disclosure-trigger"
           aria-expanded={expanded}
           aria-controls={id}
@@ -196,7 +196,8 @@ export function ConfirmDialog({
             {cancelLabel}
           </Button>
           <Button
-            variant={danger ? "danger" : "dark"}
+            emphasis="strong"
+            tone={danger ? "danger" : "neutral"}
             onClick={onConfirm}
             disabled={busy}
           >

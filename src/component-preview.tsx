@@ -148,7 +148,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
           <CopyButton
             text={s("text")}
             label={s("children")}
-            variant={s("variant") === "plain" ? "plain" : "soft"}
+            variant={s("emphasis") === "quiet" ? "plain" : "soft"}
             size={s("size") as ButtonProps["size"]}
           />
         ) : buttonsAction === "share" ? (
@@ -157,7 +157,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
           <Button
             icon={s("icon") as IconName}
             count={n("count") || undefined}
-            variant={s("variant") as ButtonProps["variant"]}
+            emphasis={s("emphasis") as ButtonProps["emphasis"]}
             size={s("size") as ButtonProps["size"]}
             disabled={b("disabled")}
             onClick={() => patch("count", n("count") + 1)}
@@ -573,6 +573,14 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       );
       break;
   }
+  const stageClassName = `practice-stage practice-stage--component practice-stage--background-${canvasBackground} practice-stage--${entry.id}`;
+  const preview = (
+    <div className="practice-preview" role="region" aria-label="组件预览">
+      <div className={`single-example single-example--${entry.id}`}>
+        {node}
+      </div>
+    </div>
+  );
   return (
     <>
       <section aria-label="组件展示" className="component-practice">
@@ -617,16 +625,16 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
             ))}
           </fieldset>
         </header>
-        <Surface
-          tone={canvasBackground === "white" ? "raised" : "soft"}
-          className={`practice-stage practice-stage--component practice-stage--background-${canvasBackground} practice-stage--${entry.id}`}
-        >
-          <div className="practice-preview" role="region" aria-label="组件预览">
-            <div className={`single-example single-example--${entry.id}`}>
-              {node}
-            </div>
-          </div>
-        </Surface>
+        {canvasBackground === "base" ? (
+          <div className={stageClassName}>{preview}</div>
+        ) : (
+          <Surface
+            tone={canvasBackground === "white" ? "raised" : "soft"}
+            className={stageClassName}
+          >
+            {preview}
+          </Surface>
+        )}
       </section>
       <Disclosure
         title="用法"

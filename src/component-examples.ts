@@ -65,7 +65,7 @@ export const componentEntries: ComponentEntry[] = [
     initial: {
       action: "button",
       children: "Like",
-      variant: "soft",
+      emphasis: "default",
       size: "default",
       icon: "plus",
       count: 0,
@@ -73,7 +73,7 @@ export const componentEntries: ComponentEntry[] = [
       text: "值得保存的内容",
       url: "https://example.com",
     },
-    code: 'import { useState } from "react";\nimport { Button } from \'./ui\';\n\nexport function Example() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <Button\n      variant={"soft"}\n      size={"default"}\n      icon={"plus"}\n      disabled={false}\n      count={count || undefined}\n      onClick={() => setCount(count => count + 1)}\n    >\n      Like\n    </Button>\n  );\n}',
+    code: 'import { useState } from "react";\nimport { Button } from \'./ui\';\n\nexport function Example() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <Button\n      emphasis={"default"}\n      size={"default"}\n      icon={"plus"}\n      disabled={false}\n      count={count || undefined}\n      onClick={() => setCount(count => count + 1)}\n    >\n      Like\n    </Button>\n  );\n}',
   },
   {
     id: "icon-button",

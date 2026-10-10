@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --ui-raised: var(--ui-gray-0);
-  --ui-border-soft: rgb(23 23 23 / 0.1);
+  --ui-border-soft: rgb(0 0 0 / 0.06);
   --ui-preview-border: var(--ui-border-soft);
   --ui-action: var(--ui-gray-900);
   --ui-action-hover: #262626;
@@ -22,6 +22,7 @@
   --ui-gray-100: #ececec;
   --ui-gray-150: #e8e8e8;
   --ui-gray-200: #e4e4e4;
+  --ui-gray-250: #dbdbdb;
   --ui-gray-300: #d4d4d4;
   --ui-gray-400: #a1a1a1;
   --ui-gray-500: #737373;
@@ -30,25 +31,38 @@
   --ui-gray-900: #171717;
   --ui-background: var(--ui-gray-25);
   --ui-surface: var(--ui-gray-50);
-  --ui-surface-hover: var(--ui-control-hover);
-  --ui-control: var(--ui-gray-100);
-  --ui-control-hover: var(--ui-gray-200);
-  --ui-action-surface: var(--ui-control);
-  --ui-action-surface-hover: var(--ui-control-hover);
-  --ui-group-hover: #dedede;
+  --ui-surface-hover: var(--ui-gray-150);
+  --ui-raised-hover: #f7f7f7;
   --ui-range-track: var(--ui-gray-300);
-  --ui-object-surface: var(--ui-surface);
-  --ui-reading-surface: var(--ui-surface);
-  --ui-choice-edge: none;
-  --ui-feedback-success-surface: var(--ui-success-surface);
-  --ui-feedback-danger-surface: var(--ui-danger-surface);
   --ui-success-surface-on-gray: #e0e9e2;
   --ui-danger-surface-on-gray: #f0dddd;
-  --ui-element: var(--ui-control);
-  --ui-element-hover: var(--ui-control-hover);
-  --ui-selected-surface: var(--ui-raised);
-  --ui-range-fill: var(--ui-control-hover);
   --ui-switch-surface: var(--ui-track);
+
+  /* Fill steps per context. Contexts re-point the variables below to these. */
+  --ui-control-on-background: var(--ui-gray-100);
+  --ui-control-hover-on-background: var(--ui-gray-200);
+  --ui-control-on-surface: var(--ui-gray-200);
+  --ui-control-hover-on-surface: var(--ui-gray-250);
+  --ui-control-on-raised: var(--ui-gray-50);
+  --ui-control-hover-on-raised: var(--ui-gray-150);
+
+  /*
+   * Context contract (page values). Components read only these.
+   * A region is the content block that alternates with its context
+   * (gray on page and white, white on gray) and becomes the context
+   * for its own children through the --ui-region-* values.
+   */
+  --ui-control: var(--ui-control-on-background);
+  --ui-control-hover: var(--ui-control-hover-on-background);
+  --ui-selected: var(--ui-control-on-background);
+  --ui-success-fill: var(--ui-success-surface);
+  --ui-danger-fill: var(--ui-danger-surface);
+  --ui-region: var(--ui-surface);
+  --ui-region-hover: var(--ui-surface-hover);
+  --ui-region-control: var(--ui-control-on-surface);
+  --ui-region-control-hover: var(--ui-control-hover-on-surface);
+  --ui-region-success-fill: var(--ui-success-surface-on-gray);
+  --ui-region-danger-fill: var(--ui-danger-surface-on-gray);
   --ui-switch-thumb: var(--ui-thumb);
   --ui-white: var(--ui-gray-0);
   --ui-text: var(--ui-gray-900);
@@ -77,15 +91,15 @@
   --ui-font-size-md: 16px;
   --ui-font-size-lg: 20px;
   --ui-font-size-xl: 28px;
-  --ui-font-weight-regular: 450;
-  --ui-font-weight-medium: var(--ui-font-weight-regular);
+  --ui-font-weight-regular: 400;
+  --ui-font-weight-medium: 500;
   --ui-font-weight-button: var(--ui-font-weight-regular);
   --ui-font-size-label: var(--ui-font-size-control);
   --ui-font-weight-label: var(--ui-font-weight-regular);
   --ui-font-size-control-value: var(--ui-font-size-control);
   --ui-font-weight-control-value: var(--ui-font-weight-regular);
   --ui-font-size-status-title: var(--ui-font-size-md);
-  --ui-font-weight-status-title: var(--ui-font-weight-regular);
+  --ui-font-weight-status-title: var(--ui-font-weight-medium);
   --ui-line-height-tight: 1.25;
   --ui-line-height-body: 1.5;
   --ui-line-height-relaxed: 1.8;
@@ -141,11 +155,15 @@
   color-scheme: dark;
   --ui-background: #151515;
   --ui-surface: #202020;
-  --ui-surface-hover: var(--ui-control-hover);
-  --ui-control: #2a2a2a;
-  --ui-group-hover: #404040;
+  --ui-surface-hover: #282828;
+  --ui-raised-hover: #363636;
+  --ui-control-on-background: #2a2a2a;
+  --ui-control-hover-on-background: #343434;
+  --ui-control-on-surface: #2e2e2e;
+  --ui-control-hover-on-surface: #383838;
+  --ui-control-on-raised: #3a3a3a;
+  --ui-control-hover-on-raised: #444444;
   --ui-range-track: #484848;
-  --ui-control-hover: #343434;
   --ui-raised: #303030;
   --ui-border-soft: rgb(255 255 255 / 0.1);
   --ui-text: #ededed;

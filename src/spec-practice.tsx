@@ -17,6 +17,7 @@ export const specEntries = [
   { id: "principles", title: "设计原则", category: "spec" as const },
   { id: "behavior", title: "交互规范", category: "spec" as const },
   { id: "layout-motion", title: "布局过渡", category: "spec" as const },
+  { id: "context-matrix", title: "环境矩阵", category: "spec" as const },
 ];
 
 function Rule({
@@ -65,14 +66,14 @@ export function SpecPractice({ id }: { id: string }) {
   const orientation = (
     <ButtonGroup label="示例版式" tone="plain">
       <Button
-        variant="plain"
+        emphasis="quiet"
         aria-pressed={layoutFormat === "portrait"}
         onClick={() => setLayoutFormat("portrait")}
       >
         竖版
       </Button>
       <Button
-        variant="plain"
+        emphasis="quiet"
         aria-pressed={layoutFormat === "landscape"}
         onClick={() => setLayoutFormat("landscape")}
       >
@@ -88,7 +89,7 @@ export function SpecPractice({ id }: { id: string }) {
     >
       {orientation}
       <span className="spec-divider" aria-hidden="true" />
-      <Button variant="plain" onClick={() => setLayoutFormat("portrait")}>
+      <Button emphasis="quiet" onClick={() => setLayoutFormat("portrait")}>
         重置
       </Button>
     </Surface>
@@ -215,7 +216,7 @@ export function SpecPractice({ id }: { id: string }) {
                 formatValue={(n) => `${n}%`}
               />
               <span className="spec-divider" aria-hidden="true" />
-              <Button variant="plain" onClick={() => setValue(50)}>
+              <Button emphasis="quiet" onClick={() => setValue(50)}>
                 重置
               </Button>
             </Surface>
@@ -240,7 +241,7 @@ export function SpecPractice({ id }: { id: string }) {
                 <Button onClick={() => setExpanded(!expanded)}>
                   {expanded ? "收起完整项目名称" : "展开名称"}
                 </Button>
-                <Button variant="plain" onClick={() => setExpanded(false)}>
+                <Button emphasis="quiet" onClick={() => setExpanded(false)}>
                   重置
                 </Button>
               </Layout>
@@ -453,7 +454,7 @@ export function SpecPractice({ id }: { id: string }) {
             <div className="spec-document-actions">
               <Badge tone="success">已完成</Badge>
               <Button
-                variant="plain"
+                emphasis="quiet"
                 onClick={() => setEditingProject((current) => !current)}
               >
                 {editingProject ? "完成编辑" : "编辑"}
@@ -524,8 +525,8 @@ export function SpecPractice({ id }: { id: string }) {
           是短暂反馈，选中是持续状态，焦点标记键盘位置。动作、值选择与内容导航可以有不同的反馈模型。
         </p>
         <p>
-          胶囊选择器移动共享指示块，主标签变深，计数保持常态色；全程保持 450
-          字重与 1.25 图标描边。
+          胶囊选择器移动共享指示块，主标签变深，计数保持常态色；字重与 1.25
+          图标描边全程不变。
         </p>
       </Rule>
       <Rule
@@ -537,14 +538,14 @@ export function SpecPractice({ id }: { id: string }) {
             role="group"
             aria-label="操作强调层级"
           >
-            <Button variant="dark">提交</Button>
-            <Button className="spec-muted-action">预览</Button>
-            <Button variant="plain">取消</Button>
+            <Button emphasis="strong">提交</Button>
+            <Button>预览</Button>
+            <Button emphasis="quiet">取消</Button>
           </div>
         }
       >
         <p>
-          同一操作行中的提交、预览和取消分别使用黑色、深一级灰和透明，按操作职责分配视觉强调。
+          同一操作行中的提交、预览和取消分别声明 strong、default 和 quiet，颜色由所在环境给出。
         </p>
         <p>
           避免一个页面处处强调；改变字号、颜色或边界前，先确定强调的对象和范围。
@@ -561,7 +562,7 @@ export function SpecPractice({ id }: { id: string }) {
                 {saved.extension ? "已保存" : "保存"}
               </Button>
               <Button
-                variant="plain"
+                emphasis="quiet"
                 onClick={() => {
                   setName("extension", "工作空间");
                   save("extension", false);

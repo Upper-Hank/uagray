@@ -17,17 +17,35 @@ import {
 
 const cx = (...classes: (string | undefined | false)[]) =>
   classes.filter(Boolean).join(" ");
+export type ButtonEmphasis = "strong" | "default" | "quiet";
+type LegacyButtonVariant = "soft" | "plain" | "white" | "dark" | "danger";
+const legacyButtonVariants: Record<
+  LegacyButtonVariant,
+  [ButtonEmphasis, "neutral" | "danger"]
+> = {
+  soft: ["default", "neutral"],
+  white: ["default", "neutral"],
+  plain: ["quiet", "neutral"],
+  dark: ["strong", "neutral"],
+  danger: ["strong", "danger"],
+};
 export type ButtonProps = ComponentPropsWithRef<"button"> & {
   icon?: IconName;
   count?: number;
   size?: "default" | "small";
-  variant?: "soft" | "plain" | "white" | "dark" | "danger";
+  /** Importance of the action. Its fill comes from the surrounding surface. */
+  emphasis?: ButtonEmphasis;
+  tone?: "neutral" | "danger";
+  /** @deprecated Use `emphasis` and `tone`. */
+  variant?: LegacyButtonVariant;
 };
 export function Button({
   icon,
   count,
   size = "default",
-  variant = "soft",
+  emphasis,
+  tone,
+  variant,
   className,
   children,
   type = "button",
@@ -35,6 +53,9 @@ export function Button({
   ...props
 }: ButtonProps) {
   const { reduced, transition } = useUiMotion();
+  const legacy = variant ? legacyButtonVariants[variant] : undefined;
+  const resolvedEmphasis = emphasis ?? legacy?.[0] ?? "default";
+  const resolvedTone = tone ?? legacy?.[1] ?? "neutral";
   return (
     <MotionButton
       ref={ref}
@@ -47,7 +68,8 @@ export function Button({
         className: cx(
           "ui-button",
           `ui-button--${size}`,
-          `ui-button--${variant}`,
+          resolvedEmphasis !== "default" && `ui-button--${resolvedEmphasis}`,
+          resolvedTone === "danger" && "ui-button--danger",
           className,
         ),
       }}
@@ -411,7 +433,7 @@ export function CopyButton({
   return (
     <Button
       size={size}
-      variant={variant}
+      emphasis={variant === "plain" ? "quiet" : "default"}
       icon={status === "success" ? "check" : icon}
       onClick={copy}
       disabled={status === "pending"}
@@ -472,7 +494,7 @@ export function ExpandableCode({
       <div className="ui-code-toggle">
         <Button
           size="small"
-          variant="plain"
+          emphasis="quiet"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-controls={id}

@@ -18,7 +18,7 @@ npm run build:lib
 npm pack
 ```
 
-组件产物位于 `dist/`，包含 ESM、类型声明和独立 CSS；`.tgz` 只包含组件库产物、README 和必要元数据。展示页、字体及测试代码不进入组件包。当前首轮发布版本为 `0.1.0-beta.0`，通过 `beta` 标签提供。
+组件产物位于 `dist/`，包含 ESM、类型声明和独立 CSS；`.tgz` 只包含组件库产物、README 和必要元数据。展示页、字体及测试代码不进入组件包。本仓库准备发布 `0.1.0-beta.1`，预发布版本通过 `beta` 标签提供。
 
 ## 使用
 
@@ -38,6 +38,10 @@ import "uagray/styles.css";
   <Button onClick={handleShare}>Share</Button>
 </Surface>;
 ```
+
+Button 使用 `emphasis="strong | default | quiet"` 与 `tone="neutral | danger"` 表达动作意图，默认是 default / neutral。颜色由页面、Surface 或白色层环境提供。旧 `variant` 已弃用但仍兼容：soft / white → default，plain → quiet，dark → strong，danger → strong + danger；显式新属性优先。迁移后 white 不再保证白底。
+
+宿主覆盖主题时，请使用当前环境变量；element、action-surface、reading-surface、object-surface、selected-surface、range-fill、choice-edge、group-hover 与 feedback-*-surface 旧别名已移除。完整环境契约见 [docs/surface-contract.md](docs/surface-contract.md)。
 
 包内字体使用系统回退，宿主可通过 `--ui-font` 和 `--ui-mono` 指定字体，不要求提供 `/fonts/`。展示站单独加载 `public/fonts/`，字体许可证随文件保留。当前声明支持 React 19，React 与 React DOM 由宿主提供；本项目代码采用 MIT 许可证，依赖与字体沿用各自许可证。
 
