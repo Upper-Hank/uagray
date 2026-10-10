@@ -65,6 +65,25 @@ it("links native channel controls and external controlled values", () => {
     "#33865C",
   );
 });
+it("follows the controlled value when the host rejects or later replaces it", () => {
+  const onValueChange = vi.fn();
+  const { rerender } = render(
+    <ColorPicker value="#112233" onValueChange={onValueChange} />,
+  );
+  const input = screen.getByLabelText("颜色 HEX") as HTMLInputElement;
+  fireEvent.change(screen.getByRole("slider", { name: /饱和度与明度/ }), {
+    target: { value: "100" },
+  });
+  expect(onValueChange).toHaveBeenCalled();
+  expect(input.value).toBe("#112233");
+  fireEvent.change(input, { target: { value: "#ABCDEF" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(onValueChange).toHaveBeenLastCalledWith("#ABCDEF");
+  expect(input.value).toBe("#112233");
+  rerender(<ColorPicker value="#00FF00" onValueChange={onValueChange} />);
+  expect(input.value).toBe("#00FF00");
+});
+
 it("disables all editable controls", () => {
   const onValueChange = vi.fn();
   render(<ColorPicker disabled onValueChange={onValueChange} />);

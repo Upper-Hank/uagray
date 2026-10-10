@@ -92,6 +92,39 @@ it("NumberInput uses bounded decimal steps and exposes the native input ref", ()
   expect(ref.current?.value).toBe("1");
 });
 
+it("keeps a rejected step or typed number from replacing the controlled value", () => {
+  const onValueChange = vi.fn();
+  const { rerender } = render(
+    <NumberInput
+      aria-label="数量"
+      value={10}
+      min={0}
+      max={20}
+      onValueChange={onValueChange}
+    />,
+  );
+  const input = screen.getByRole("spinbutton") as HTMLInputElement;
+  fireEvent.click(screen.getByRole("button", { name: "增加" }));
+  expect(onValueChange).toHaveBeenLastCalledWith(11);
+  expect(input.value).toBe("10");
+  fireEvent.change(input, { target: { value: "15" } });
+  expect(onValueChange).toHaveBeenLastCalledWith(15);
+  expect(input.value).toBe("10");
+  fireEvent.change(input, { target: { value: "25" } });
+  expect(onValueChange).toHaveBeenLastCalledWith(20);
+  expect(input.value).toBe("10");
+  rerender(
+    <NumberInput
+      aria-label="数量"
+      value={11}
+      min={0}
+      max={20}
+      onValueChange={onValueChange}
+    />,
+  );
+  expect(input.value).toBe("11");
+});
+
 it("NumberInput allows clearing while editing and restores a finite value on blur", () => {
   const onValueChange = vi.fn();
   const { rerender } = render(
@@ -109,6 +142,7 @@ it("NumberInput allows clearing while editing and restores a finite value on blu
   expect(onValueChange).not.toHaveBeenCalled();
   fireEvent.blur(input);
   expect(input.value).toBe("10");
+  expect(onValueChange).not.toHaveBeenCalled();
   rerender(
     <NumberInput
       aria-label="数量"

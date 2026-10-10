@@ -2,8 +2,8 @@ import {
   createContext,
   useContext,
   useId,
-  useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithRef,
@@ -125,6 +125,9 @@ export type NumberInputProps = Omit<
   step?: number;
   onValueChange?: (value: number) => void;
 };
+function isCompleteNumber(text: string) {
+  return /^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(text);
+}
 export function NumberInput({
   value,
   defaultValue = 0,
@@ -141,51 +144,64 @@ export function NumberInput({
 }: NumberInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => inputRef.current!, []);
-  const [draft, setDraft] = useState(String(value ?? defaultValue));
-  useEffect(() => {
-    if (value !== undefined) setDraft(String(value));
-  }, [value]);
+  const [uncontrolled, setUncontrolled] = useState(defaultValue);
+  const [draft, setDraft] = useState<string | null>(null);
+  const committed = value ?? uncontrolled;
   const clamp = (next: number) =>
     Math.max(min ?? -Infinity, Math.min(max ?? Infinity, next));
+  useLayoutEffect(() => {
+    if (value === undefined || draft === null || !isCompleteNumber(draft))
+      return;
+    setDraft(null);
+  }, [value, draft]);
   const commit = (next: number) => {
     const result = clamp(next);
-    setDraft(String(result));
-    onValueChange?.(result);
+    if (value === undefined) setUncontrolled(result);
+    setDraft(null);
+    if (result !== committed) onValueChange?.(result);
   };
   const adjust = (direction: number) => {
     const input = inputRef.current;
-    if (!input) return;
-    if (!Number.isFinite(input.valueAsNumber))
-      input.value = String(clamp(value ?? defaultValue));
+    if (!input || disabled || readOnly) return;
+    const shown = input.value;
+    input.value = String(committed);
     if (direction > 0) input.stepUp();
     else input.stepDown();
-    if (Number.isFinite(input.valueAsNumber)) commit(input.valueAsNumber);
+    const next = input.valueAsNumber;
+    input.value = shown;
+    if (Number.isFinite(next)) commit(next);
   };
-  const current = Number(draft);
   return (
     <div className={`ui-number-input ${className}`}>
       <Input
         {...props}
         ref={inputRef}
         type="number"
-        value={draft}
+        value={draft ?? String(committed)}
         min={min}
         max={max}
         step={step > 0 ? step : 1}
         disabled={disabled}
         readOnly={readOnly}
         onChange={(event) => {
-          setDraft(event.target.value);
-          const next = event.target.valueAsNumber;
-          if (Number.isFinite(next)) onValueChange?.(clamp(next));
+          const text = event.target.value;
+          if (!isCompleteNumber(text)) {
+            setDraft(text);
+            return;
+          }
+          const next = clamp(Number(text));
+          if (value === undefined) {
+            setUncontrolled(next);
+            setDraft(null);
+          } else setDraft(text);
+          if (next !== committed) onValueChange?.(next);
         }}
         onBlur={(event) => {
-          if (!readOnly && !disabled)
-            commit(
-              Number.isFinite(event.target.valueAsNumber)
-                ? event.target.valueAsNumber
-                : (value ?? defaultValue),
-            );
+          if (!readOnly && !disabled) {
+            const next = event.target.valueAsNumber;
+            if (Number.isFinite(next)) commit(next);
+            else setDraft(null);
+          }
           onBlur?.(event);
         }}
       />
@@ -194,7 +210,7 @@ export function NumberInput({
           type="button"
           aria-label="减少"
           disabled={
-            disabled || readOnly || (min !== undefined && current <= min)
+            disabled || readOnly || (min !== undefined && committed <= min)
           }
           onClick={() => adjust(-1)}
         >
@@ -204,7 +220,7 @@ export function NumberInput({
           type="button"
           aria-label="增加"
           disabled={
-            disabled || readOnly || (max !== undefined && current >= max)
+            disabled || readOnly || (max !== undefined && committed >= max)
           }
           onClick={() => adjust(1)}
         >

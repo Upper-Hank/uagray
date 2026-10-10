@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ColorArea, ColorThumb } from "react-aria-components/ColorArea";
 import { ColorSlider } from "react-aria-components/ColorSlider";
 import { SliderTrack } from "react-aria-components/Slider";
@@ -60,7 +60,6 @@ export function ColorPicker({
   const [invalid, setInvalid] = useState(false);
   const [picking, setPicking] = useState(false);
   const [pickError, setPickError] = useState("");
-  const emitted = useRef(current);
   const abort = useRef<AbortController | null>(null);
   const Dropper = (
     globalThis as typeof globalThis & { EyeDropper?: EyeDropperConstructor }
@@ -72,25 +71,25 @@ export function ColorPicker({
       setPicking(false);
     }
   }, [disabled]);
-  useEffect(() => {
-    const next = value === undefined ? null : normalizeHex(value);
-    if (next && next !== emitted.current) {
-      const nextColor = parseColor(next).toFormat("hsb");
-      setColor(nextColor);
-      emitted.current = serialize(nextColor);
-    }
-  }, [value]);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (value === undefined) return;
+    const next = normalizeHex(value);
+    if (!next) return;
+    const parsed = parseColor(next).toFormat("hsb");
+    if (serialize(parsed) === current) return;
+    setColor(parsed);
+  }, [value, current]);
+  useLayoutEffect(() => {
     setDraft(current);
     setInvalid(false);
   }, [current]);
   function commit(next: Color) {
     if (disabled) return;
-    emitted.current = serialize(next);
+    const serialized = serialize(next);
     setColor(next.toFormat("hsb"));
-    setDraft(emitted.current);
+    setDraft(serialized);
     setInvalid(false);
-    onValueChange?.(emitted.current);
+    onValueChange?.(serialized);
   }
   function commitDraft() {
     const hex = normalizeHex(draft);
