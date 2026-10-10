@@ -1,0 +1,39 @@
+/* Native scrolling, scoped to library surfaces and the opt-in utility. */
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area) {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-scrollbar-thumb) transparent;
+}
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area):is(:hover, :focus-within) {
+  scrollbar-color: var(--ui-scrollbar-thumb-hover) transparent;
+}
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-scrollbar {
+  width: var(--ui-size-scrollbar);
+  height: var(--ui-size-scrollbar);
+}
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-scrollbar-button {
+  display: none;
+}
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-scrollbar-track,
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-scrollbar-corner,
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-resizer {
+  background: transparent;
+}
+:where(.ui-textarea, .ui-dialog, .ui-scroll-area)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-scrollbar-thumb);
+  background-clip: padding-box;
+}
+:where(
+    .ui-textarea,
+    .ui-dialog,
+    .ui-scroll-area
+  )::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ui-scrollbar-thumb-hover);
+}
+@media (forced-colors: active) {
+  :where(.ui-textarea, .ui-dialog, .ui-scroll-area) {
+    scrollbar-color: auto;
+  }
+}

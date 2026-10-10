@@ -1,0 +1,36 @@
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-font-smoothing: antialiased;
+  /* Keep page width stable when content crosses the scroll threshold. */
+  scrollbar-gutter: stable;
+}
+body {
+  margin: 0;
+  background: var(--ui-background);
+  color: var(--ui-body);
+  font: var(--ui-font-weight-regular)
+    var(--ui-font-size-body)/var(--ui-line-height-body) var(--ui-font);
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font-family: inherit;
+}
+:where(h1, h2, h3, h4, h5, h6, strong, b) {
+  font-weight: var(--ui-font-weight-regular);
+}
+a {
+  color: inherit;
+}
+svg {
+  flex-shrink: 0;
+}
+::selection {
+  background: var(--ui-gray-200);
+  color: var(--ui-text);
+}

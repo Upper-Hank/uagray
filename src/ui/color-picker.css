@@ -1,0 +1,142 @@
+.ui-color-picker {
+  box-sizing: border-box;
+  width: 100%;
+  container-type: inline-size;
+  padding: var(--ui-space-6);
+  background: var(--ui-raised);
+  border: 1px solid var(--ui-border-soft);
+  border-radius: calc(var(--ui-radius-sm) + var(--ui-space-6));
+}
+.ui-color-picker-fields {
+  display: grid;
+  gap: var(--ui-space-6);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.ui-color-area {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.25;
+  border-radius: var(--ui-radius-sm);
+  touch-action: none;
+}
+.ui-color-thumb {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.2),
+    0 1px 3px rgb(0 0 0 / 0.2);
+}
+.ui-color-thumb[data-focus-visible] {
+  outline: 1px solid var(--ui-text);
+  outline-offset: 3px;
+}
+.ui-color-picker-sliders {
+  display: grid;
+  grid-template-columns: var(--ui-size-control) minmax(0, 1fr);
+  gap: var(--ui-space-5);
+  align-items: center;
+}
+.ui-color-picker-tracks {
+  display: grid;
+  gap: var(--ui-space-5);
+  padding-inline: 9px;
+}
+.ui-color-slider {
+  min-width: 0;
+}
+.ui-color-track {
+  position: relative;
+  height: 14px;
+  border-radius: var(--ui-radius-full);
+  touch-action: none;
+}
+.ui-color-slider--alpha {
+  border-radius: var(--ui-radius-full);
+  background: repeating-conic-gradient(#ddd 0% 25%, #fff 0% 50%) 0 / 8px 8px;
+}
+.ui-color-picker-values {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 90px;
+  gap: var(--ui-space-3);
+  align-items: start;
+}
+.ui-color-picker-values > .ui-select-trigger {
+  align-self: start;
+}
+.ui-color-picker-values .ui-input {
+  font-variant-numeric: tabular-nums;
+  padding-inline: var(--ui-space-4);
+}
+.ui-color-picker-channels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ui-space-2);
+}
+.ui-color-picker-values .ui-number-input-actions {
+  display: none;
+}
+.ui-color-picker-values .ui-number-input > .ui-input {
+  padding-right: var(--ui-space-4);
+}
+.ui-color-picker-fields:disabled {
+  opacity: var(--ui-disabled-opacity, 0.5);
+}
+@container (max-width: 340px) {
+  .ui-color-picker-values {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+  .ui-color-picker-values > .ui-color-alpha {
+    grid-column: 2;
+  }
+  .ui-color-picker-channels {
+    grid-column: 1 / -1;
+  }
+}
+
+.ui-color-track .ui-color-thumb {
+  top: 50%;
+}
+
+.ui-color-picker-values .ui-field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ui-color-channel {
+  position: relative;
+  min-width: 0;
+}
+.ui-color-channel > span {
+  position: absolute;
+  inset-inline-start: var(--ui-space-4);
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 1;
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-xs);
+  pointer-events: none;
+  user-select: none;
+}
+.ui-color-picker-values .ui-color-channel .ui-input {
+  padding-inline-start: var(--ui-space-7);
+  text-align: right;
+}
+.ui-color-picker-values .ui-color-channel .ui-field-error {
+  margin-top: var(--ui-space-2);
+}
+
+.ui-color-picker-fields:disabled .ui-input {
+  opacity: 1;
+}
