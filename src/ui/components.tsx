@@ -4,11 +4,14 @@ import {
   useRef,
   useState,
   type ComponentPropsWithRef,
+  type CSSProperties,
+  type HTMLAttributes,
   type ReactNode,
+  type Ref,
 } from "react";
 import { useKeyboardFocus } from "./focus";
 import { Icon, type IconName } from "./icons";
-import { LayoutGroup, motion } from "framer-motion";
+import { LayoutGroup, motion, type MotionProps } from "framer-motion";
 import { MotionButton, useUiMotion } from "./motion";
 import {
   SelectionIndicator,
@@ -17,6 +20,13 @@ import {
 
 const cx = (...classes: (string | undefined | false)[]) =>
   classes.filter(Boolean).join(" ");
+type MotionSafeDiv = Omit<ComponentPropsWithRef<"div">, keyof MotionProps> & {
+  style?: CSSProperties;
+};
+function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
+  if (typeof ref === "function") ref(node);
+  else if (ref) ref.current = node;
+}
 export type ButtonEmphasis = "strong" | "default" | "quiet";
 type ButtonSize = "md" | "sm";
 /** @deprecated Use `"md"` or `"sm"`. */
@@ -141,29 +151,33 @@ function resolveGroupVariant(
   if (tone === "soft") return "contained";
   return fallback;
 }
-type ButtonGroupProps = {
+type ButtonGroupProps = Omit<MotionSafeDiv, "aria-label"> & {
   children: ReactNode;
   variant?: GroupVariant;
   /** @deprecated Use `variant`. `soft` maps to `contained`. */
   tone?: LegacyGroupTone;
 } & (
-  | {
-      "aria-label": string;
-      /** @deprecated Use `aria-label`. */
-      label?: string;
-    }
-  | {
-      "aria-label"?: undefined;
-      /** @deprecated Use `aria-label`. */
-      label: string;
-    }
-);
+    | {
+        "aria-label": string;
+        /** @deprecated Use `aria-label`. */
+        label?: string;
+      }
+    | {
+        "aria-label"?: undefined;
+        /** @deprecated Use `aria-label`. */
+        label: string;
+      }
+  );
 export function ButtonGroup({
   "aria-label": ariaLabel,
   label,
   children,
   variant,
   tone,
+  className,
+  style,
+  ref,
+  ...props
 }: ButtonGroupProps) {
   const { reduced, transition } = useUiMotion();
   const name = ariaLabel ?? label;
@@ -171,20 +185,41 @@ export function ButtonGroup({
   return (
     <LayoutGroup>
       <motion.div
+        {...props}
+        ref={ref}
         role="group"
         aria-label={name}
-        className={`ui-button-group ui-button-group--${resolved}`}
+        className={cx(
+          "ui-button-group",
+          `ui-button-group--${resolved}`,
+          className,
+        )}
         layout={reduced ? false : true}
         transition={transition}
-        style={{ borderRadius: "var(--ui-group-radius)" }}
+        style={{ borderRadius: "var(--ui-group-radius)", ...style }}
       >
         {children}
       </motion.div>
     </LayoutGroup>
   );
 }
-export function Keycap({ children }: { children: ReactNode }) {
-  return <kbd className="ui-keycap">{children}</kbd>;
+export function Keycap({
+  children,
+  className,
+  style,
+  ref,
+  ...props
+}: ComponentPropsWithRef<"kbd">) {
+  return (
+    <kbd
+      {...props}
+      ref={ref}
+      className={cx("ui-keycap", className)}
+      style={style}
+    >
+      {children}
+    </kbd>
+  );
 }
 export type SegmentOption = {
   value: string;
@@ -397,16 +432,25 @@ export function SearchField({
 }
 export function ExternalLinks({
   links,
-}: {
+  className,
+  style,
+  ref,
+  "aria-label": ariaLabel = "外部链接",
+  ...props
+}: Omit<ComponentPropsWithRef<"nav">, "children"> & {
   links: { label: string; href: string; icon: IconName }[];
 }) {
   return (
     <nav
+      {...props}
+      ref={ref}
       className={cx(
         "ui-external-links",
         links.length > 1 && "ui-button-group ui-button-group--contained",
+        className,
       )}
-      aria-label="External links"
+      style={style}
+      aria-label={ariaLabel}
     >
       {links.map((link) => (
         <a
@@ -460,12 +504,17 @@ export function ShowcaseCard({
   href,
   children,
   externalLink,
-}: {
+  className,
+  style,
+  ref,
+  ...props
+}: Omit<HTMLAttributes<HTMLElement>, "title" | "children"> & {
   title: string;
   description?: string;
   href: string;
   children: ReactNode;
   externalLink?: { href: string; label: string };
+  ref?: Ref<HTMLElement>;
 }) {
   const art = (
     <div className="ui-showcase-art" aria-hidden="true">
@@ -474,7 +523,12 @@ export function ShowcaseCard({
   );
   if (externalLink) {
     return (
-      <div className="ui-showcase ui-showcase--external">
+      <div
+        {...props}
+        ref={(node) => setRef(ref, node)}
+        className={cx("ui-showcase ui-showcase--external", className)}
+        style={style}
+      >
         <a
           className="ui-showcase-link"
           href={href}
@@ -496,7 +550,13 @@ export function ShowcaseCard({
     );
   }
   return (
-    <a className="ui-showcase" href={href}>
+    <a
+      {...props}
+      ref={(node) => setRef(ref, node)}
+      className={cx("ui-showcase", className)}
+      style={style}
+      href={href}
+    >
       {art}
       <div className="ui-showcase-caption">
         <span>{title}</span>
@@ -524,7 +584,7 @@ export function CopyButton({
   /** @deprecated Use `emphasis`. `soft` maps to `default`, `plain` maps to `quiet`. */
   variant?: "soft" | "plain";
 }) {
-  const idle = children ?? label ?? "Copy";
+  const idle = children ?? label ?? "复制";
   const resolvedEmphasis =
     emphasis ?? (variant === "plain" ? "quiet" : "default");
   const [status, setStatus] = useState<
@@ -575,7 +635,7 @@ export function CopyButton({
 export function ShareButton({ url }: { url: string }) {
   return (
     <CopyButton text={url} icon="share" size="md">
-      Share
+      分享
     </CopyButton>
   );
 }
@@ -591,7 +651,7 @@ export function ExpandableCode({
   label?: string;
   collapsedHeight?: number;
 }) {
-  const toggleLabel = expandLabel ?? label ?? "Show full text";
+  const toggleLabel = expandLabel ?? label ?? "展开全文";
   const { reduced, transition } = useUiMotion();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
@@ -638,27 +698,40 @@ export function ExpandableCode({
   );
 }
 export type NavigationItem = { title: string; href: string };
+const pageDirectionLabel = { previous: "上一页", next: "下一页" } as const;
 export function Pager({
   previous,
   next,
-}: {
+  className,
+  style,
+  ref,
+  "aria-label": ariaLabel = "页面导航",
+  ...props
+}: Omit<ComponentPropsWithRef<"nav">, "children"> & {
   previous?: NavigationItem;
   next?: NavigationItem;
 }) {
   return (
     <nav
-      aria-label="Page navigation"
-      className="ui-button-group ui-button-group--contained ui-pager"
+      {...props}
+      ref={ref}
+      aria-label={ariaLabel}
+      className={cx(
+        "ui-button-group ui-button-group--contained ui-pager",
+        className,
+      )}
+      style={style}
     >
       {(["previous", "next"] as const).map((direction) => {
         const item = direction === "previous" ? previous : next;
         const icon = direction === "previous" ? "left" : "right";
+        const name = pageDirectionLabel[direction];
         return item ? (
           <a
             key={direction}
             className="ui-icon-button ui-external"
             href={item.href}
-            aria-label={`${direction}: ${item.title}`}
+            aria-label={`${name}：${item.title}`}
             title={item.title}
           >
             <Icon name={icon} size={16} />
@@ -666,7 +739,7 @@ export function Pager({
         ) : (
           <IconButton
             key={direction}
-            aria-label={`${direction} unavailable`}
+            aria-label={`${name}不可用`}
             icon={icon}
             disabled
           />
@@ -680,16 +753,25 @@ export function NavigationCard({
   directionLabel,
   title,
   href,
-}: NavigationItem & {
-  direction: "previous" | "next";
-  directionLabel?: string;
-}) {
+  className,
+  style,
+  ref,
+  ...props
+}: Omit<ComponentPropsWithRef<"a">, "children" | "href"> &
+  NavigationItem & {
+    direction: "previous" | "next";
+    directionLabel?: string;
+  }) {
   return (
     <a
+      {...props}
+      ref={ref}
       className={cx(
         "ui-navigation-card",
         direction === "next" && "ui-navigation-card--next",
+        className,
       )}
+      style={style}
       href={href}
     >
       <Icon name={direction === "previous" ? "left" : "right"} size={16} />

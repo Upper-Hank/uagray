@@ -1,8 +1,27 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { motion, useAnimationControls } from "framer-motion";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ComponentPropsWithRef,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from "react";
+import { motion, useAnimationControls, type MotionProps } from "framer-motion";
 import { useUiMotion } from "./motion";
 import { Button, IconButton } from "./components";
 import { Icon } from "./icons";
+const cx = (...classes: (string | undefined | false)[]) =>
+  classes.filter(Boolean).join(" ");
+function assignRef<T>(ref: Ref<T> | undefined, node: T | null) {
+  if (typeof ref === "function") ref(node);
+  else if (ref) ref.current = node;
+}
+type MotionSafeDialog = Omit<
+  ComponentPropsWithRef<"dialog">,
+  keyof MotionProps | "open" | "title" | "children"
+> & { style?: CSSProperties };
 
 export function Disclosure({
   title,
@@ -63,7 +82,7 @@ export function Disclosure({
     </div>
   );
 }
-export type DialogProps = {
+export type DialogProps = MotionSafeDialog & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -84,7 +103,11 @@ function DialogFrame({
   footer,
   dismissible = true,
   closeLabel = "关闭",
+  className,
+  style,
+  ref: externalRef,
   variant = "dialog",
+  ...props
 }: Omit<DialogProps, "variant"> & { variant?: "dialog" | "drawer" }) {
   const id = useId();
   const ref = useRef<HTMLDialogElement>(null);
@@ -122,8 +145,13 @@ function DialogFrame({
   }, [open, controls, reduced, transition.duration, variant]);
   return (
     <motion.dialog
-      className={`ui-dialog ui-dialog--${variant}`}
-      ref={ref}
+      {...props}
+      className={cx(`ui-dialog ui-dialog--${variant}`, className)}
+      style={style}
+      ref={(node) => {
+        ref.current = node;
+        assignRef(externalRef, node);
+      }}
       animate={controls}
       aria-labelledby={`${id}-title`}
       aria-describedby={description ? `${id}-description` : undefined}
@@ -180,7 +208,7 @@ export function ConfirmDialog({
   busy = false,
   tone,
   danger,
-  confirmLabel = "确认删除",
+  confirmLabel = "确认",
   cancelLabel = "取消",
 }: {
   open: boolean;

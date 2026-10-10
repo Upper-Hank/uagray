@@ -274,9 +274,9 @@ it("maps ConfirmDialog danger and lets tone win", () => {
       onConfirm={() => {}}
     />,
   );
-  expect(
-    screen.getByRole("button", { name: "确认删除" }).className,
-  ).not.toContain("ui-button--danger");
+  expect(screen.getByRole("button", { name: "确认" }).className).not.toContain(
+    "ui-button--danger",
+  );
   view.rerender(
     <ConfirmDialog
       open
@@ -286,7 +286,7 @@ it("maps ConfirmDialog danger and lets tone win", () => {
       onConfirm={() => {}}
     />,
   );
-  expect(screen.getByRole("button", { name: "确认删除" }).className).toContain(
+  expect(screen.getByRole("button", { name: "确认" }).className).toContain(
     "ui-button--danger",
   );
   view.rerender(
@@ -299,9 +299,9 @@ it("maps ConfirmDialog danger and lets tone win", () => {
       onConfirm={() => {}}
     />,
   );
-  expect(
-    screen.getByRole("button", { name: "确认删除" }).className,
-  ).not.toContain("ui-button--danger");
+  expect(screen.getByRole("button", { name: "确认" }).className).not.toContain(
+    "ui-button--danger",
+  );
 });
 
 it("maps Toast message and lets children win", () => {
@@ -341,6 +341,43 @@ it("maps ExpandableCode label and lets expandLabel win", () => {
   );
   expect(screen.getByRole("button", { name: /新标签/ })).toBeTruthy();
   expect(screen.queryByRole("button", { name: /旧标签/ })).toBeNull();
+});
+
+it("forwards className and style onto the component root", () => {
+  const view = render(
+    <Badge className="host-badge" style={{ marginTop: 2 }}>
+      标记
+    </Badge>,
+  );
+  const badge = screen.getByText("标记");
+  expect(badge.classList.contains("host-badge")).toBe(true);
+  expect(badge.getAttribute("style")).toContain("margin-top");
+  view.rerender(
+    <ButtonGroup
+      aria-label="动作"
+      className="host-group"
+      style={{ marginTop: 4 }}
+    >
+      <Button>一项</Button>
+    </ButtonGroup>,
+  );
+  const group = screen.getByRole("group", { name: "动作" });
+  expect(group.classList.contains("host-group")).toBe(true);
+  expect(group.getAttribute("style")).toContain("margin-top");
+  view.rerender(
+    <Dialog
+      open
+      onOpenChange={() => {}}
+      title="标题"
+      className="host-dialog"
+      style={{ marginTop: 6 }}
+    >
+      内容
+    </Dialog>,
+  );
+  const dialog = screen.getByRole("dialog");
+  expect(dialog.classList.contains("host-dialog")).toBe(true);
+  expect(dialog.getAttribute("style")).toContain("margin-top");
 });
 
 it("keeps Dialog variant as a deprecated drawer alias", () => {

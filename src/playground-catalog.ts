@@ -130,7 +130,7 @@ const componentDefaults: Record<string, Record<string, Value>> = {
   "confirm-dialog": {
     tone: "neutral",
     busy: false,
-    confirmLabel: "确认删除",
+    confirmLabel: "确认",
     cancelLabel: "取消",
   },
   badge: { tone: "neutral", emphasis: "default" },
@@ -139,7 +139,7 @@ const componentDefaults: Record<string, Record<string, Value>> = {
   progress: { max: 100 },
   upload: { multiple: false, disabled: false, buttonLabel: "选择文件" },
   selection: { busy: false, variant: "plain" },
-  text: { expandLabel: "Show full text", collapsedHeight: 210 },
+  text: { expandLabel: "展开全文", collapsedHeight: 210 },
   surface: { variant: "soft", treatment: "tonal" },
   icons: { size: 18, weight: DEFAULT_ICON_WEIGHT, absoluteWeight: true },
 };

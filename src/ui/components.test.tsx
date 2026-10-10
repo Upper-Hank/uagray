@@ -98,7 +98,7 @@ describe("keyboard interactions", () => {
 });
 it("expands and collapses text with associated accessibility state", () => {
   render(<ExpandableCode code={"line\n".repeat(30)} />);
-  const toggle = screen.getByRole("button", { name: /Show full text/ });
+  const toggle = screen.getByRole("button", { name: /展开全文/ });
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
   expect(
     document.getElementById(toggle.getAttribute("aria-controls")!),
@@ -115,7 +115,7 @@ it("reports clipboard success and failure honestly", async () => {
     configurable: true,
   });
   render(<CopyButton text="content" />);
-  fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+  fireEvent.click(screen.getByRole("button", { name: "复制" }));
   await screen.findByText("Copied");
   expect(writeText).toHaveBeenCalledWith("content");
   writeText.mockRejectedValueOnce(new Error("denied"));
