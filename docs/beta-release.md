@@ -45,7 +45,7 @@ git push origin v0.1.0-beta.1
 
 ## 展示站部署
 
-Vercel 继续通过 Git 集成部署 main。根目录 `vercel.json` 明确使用 `npm run build` 与 `dist-site/`，展示规范、Token 和组件预览。`dist/` 仅用于 npm 组件包。案例、API 调试及本地实验不进入展示站。
+Vercel 继续通过 Git 集成部署 main。根目录 `vercel.json` 明确使用 `npm run build` 与 `dist-site/`，展示规范、Token、组件预览和 API 配置。`dist/` 仅用于 npm 组件包。案例与本机消费验证不进入展示站，调试页也不进入组件包。
 
 ## 消费
 

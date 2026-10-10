@@ -3,7 +3,7 @@ dist/
 *.tsbuildinfo
 .DS_Store
 
-# Local API playground stays on this machine.
+# Local site entry and consumer verification stay on this machine.
 /local/
 *.tgz
 

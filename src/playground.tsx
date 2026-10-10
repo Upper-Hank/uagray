@@ -1,10 +1,15 @@
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   lines,
-  type Args,
+  choiceItems,
+  exampleArgs,
+  normalizeArgs,
+  visibleFields,
   type Value,
   type ComponentEntry,
-} from "./component-examples";
+} from "./playground-catalog";
+import { ApiPanel } from "./api-panel";
+import { exampleCode } from "./playground-code";
 import {
   Alert,
   Badge,
@@ -51,57 +56,22 @@ import {
   type IconName,
 } from "./ui";
 
-export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
-  const [args, setArgs] = useState<Args>(() => ({ ...entry.initial }));
+export function Playground({ entry }: { entry: ComponentEntry }) {
+  const apiId = useId();
+  const [apiOpen, setApiOpen] = useState(true);
+  const [args, setArgs] = useState(() => exampleArgs(entry));
   const [canvasBackground, setCanvasBackground] = useState<
     "base" | "gray" | "white"
   >("gray");
   const [files, setFiles] = useState<File[]>([]);
   const patch = (key: string, value: Value) =>
-    setArgs((current) => {
-      const next = { ...current, [key]: value };
-      if (entry.id === "slider") {
-        next.max = Math.max(Number(next.min) + 1, Number(next.max));
-        next.value = Math.max(
-          Number(next.min),
-          Math.min(Number(next.max), Number(next.value)),
-        );
-      }
-      if (entry.id === "number-input") {
-        next.max = Math.max(Number(next.min), Number(next.max));
-        next.value = Math.max(
-          Number(next.min),
-          Math.min(Number(next.max), Number(next.value)),
-        );
-      }
-      if (entry.id === "selection")
-        next.count = Math.min(Number(next.count), Number(next.total));
-      if (entry.id === "progress")
-        next.value = Math.min(Number(next.value), Number(next.max));
-      if (entry.id === "segments" || entry.id === "tabs") {
-        const items = lines(
-          String(next[entry.id === "segments" ? "options" : "items"]),
-        );
-        const enabled = items
-          .map((_, i) => i)
-          .filter((i) => !(next.lastDisabled && i === items.length - 1));
-        if (!enabled.includes(Number(next.value)))
-          next.value = String(enabled[0] ?? "");
-      }
-      return next;
-    });
+    setArgs((current) => normalizeArgs(entry, { ...current, [key]: value }));
   const s = (key: string) => String(args[key] ?? "");
   const n = (key: string) => Number(args[key]);
   const b = (key: string) => args[key] === true;
   const buttonsAction = s("action");
-  const clamped = (key: string, min: number, max: number) =>
-    Math.max(min, Math.min(max, n(key)));
-  const choices = (key: string) =>
-    lines(s(key)).map((label, i) => ({
-      value: String(i),
-      label,
-      disabled: b("lastDisabled") && i === lines(s(key)).length - 1,
-    }));
+  const fields = visibleFields(entry, args);
+  const choices = (key: string) => choiceItems(args[key]);
   const feedbackIcon =
     s("icon") === "none"
       ? false
@@ -154,12 +124,12 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
           <ShareButton url={s("url")} />
         ) : (
           <Button
-            icon={s("icon") as IconName}
-            count={n("count") || undefined}
+            icon={s("icon") === "none" ? undefined : (s("icon") as IconName)}
+            count={b("showCount") ? n("count") : undefined}
             emphasis={s("emphasis") as ButtonProps["emphasis"]}
+            tone={s("tone") as ButtonProps["tone"]}
             size={s("size") as ButtonProps["size"]}
             disabled={b("disabled")}
-            onClick={() => patch("count", n("count") + 1)}
           >
             {s("children")}
           </Button>
@@ -171,6 +141,8 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
           label={s("label")}
           icon={s("icon") as IconName}
           size={s("size") as ButtonProps["size"]}
+          emphasis={s("emphasis") as ButtonProps["emphasis"]}
+          tone={s("tone") as ButtonProps["tone"]}
           disabled={b("disabled")}
         />
       );
@@ -243,11 +215,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       node = (
         <Select
           aria-label="格式"
-          options={[
-            { value: "svg", label: "SVG" },
-            { value: "png", label: "PNG" },
-            { value: "pdf", label: "PDF", disabled: b("lastDisabled") },
-          ]}
+          options={choices("options")}
           value={s("value")}
           placeholder={s("placeholder")}
           disabled={b("disabled")}
@@ -290,14 +258,14 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       break;
     case "slider": {
       const min = n("min");
-      const max = Math.max(min + 1, n("max"));
+      const max = n("max");
       node = (
         <Slider
           label={s("label") || undefined}
           aria-label={s("label") || "value"}
           variant={s("variant") as "track" | "filled"}
           layout={s("layout") as "field" | "inline" | "bare"}
-          value={clamped("value", min, max)}
+          value={n("value")}
           min={min}
           max={max}
           step={n("step")}
@@ -314,13 +282,9 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
           label={s("label")}
           value={s("value")}
           onChange={(value) => patch("value", value)}
-          items={choices("items").map((item, index) => ({
+          items={choices("items").map((item) => ({
             ...item,
-            content: lines(s("contents"))[index] ? (
-              <p className="tabs-example-content">
-                {lines(s("contents"))[index] ?? ""}
-              </p>
-            ) : null,
+            content: item.content || null,
           }))}
         />
       );
@@ -422,7 +386,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
         <Progress
           label={s("label") || undefined}
           valueLabel={s("valueLabel") || undefined}
-          value={b("indeterminate") ? undefined : clamped("value", 0, n("max"))}
+          value={b("indeterminate") ? undefined : n("value")}
           max={n("max")}
         />
       );
@@ -464,7 +428,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
         <SelectionBar
           summary={s("summary") || undefined}
           tone={s("tone") as "plain" | "soft"}
-          count={clamped("count", 0, n("total"))}
+          count={n("count")}
           total={n("total")}
           busy={b("busy")}
           onSelectAll={() => patch("count", n("total"))}
@@ -572,52 +536,92 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       );
       break;
   }
-  const stageClassName = `practice-stage practice-stage--component practice-stage--background-${canvasBackground} practice-stage--${entry.id}`;
-  const preview = (
-    <div className="practice-preview" role="region" aria-label="组件预览">
-      <div className={`single-example single-example--${entry.id}`}>{node}</div>
-    </div>
-  );
+  const code = exampleCode(entry, args);
   return (
     <>
       <section aria-label="组件展示" className="component-practice">
         <header className="practice-heading practice-heading--component">
           <h1 id="practice-title">{entry.title}</h1>
-          <SegmentedControl
-            label="画布环境"
-            value={canvasBackground}
-            onChange={(value) =>
-              setCanvasBackground(value as "base" | "gray" | "white")
-            }
-            options={[
-              { value: "base", label: "页面" },
-              { value: "gray", label: "灰区" },
-              { value: "white", label: "白层" },
-            ]}
-          />
         </header>
-        {canvasBackground === "base" ? (
-          <div className={stageClassName}>{preview}</div>
-        ) : (
+        <Surface
+          tone="raised"
+          className="practice-layout"
+          role="group"
+          aria-label="Preview"
+        >
+          <div className="practice-toolbar">
+            <h2 className="practice-toolbar-title">预览</h2>
+            <SegmentedControl
+              label="画布环境"
+              value={canvasBackground}
+              onChange={(value) =>
+                setCanvasBackground(value as "base" | "gray" | "white")
+              }
+              options={[
+                { value: "base", label: "页面" },
+                { value: "gray", label: "灰区" },
+                { value: "white", label: "白层" },
+              ]}
+            />
+            <Button
+              aria-expanded={apiOpen}
+              aria-controls={apiId}
+              onClick={() => setApiOpen((open) => !open)}
+            >
+              {apiOpen ? "收起 API" : "展开 API"}
+            </Button>
+          </div>
           <Surface
             tone={canvasBackground === "white" ? "raised" : "soft"}
-            className={stageClassName}
+            className={`practice-stage practice-stage--component practice-stage--background-${canvasBackground} practice-stage--${entry.id}`}
           >
-            {preview}
+            <div
+              className="practice-preview"
+              role="region"
+              aria-label="组件预览"
+            >
+              <div className={`single-example single-example--${entry.id}`}>
+                {node}
+              </div>
+            </div>
           </Surface>
-        )}
+          <ApiPanel
+            id={apiId}
+            hidden={!apiOpen}
+            entry={entry}
+            fields={fields}
+            args={args}
+            patch={patch}
+            selectOptions={(field) =>
+              ["segments", "tabs", "select"].includes(entry.id) &&
+              field.key === "value"
+                ? choices(entry.id === "tabs" ? "items" : "options")
+                : (field.options?.map((value) => ({
+                    value,
+                    label: value,
+                  })) ?? null)
+            }
+            fieldDisabled={(key) =>
+              entry.id === "confirm-dialog" && key === "open" && b("busy")
+            }
+            onReset={() => {
+              setArgs(exampleArgs(entry));
+              setFiles([]);
+            }}
+          />
+        </Surface>
       </section>
       <Disclosure
         title="用法"
         className="usage-code"
-        actions={<CopyButton text={entry.code} variant="plain" />}
+        actions={<CopyButton text={code} variant="plain" />}
       >
         <pre
           className="usage-source ui-scroll-area"
           tabIndex={0}
           aria-label="示例代码"
         >
-          {entry.code}
+          {code}
         </pre>
       </Disclosure>
     </>

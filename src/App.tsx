@@ -9,8 +9,8 @@ import {
 } from "./ui";
 import { ThemeToggle } from "./theme-toggle";
 import { tokenGroups, TokenPractice } from "./token-practice";
-import { ComponentPreview } from "./component-preview";
-import { componentEntries } from "./component-examples";
+import { Playground } from "./playground";
+import { componentEntries } from "./playground-catalog";
 import { specEntries, SpecPractice } from "./spec-practice";
 import { ContextMatrix } from "./context-matrix";
 import "./app.css";
@@ -171,7 +171,7 @@ export default function App() {
           {category === "token" ? (
             <TokenPractice key={piece.id} id={piece.id} />
           ) : component ? (
-            <ComponentPreview key={component.id} entry={component} />
+            <Playground key={component.id} entry={component} />
           ) : piece.id === "context-matrix" ? (
             <ContextMatrix />
           ) : (

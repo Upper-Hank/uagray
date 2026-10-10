@@ -1,6 +1,6 @@
 # Uagray
 
-供其他 React 项目复用的轻量灰阶设计系统。仓库保留组件库与展示页，展示页包含规范、Token、组件预览和用法示例。案例页已删除，API 调试配置保存在本机 `local/site/`，不纳入远端最新源码。
+供其他 React 项目复用的轻量灰阶设计系统。仓库保留组件库与展示页，展示页包含规范、Token、组件预览、API 配置和用法示例。案例页已删除。独立消费验证保存在本机 `local/beta-consumer/`，不纳入远端源码。
 
 ## 开发与展示
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-`npm run check` 检查类型；`npm run build` 构建展示站到 `dist-site/`；`npm test` 运行组件与展示页交互测试。展示页不提供案例链接、案例路由或 API 属性调试面板，组件自身交互保持可用。
+`npm run check` 检查类型；`npm run build` 构建展示站到 `dist-site/`；`npm test` 运行组件与展示页交互测试。展示页提供组件 API 配置，不提供案例链接或案例路由。
 
 ## 构建与试包
 

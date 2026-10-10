@@ -9,8 +9,8 @@
 ## 工程边界
 
 - `src/ui/`：可复用组件、图标适配、tokens 与组件样式。
-- `src/App.tsx`、`src/app.css`、`src/component-preview.tsx`：公开展示页，保留规范、Token 与可交互组件预览，不包含案例入口或 API 调试配置。
-- `local/site/`：保留完整 API 调试及相关页面测试，由 Git 忽略；不让组件库或公开展示页依赖它们。案例页已全部删除，不再恢复案例入口。
+- `src/App.tsx`、`src/app.css`、`src/playground.tsx`：公开展示页，保留规范、Token、可交互组件预览、API 配置与用法生成，不包含案例入口。
+- `local/site/`：本机展示入口，由 Git 忽略，转引 `src/` 中的调试实现；不让组件库依赖它。`local/beta-consumer/` 保留独立消费验证。案例页已全部删除，不再恢复案例入口。
 - `vite.config.ts`：展示站构建至 `dist-site/`。
 - `vite.lib.config.ts`、`tsconfig.lib.json`：组件包构建与类型声明至 `dist/`；产物由 `package.json` 白名单控制。
 - `docs/source-boundary.md`：源码推送范围与本地目录约定。

@@ -76,7 +76,7 @@ it("organizes the library into rules, tokens and components and updates the segm
   await waitFor(() =>
     expect(screen.getByRole("radiogroup", { name: "分类" })).toBeTruthy(),
   );
-  expect(screen.getAllByRole("radio", { name: /^规范/ })).toHaveLength(2);
+  expect(screen.getAllByRole("radio", { name: /^规范/ })).toHaveLength(3);
   expect(
     screen.queryByRole("radio", { name: /All|Foundations|Tools/ }),
   ).toBeNull();
@@ -179,7 +179,7 @@ it("resets the inline zoom control to its initial value", () => {
   expect(toolbar.getByText("50%")).toBeTruthy();
 });
 
-it("keeps component previews interactive without case links or API configuration", () => {
+it("keeps component previews interactive with API configuration and without case links", () => {
   render(<App />);
   expect(screen.queryByRole("link", { name: "案例" })).toBeNull();
   fireEvent.click(screen.getByRole("radio", { name: /^组件/ }));
@@ -187,9 +187,8 @@ it("keeps component previews interactive without case links or API configuration
     window.location.hash = `#${id}`;
     fireEvent(window, new Event("hashchange"));
     expect(screen.getByRole("region", { name: "组件预览" })).toBeTruthy();
-    expect(screen.queryByRole("group", { name: "API 配置" })).toBeNull();
-    expect(screen.queryByLabelText(/^API /)).toBeNull();
-    expect(screen.queryByText("重置")).toBeNull();
+    expect(screen.getByRole("group", { name: "API 配置" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "收起 API" })).toBeTruthy();
   }
   const group = screen.getByRole("radiogroup", { name: "分类" });
   const option = within(group).getByRole("radio", { name: /^Token/ });
