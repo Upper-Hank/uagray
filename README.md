@@ -18,11 +18,17 @@ npm run build:lib
 npm pack
 ```
 
-组件产物位于 `dist/`，包含 ESM、类型声明和独立 CSS；`.tgz` 只包含组件库产物、README 和必要元数据。展示页、字体及测试代码不进入组件包。当前保留 `private: true`，尚未发布 npm。
+组件产物位于 `dist/`，包含 ESM、类型声明和独立 CSS；`.tgz` 只包含组件库产物、README 和必要元数据。展示页、字体及测试代码不进入组件包。当前首轮发布版本为 `0.1.0-beta.0`，通过 `beta` 标签提供。
 
 ## 使用
 
-在消费项目安装生成的 `.tgz` 后：
+安装 beta 包：
+
+```sh
+npm install uagray@beta
+```
+
+使用：
 
 ```tsx
 import { Button, Surface } from "uagray";
@@ -33,7 +39,7 @@ import "uagray/styles.css";
 </Surface>;
 ```
 
-包内字体使用系统回退，宿主可通过 `--ui-font` 和 `--ui-mono` 指定字体，不要求提供 `/fonts/`。展示站单独加载 `public/fonts/`，字体许可证随文件保留。当前声明支持 React 19，React 与 React DOM 由宿主提供；正式发布许可证仍需确定。
+包内字体使用系统回退，宿主可通过 `--ui-font` 和 `--ui-mono` 指定字体，不要求提供 `/fonts/`。展示站单独加载 `public/fonts/`，字体许可证随文件保留。当前声明支持 React 19，React 与 React DOM 由宿主提供；本项目代码采用 MIT 许可证，依赖与字体沿用各自许可证。
 
 ## 设计与来源
 

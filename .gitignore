@@ -8,3 +8,6 @@ dist/
 *.tgz
 
 /dist-site/
+
+/.playwright-cli/
+/output/playwright/

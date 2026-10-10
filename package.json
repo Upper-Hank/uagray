@@ -1,7 +1,6 @@
 {
   "name": "uagray",
-  "private": true,
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "type": "module",
   "scripts": {
     "build": "npm run check && vite build",
@@ -32,7 +31,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -48,5 +48,20 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "description": "A lightweight grayscale React design system.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Upper-Hank/uagray.git"
+  },
+  "homepage": "https://github.com/Upper-Hank/uagray#readme",
+  "bugs": {
+    "url": "https://github.com/Upper-Hank/uagray/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
   }
 }
