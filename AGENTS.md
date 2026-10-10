@@ -9,7 +9,9 @@
 ## 工程边界
 
 - `src/ui/`：可复用组件、图标适配、tokens 与组件样式。
-- `src/App.tsx`、`src/app.css`：展示页，不让组件库反向依赖它们。
+- `local/site/`：本机展示、API 演示、案例与页面测试，由 Git 忽略；不让组件库或远端构建依赖它们。
+- `vite.config.ts`、`tsconfig.lib.json`：独立组件包构建与类型声明；产物由 `package.json` 白名单控制。
+- `docs/source-boundary.md`：源码推送范围与本地目录约定。
 - `docs/playground.md`：单件实践、API 配置、代码生成和输入焦点契约。
 - `docs/tokens.md`：五类 Token 的尺度、别名与消费契约。
 - `docs/design-system.md`：视觉规则与组件契约。

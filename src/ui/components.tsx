@@ -14,8 +14,6 @@ import {
   SelectionIndicator,
   useSelectionIndicator,
 } from "./selection-indicator";
-import "./tokens.css";
-import "./components.css";
 
 const cx = (...classes: (string | undefined | false)[]) =>
   classes.filter(Boolean).join(" ");

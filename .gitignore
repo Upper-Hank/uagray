@@ -2,3 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+
+# Unfinished site, API playground and cases stay on this machine.
+/local/
+*.tgz

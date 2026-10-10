@@ -7,5 +7,4 @@ export * from "./panels";
 export * from "./feedback";
 export * from "./file-dropzone";
 export * from "./color-picker";
-import "./scrollbars.css";
-import "./controls.css";
+import "./styles.css";

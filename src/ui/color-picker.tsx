@@ -9,7 +9,6 @@ import {
 } from "react-aria-components/ColorPicker";
 import { IconButton, Surface } from "./components";
 import { Field, Input, NumberInput, Select } from "./fields";
-import "./color-picker.css";
 
 export function normalizeHex(value: string): string | null {
   let hex = value.trim().replace(/^#/, "");
