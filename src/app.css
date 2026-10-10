@@ -360,6 +360,7 @@
 }
 .practice-stage--component {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   align-items: start;
   gap: var(--ui-space-8);
