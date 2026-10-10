@@ -10,7 +10,7 @@
 
 - `src/ui/`：可复用组件、图标适配、tokens 与组件样式。
 - `src/App.tsx`、`src/app.css`、`src/component-preview.tsx`：公开展示页，保留规范、Token 与可交互组件预览，不包含案例入口或 API 调试配置。
-- `local/site/`：保留完整 API 调试、案例及相关页面测试，由 Git 忽略；不让组件库或公开展示页依赖它们。
+- `local/site/`：保留完整 API 调试及相关页面测试，由 Git 忽略；不让组件库或公开展示页依赖它们。案例页已全部删除，不再恢复案例入口。
 - `vite.config.ts`：展示站构建至 `dist-site/`。
 - `vite.lib.config.ts`、`tsconfig.lib.json`：组件包构建与类型声明至 `dist/`；产物由 `package.json` 白名单控制。
 - `docs/source-boundary.md`：源码推送范围与本地目录约定。
@@ -28,6 +28,7 @@
 - 新组件按实际复用需求独立设计，维护统一灰阶、留白、圆角与反馈规则。
 - 颜色遵循 `docs/surface-contract.md` 的环境契约：组件声明意图，控件读取 control，区块读取 region 并建立子项环境；区块不嵌套。Button 使用 emphasis 与 tone，旧 variant 仅作兼容。
 - 界面与正文使用 400，标题使用 500；交互状态不改变字重。
+- 圆角按 `docs/design-system.md` 的圆角与组合几何契约：标记 4px、小控件 8px、普通控件 12px；组合按内圆角加实际 inset 派生，CSS 与 Motion 共用变量。单个动作不套无用途底座，成组不压缩子控件高度。
 - 复杂需求先明确用户意愿，提出方案后执行；路线图不是对全部待办的实施授权。
 
 ## 发布与部署

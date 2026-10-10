@@ -110,7 +110,8 @@ export const tokenGroups: TokenGroup[] = [
   {
     id: "radius",
     title: "圆角 Radius",
-    description: "保持内外层圆角关系，用控件、卡片、面板别名表达使用场景。",
+    description:
+      "标记 4px、小控件 8px、普通控件 12px；容器按内圆角加实际留白派生。",
     kind: "radius",
     names: [
       ...names("radius", [

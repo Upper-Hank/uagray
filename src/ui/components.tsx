@@ -300,7 +300,13 @@ export function ExternalLinks({
   links: { label: string; href: string; icon: IconName }[];
 }) {
   return (
-    <nav className="ui-button-group" aria-label="External links">
+    <nav
+      className={cx(
+        "ui-external-links",
+        links.length > 1 && "ui-button-group ui-button-group--soft",
+      )}
+      aria-label="External links"
+    >
       {links.map((link) => (
         <a
           key={link.label}
@@ -517,7 +523,10 @@ export function Pager({
   next?: NavigationItem;
 }) {
   return (
-    <nav aria-label="Page navigation" className="ui-button-group ui-pager">
+    <nav
+      aria-label="Page navigation"
+      className="ui-button-group ui-button-group--soft ui-pager"
+    >
       {(["previous", "next"] as const).map((direction) => {
         const item = direction === "previous" ? previous : next;
         const icon = direction === "previous" ? "left" : "right";

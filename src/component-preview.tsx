@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   lines,
   type Args,
@@ -56,7 +56,6 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
   const [canvasBackground, setCanvasBackground] = useState<
     "base" | "gray" | "white"
   >("gray");
-  const backgroundId = useId();
   const [files, setFiles] = useState<File[]>([]);
   const patch = (key: string, value: Value) =>
     setArgs((current) => {
@@ -576,9 +575,7 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
   const stageClassName = `practice-stage practice-stage--component practice-stage--background-${canvasBackground} practice-stage--${entry.id}`;
   const preview = (
     <div className="practice-preview" role="region" aria-label="组件预览">
-      <div className={`single-example single-example--${entry.id}`}>
-        {node}
-      </div>
+      <div className={`single-example single-example--${entry.id}`}>{node}</div>
     </div>
   );
   return (
@@ -586,44 +583,18 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       <section aria-label="组件展示" className="component-practice">
         <header className="practice-heading practice-heading--component">
           <h1 id="practice-title">{entry.title}</h1>
-          <fieldset
-            className="canvas-background-picker"
-            role="radiogroup"
-            aria-label="画布背景"
-          >
-            <legend className="ui-sr-only">画布背景</legend>
-            {(["base", "gray", "white"] as const).map((background) => (
-              <label
-                key={background}
-                title={
-                  background === "base"
-                    ? "浅色"
-                    : background === "gray"
-                      ? "灰色"
-                      : "白色"
-                }
-              >
-                <input
-                  type="radio"
-                  name={backgroundId}
-                  value={background}
-                  checked={canvasBackground === background}
-                  onChange={() => setCanvasBackground(background)}
-                />
-                <span
-                  className={`canvas-background-swatch canvas-background-swatch--${background}`}
-                >
-                  <span className="ui-sr-only">
-                    {background === "base"
-                      ? "浅色"
-                      : background === "gray"
-                        ? "灰色"
-                        : "白色"}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
+          <SegmentedControl
+            label="画布环境"
+            value={canvasBackground}
+            onChange={(value) =>
+              setCanvasBackground(value as "base" | "gray" | "white")
+            }
+            options={[
+              { value: "base", label: "页面" },
+              { value: "gray", label: "灰区" },
+              { value: "white", label: "白层" },
+            ]}
+          />
         </header>
         {canvasBackground === "base" ? (
           <div className={stageClassName}>{preview}</div>
@@ -638,7 +609,6 @@ export function ComponentPreview({ entry }: { entry: ComponentEntry }) {
       </section>
       <Disclosure
         title="用法"
-        defaultOpen
         className="usage-code"
         actions={<CopyButton text={entry.code} variant="plain" />}
       >

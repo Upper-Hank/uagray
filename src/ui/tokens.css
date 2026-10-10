@@ -128,6 +128,8 @@
   --ui-radius-4: 16px;
   --ui-radius-5: 24px;
   --ui-radius-full: 999px;
+  /* 4px marks/keycaps; 8px small controls; 12px regular controls.
+   * Nested containers derive radius from the child radius and actual inset. */
   --ui-radius-sm: var(--ui-radius-2);
   --ui-radius-control: var(--ui-radius-3);
   --ui-radius-card: var(--ui-radius-4);

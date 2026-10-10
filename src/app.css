@@ -376,9 +376,6 @@
   background: var(--ui-background);
   box-shadow: inset 0 0 0 1px var(--ui-preview-border);
 }
-.canvas-background-swatch--base {
-  background: var(--ui-background);
-}
 .component-practice {
   display: grid;
   gap: var(--ui-space-6);
@@ -389,47 +386,8 @@
   align-items: center;
   justify-content: space-between;
 }
-.canvas-background-picker {
-  display: flex;
+.practice-heading--component > .ui-segments {
   flex-shrink: 0;
-  gap: var(--ui-space-3);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.canvas-background-picker label {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-width: var(--ui-size-control);
-  min-height: var(--ui-size-control);
-  cursor: pointer;
-}
-.canvas-background-picker input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
-.canvas-background-swatch {
-  width: 28px;
-  height: 20px;
-  border: 1px solid var(--ui-border-soft);
-  border-radius: var(--ui-radius-1);
-}
-.canvas-background-swatch--gray {
-  background: var(--ui-surface);
-}
-.canvas-background-swatch--white {
-  background: var(--ui-raised);
-}
-.canvas-background-picker input:checked + .canvas-background-swatch {
-  outline: 1px solid var(--ui-text);
-  outline-offset: 3px;
-}
-.canvas-background-picker input:focus-visible + .canvas-background-swatch {
-  outline: 2px solid var(--ui-focus-outline);
-  outline-offset: 3px;
 }
 .practice-preview {
   display: flex;
@@ -669,7 +627,7 @@
   justify-self: start;
 }
 
-:where(.directory-list a, .workbench-case-link) {
+.directory-list a {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -795,16 +753,20 @@
 .spec-document-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ui-space-6);
+  column-gap: var(--ui-space-6);
+  row-gap: var(--ui-space-4);
   width: 100%;
   padding: var(--ui-space-5);
   border-radius: calc(var(--ui-radius-control) + var(--ui-space-5));
 }
-.spec-document-identity {
-  min-width: 0;
+.spec-document-identity,
+.spec-document-actions {
   display: grid;
-  gap: var(--ui-space-4);
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
 }
 .spec-document-identity p {
   margin: 0;
@@ -814,9 +776,10 @@
   font-size: var(--ui-font-size-sm);
 }
 .spec-document-actions {
-  display: grid;
-  justify-items: center;
-  gap: var(--ui-space-4);
+  justify-items: end;
+}
+.spec-document-actions > .ui-button {
+  margin-inline-end: calc(-1 * var(--ui-padding-control));
 }
 .spec-emphasis-actions {
   display: flex;

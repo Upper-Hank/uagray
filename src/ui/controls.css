@@ -174,7 +174,7 @@
   height: var(--ui-size-choice);
   flex-shrink: 0;
   background: var(--ui-control);
-  border-radius: 6px;
+  border-radius: var(--ui-radius-1);
   transition:
     background var(--ui-fast),
     color var(--ui-fast);
@@ -458,7 +458,7 @@
   height: 100svh;
   max-height: 100svh;
   margin: 0;
-  border-radius: 24px 0 0 24px;
+  border-radius: var(--ui-radius-surface) 0 0 var(--ui-radius-surface);
 }
 .ui-dialog--drawer .ui-dialog-inner {
   min-height: 100%;

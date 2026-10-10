@@ -32,7 +32,9 @@ border-soft 在满足白底强调条件时表达对象边缘，也可表达不�
 
 Space 的编号表示阶梯顺序，不表示数值必须是编号乘以 4。用于控件细节的 2px/6px 与用于区域的较大步长各有用途。尺寸变量与间距分开命名，避免一次改间距便意外改变控件高度。
 
-嵌套组合遵循等距圆角：外圆角 = 内圆角 + 实际 inset。独立组件消费语义圆角，组合按实际轮廓用 calc() 派生，允许得到 28px 等非基础档位，不为派生尺寸新增 token。普通动作组默认 12px + 4px = 16px，小动作组及选择轨道为 8px + 4px = 12px；API 工具区为 12px + 12px = 24px；教学展示直接消费 surface 与 radius-surface，不预设内层画布。完整适用边界见 [等距圆角契约](design-system.md#等距圆角契约)。
+圆角基础尺度保持 0 / 4 / 8 / 12 / 16 / 24px。18px 选择标记与24px 键帽消费 radius-1（4px），32px 控件消费 radius-sm（8px），36px / 44px 控件消费 radius-control（12px），独立卡片消费 radius-card（16px），大面板消费 radius-surface（24px）。full 仅用于圆形标记、滑块与细轨道，不作为普通动作或标签的默认值。
+
+嵌套组合外圆角 = 内圆角 + 实际 inset，使用已有 Radius / Space 的 calc() 派生，不新增基础档位。普通动作组为 12px + 4px = 16px，全 small 组与选择轨道为 8px + 4px = 12px；成组不压缩子项高度。plain 组保留各自圆角，单个外链不套组。更大的工具区按实际 inset 派生；没有对应内轮廓的教学承载不制造嵌套。CSS 与 Motion 消费同一个局部变量。完整规则见 [圆角与组合几何契约](design-system.md#圆角与组合几何契约)。
 
 排版使用两档字重：界面与正文为 regular（400），页面、小节、弹层与状态标题为 medium（500）。控件数值默认 control（13px）/400，状态标题默认 md（16px）/500；标签、按钮、计数与选中目录均为 400。font-weight-button 引用 regular，font-weight-status-title 引用 medium。交互状态不改变字重；正文与 strong 动作不自动加重。同一角色统一消费 Token，不逐组件维护字重补丁。
 

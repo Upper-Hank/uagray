@@ -1,6 +1,6 @@
 # Uagray API 规范草案与审计
 
-状态：供用户讨论确认。本次审计覆盖 37 个展示条目及 CopyButton/ShareButton 辅助导出。以下“建议”是目标契约，不表示当前组件已经符合，也不自动授权批量破坏性迁移。
+状态：公共 API 迁移建议供用户讨论确认。2026-10-10 已实施本地调试元数据、固定配置区、结构化选项、Button emphasis/tone 与代码同步；现行调试契约见 [playground.md](playground.md)。以下旧审计问题不代表均仍存在。本次审计覆盖 37 个展示条目及 CopyButton/ShareButton 辅助导出。以下“建议”是目标契约，不表示当前组件已经符合，也不自动授权批量破坏性迁移。
 
 组件 API、展示页配置、生成代码必须分别审核。TypeScript 组件声明定义可用能力；展示页选择常用配置并提供示例数据；代码生成把配置转成真实调用。三者一致，不要求把每个原生属性都做成配置控件。
 
@@ -44,7 +44,7 @@
 | size                        | 同一组件的几何尺度，映射尺寸 Token；不改变颜色或外部宽度 |
 | className/style             | 宿主布局与必要扩展；原生控件遵守对应 DOM 语义            |
 
-Button 目前 white/dark/danger 把原始颜色、呈现方式和状态混在 variant 里，需在同一轮讨论后重新定义；不直接增加任意 color/background/borderColor 参数。
+Button 已使用 emphasis="strong|default|quiet" 与 tone="neutral|danger"，旧 variant 仅作弃用兼容。本地调试与代码生成消费新属性，不提供任意 color/background/borderColor 参数。
 
 边界与层级是组件视觉契约，不把白底自动等同描边。Surface 已公开有限的 treatment，详见本轮已实施补充；不能为了统一 API 而给全部控件增加 border/shadow 开关。详情页画布的边框属于展示层。
 
