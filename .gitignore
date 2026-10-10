@@ -3,6 +3,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 
-# Unfinished site, API playground and cases stay on this machine.
+# Unfinished API playground and cases stay on this machine.
 /local/
 *.tgz
+
+/dist-site/

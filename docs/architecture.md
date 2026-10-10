@@ -1,6 +1,6 @@
 # Uagray · 轻量设计系统架构与缺口
 
-> 2026-10-10 更新：展示与案例已迁入 Git 忽略的 `local/site/`；根目录构建已改为组件库，提供 ESM、声明文件和 `styles.css`，字体资源保留在本地。下文评估表保留原评估时点状态，当前源码推送边界见 [source-boundary.md](source-boundary.md)。
+> 2026-10-10 更新：远端保留展示站，排除案例与 API 调试配置；完整未完成实现保留在 Git 忽略的 `local/site/`。展示站和组件包分别构建至 `dist-site/` 与 `dist/`，组件包提供 ESM、声明文件和 `styles.css`，不携带展示字体。下文评估表保留原评估时点状态，当前源码推送边界见 [source-boundary.md](source-boundary.md)。
 
 评估日期：2026-10-09。依据当前源码检查，未使用浏览器。本次已扩充基础组件并加入 Framer Motion。包构建、字体迁移及宿主消费验证仍未实施。新增 API 与需求依据见 [组件批次](component-batch.md)。
 

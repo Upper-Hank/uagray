@@ -4,11 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "npm run check && vite build && tsc -p tsconfig.lib.json",
+    "build": "npm run check && vite build",
     "check": "tsc -b",
-    "test": "vitest run src/ui",
-    "format": "prettier --write src docs README.md package.json tsconfig*.json vite.config.ts",
-    "prepack": "npm run build"
+    "test": "vitest run src",
+    "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite*.config.ts",
+    "prepack": "npm run build:lib",
+    "dev": "vite",
+    "build:lib": "npm run check && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.3.8",
