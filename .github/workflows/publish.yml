@@ -48,7 +48,8 @@ jobs:
       - name: Build and check package contents
         shell: bash
         run: |
-          npm pack --json > "$RUNNER_TEMP/package.json"
+          npm run build:lib
+          npm pack --ignore-scripts --json > "$RUNNER_TEMP/package.json"
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const [pack] = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/package.json`));
