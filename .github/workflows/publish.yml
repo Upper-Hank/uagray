@@ -2,6 +2,7 @@ name: Publish npm package
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -32,7 +33,7 @@ jobs:
           npm install --global npm@11.21.0
           npm ci
       - name: Verify release source and version
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         shell: bash
         run: |
           git merge-base --is-ancestor HEAD origin/main
@@ -65,13 +66,13 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_ENV, `NPM_TARBALL=${pack.filename}\n`);
           JS
       - name: Publish using npm Trusted Publishing
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         run: npm publish "$NPM_TARBALL" --tag "$NPM_TAG" --access public --provenance --ignore-scripts
       - name: Verify registry version
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           version=$(node -p "JSON.parse(require('fs').readFileSync('package.json')).version")
           npm view "uagray@$version" version dist.integrity --json
-      - name: Manual validation without publishing
-        if: github.event_name == 'workflow_dispatch'
+      - name: Validation without publishing
+        if: github.ref_type != 'tag' || github.event_name == 'workflow_dispatch'
         run: echo 'Package validation passed. Push a matching version tag to publish.'

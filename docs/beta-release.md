@@ -33,7 +33,7 @@ git tag -a v0.1.0-beta.1 -m "Release 0.1.0-beta.1"
 git push origin v0.1.0-beta.1
 ```
 
-`beta` 预发布版本发布至 `beta` 标签；正式版本发布至 `latest`。其他预发布类型暂不允许。手动运行工作流只做验证，不发布，当前版本不会因此重复发布。
+`beta` 预发布版本发布至 `beta` 标签；正式版本发布至 `latest`。其他预发布类型暂不允许。推送 main 或手动运行工作流只做验证，不发布，当前版本不会因此重复发布。
 
 工作流使用 GitHub 托管 runner、Node 24 和 npm 11.21.0，通过 npm Trusted Publishing 的 OIDC 身份认证；不配置长期 NPM_TOKEN。npm 绑定仓库 `Upper-Hank/uagray`、工作流文件 `publish.yml`，允许直接发布，Environment 留空。配置依据 [npm 官方文档](https://docs.npmjs.com/trusted-publishers/)。
 
