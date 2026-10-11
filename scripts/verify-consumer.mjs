@@ -87,17 +87,17 @@ function App() {
   return (
     <main>
       <Surface>
-        <Button onClick={() => setCount((value) => value + 1)}>计数 {count}</Button>
-        <CopyButton text="uagray" copiedLabel="已复制">复制</CopyButton>
+        <Button onClick={() => setCount((value) => value + 1)}><Button.Label>计数</Button.Label><Button.Count>{count}</Button.Count></Button>
+        <CopyButton text="uagray"><CopyButton.Label>复制</CopyButton.Label><CopyButton.Feedback state="success">已复制</CopyButton.Feedback></CopyButton>
         <Input aria-label="名称" name="name" />
         <NumberInput aria-label="数量" value={count} onValueChange={setCount} />
-        <Select aria-label="选项" value={value} onValueChange={setValue} options={[{ value: "a", label: "甲" }, { value: "b", label: "乙" }]} />
+        <Select aria-label="选项" value={value} onValueChange={setValue}><Select.Item value="a">甲</Select.Item><Select.Item value="b">乙</Select.Item></Select>
         <Progress aria-label="上传进度" value={count} />
         <Spinner aria-label="加载中" />
         <Button onClick={() => setOpen(true)}>打开</Button>
-        <Dialog open={open} onOpenChange={setOpen} title="消费检查">内容</Dialog>
+        <Dialog open={open} onOpenChange={setOpen}><Dialog.Header><Dialog.Title>消费检查</Dialog.Title></Dialog.Header><Dialog.Body>内容</Dialog.Body></Dialog>
         <Button onClick={() => setToastOpen(true)}>显示提示</Button>
-        <ToastRegion><Toast open={toastOpen} onOpenChange={setToastOpen}>提示</Toast></ToastRegion>
+        <ToastRegion><Toast open={toastOpen} onOpenChange={setToastOpen}><Toast.Body>提示</Toast.Body></Toast></ToastRegion>
       </Surface>
     </main>
   );
