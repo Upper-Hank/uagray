@@ -79,7 +79,10 @@ it("organizes the library into rules, tokens and components and updates the segm
   await waitFor(() =>
     expect(screen.getByRole("radiogroup", { name: "分类" })).toBeTruthy(),
   );
-  expect(screen.getAllByRole("radio", { name: /^规范/ })).toHaveLength(3);
+  const example = within(screen.getByRole("radiogroup", { name: "分类" }));
+  const rules = example.getByRole("radio", { name: /^规范/ });
+  fireEvent.click(rules);
+  expect(rules.getAttribute("aria-checked")).toBe("true");
   expect(
     screen.queryByRole("radio", { name: /All|Foundations|Tools/ }),
   ).toBeNull();
