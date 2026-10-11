@@ -5,7 +5,7 @@
 ## 源码与依赖边界
 
 - `src/ui/` 提供可复用组件、语义变量、图标适配与共享动效，不导入展示站或本地消费项目。
-- `src/App.tsx`、`src/app.css`、`src/playground*.ts*`、`src/api-panel.tsx` 与 `src/options-editor.tsx` 提供公开展示和调试工具，不进入组件包。
+- `src/App.tsx`、`src/app.css`、`src/playground*.ts*`、`src/api-panel.tsx`、`src/content-tree-editor.tsx` 与 `src/api-editors.tsx` 提供公开展示和调试工具，不进入组件包。
 - `local/site/` 是 Git 忽略的本机入口，直接启动仓库里的公开展示站。`local/beta-consumer/` 是本机消费目录。远端用 `npm run verify:consumer` 安装当前打包结果并完成类型检查与生产构建。
 - 公开案例页已删除，不恢复旧路由或依赖。`lab/` 是随 Git 维护的内部产品原型，独立 Vite 开发入口直接消费 `src/ui/`，不进入公开站依赖图、组件包或部署产物。
 

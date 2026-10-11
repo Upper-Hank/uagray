@@ -4,12 +4,14 @@ import {
   descriptionRows,
   choiceItems,
   exampleArgs,
+  presetArgs,
   normalizeArgs,
-  visibleFields,
   type Value,
   type ComponentEntry,
 } from "./playground-catalog";
-import { ApiPanel } from "./api-panel";
+import { CustomConfiguration } from "./api-panel";
+import { treeFromExample, type ContentNode } from "./playground-tree";
+import { TreePreview, treeCode } from "./playground-tree-view";
 import { exampleCode } from "./playground-code";
 import {
   ActionRow,
@@ -34,7 +36,6 @@ import {
   Field,
   FileDropzone,
   Icon,
-  IconButton,
   Input,
   NumberInput,
   Keycap,
@@ -67,7 +68,11 @@ import {
 export function Playground({ entry }: { entry: ComponentEntry }) {
   const apiId = useId();
   const [apiOpen, setApiOpen] = useState(true);
+  const [configurationRevision, setConfigurationRevision] = useState(0);
+  const [preset, setPreset] = useState("button");
   const [args, setArgs] = useState(() => exampleArgs(entry));
+  const [mode, setMode] = useState<"preset" | "custom">("preset");
+  const [tree, setTree] = useState<ContentNode>(() => treeFromExample(entry));
   const [canvasBackground, setCanvasBackground] = useState<
     "base" | "gray" | "white"
   >("gray");
@@ -78,7 +83,6 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
   const n = (key: string) => Number(args[key]);
   const b = (key: string) => args[key] === true;
   const buttonsAction = s("action");
-  const fields = visibleFields(entry, args);
   const choices = (key: string) => choiceItems(args[key]);
   let node: ReactNode;
   switch (entry.id) {
@@ -128,31 +132,75 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
         />
       );
       break;
-    case "buttons":
+    case "buttons": {
+      const content = (
+        <>
+          {s("icon") && s("icon") !== "none" && (
+            <Button.Icon>
+              <Icon name={s("icon") as IconName} />
+            </Button.Icon>
+          )}
+          {s("children") && <Button.Label>{s("children")}</Button.Label>}
+          {s("count") && <Button.Count>{s("count")}</Button.Count>}
+          {buttonsAction !== "button" && (
+            <>
+              {s("copiedLabel") && (
+                <CopyButton.Feedback state="success">
+                  {s("copiedLabel")}
+                </CopyButton.Feedback>
+              )}
+              {s("copyingLabel") && (
+                <CopyButton.Feedback state="pending">
+                  {s("copyingLabel")}
+                </CopyButton.Feedback>
+              )}
+              {s("copyFailedLabel") && (
+                <CopyButton.Feedback state="error">
+                  {s("copyFailedLabel")}
+                </CopyButton.Feedback>
+              )}
+            </>
+          )}
+        </>
+      );
+      const common: ButtonProps = {
+        emphasis: s("emphasis") as ButtonProps["emphasis"],
+        tone: s("tone") as ButtonProps["tone"],
+        size: s("size") as ButtonProps["size"],
+        shape: s("shape") as ButtonProps["shape"],
+        disabled: b("disabled"),
+        busy: b("busy"),
+        "aria-label": s("aria-label") || undefined,
+      };
       node =
         buttonsAction === "copy" ? (
-          <CopyButton text={s("text")} emphasis={s("emphasis") as ButtonProps["emphasis"]} size={s("size") as ButtonProps["size"]}><CopyButton.Label>
-            {s("children")}
-          </CopyButton.Label><CopyButton.Feedback state="success">{s("copiedLabel")}</CopyButton.Feedback><CopyButton.Feedback state="pending">{s("copyingLabel")}</CopyButton.Feedback><CopyButton.Feedback state="error">{s("copyFailedLabel")}</CopyButton.Feedback></CopyButton>
+          <CopyButton {...common} text={s("text")}>
+            {content}
+          </CopyButton>
         ) : buttonsAction === "share" ? (
-          <ShareButton url={s("url")}><ShareButton.Label>分享</ShareButton.Label><ShareButton.Feedback state="success">已复制</ShareButton.Feedback><ShareButton.Feedback state="pending">正在复制</ShareButton.Feedback><ShareButton.Feedback state="error">复制失败</ShareButton.Feedback></ShareButton>
+          <ShareButton {...common} url={s("url")}>
+            {content}
+          </ShareButton>
         ) : (
-          <Button emphasis={s("emphasis") as ButtonProps["emphasis"]} tone={s("tone") as ButtonProps["tone"]} size={s("size") as ButtonProps["size"]} disabled={b("disabled")} busy={b("busy")}>{((icon) => icon === undefined ? null : <Button.Icon><Icon name={icon as Parameters<typeof Icon>[0]["name"]} /></Button.Icon>)(s("icon") === "none" ? undefined : (s("icon") as IconName))}<Button.Label>
-            {s("children")}
-          </Button.Label>{(b("showCount") ? n("count") : undefined) !== undefined && <Button.Count>{b("showCount") ? n("count") : undefined}</Button.Count>}</Button>
+          <Button {...common}>{content}</Button>
         );
       break;
+    }
     case "icon-button":
       node = (
-        <IconButton
+        <Button
           aria-label={s("aria-label")}
-          icon={s("icon") as IconName}
+          shape={s("shape") as ButtonProps["shape"]}
           size={s("size") as ButtonProps["size"]}
           emphasis={s("emphasis") as ButtonProps["emphasis"]}
           tone={s("tone") as ButtonProps["tone"]}
           disabled={b("disabled")}
           busy={b("busy")}
-        />
+        >
+          <Button.Icon>
+            <Icon name={s("icon") as IconName} />
+          </Button.Icon>
+        </Button>
       );
       break;
     case "button-group":
@@ -162,7 +210,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           variant={s("variant") as "contained" | "plain"}
         >
           {lines(s("children")).map((label, i) => (
-            <Button key={i}>{label}</Button>
+            <Button key={i}>
+              <Button.Label>{label}</Button.Label>
+            </Button>
           ))}
         </ButtonGroup>
       );
@@ -355,7 +405,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <>
           <Button onClick={() => patch("open", true)}>
-            打开{entry.id === "dialog" ? "对话框" : "抽屉"}
+            <Button.Label>
+              打开{entry.id === "dialog" ? "对话框" : "抽屉"}
+            </Button.Label>
           </Button>
           <Panel
             open={b("open")}
@@ -374,7 +426,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
             {s("body") && <Panel.Body>{s("body")}</Panel.Body>}
             {b("footer") && (
               <Panel.Footer>
-                <Button onClick={() => patch("open", false)}>关闭示例</Button>
+                <Button onClick={() => patch("open", false)}>
+                  <Button.Label>关闭示例</Button.Label>
+                </Button>
               </Panel.Footer>
             )}
           </Panel>
@@ -386,9 +440,43 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <>
           <Button disabled={b("busy")} onClick={() => patch("open", true)}>
-            打开确认框
+            <Button.Label>打开确认框</Button.Label>
           </Button>
-          <ConfirmDialog open={b("open")} onOpenChange={(open) => patch("open", open)} onConfirm={() => patch("open", false)} busy={b("busy")} tone={s("tone") as "neutral" | "danger"}><ConfirmDialog.Header><ConfirmDialog.Title>{s("title")}</ConfirmDialog.Title><ConfirmDialog.Description>{s("description")}</ConfirmDialog.Description></ConfirmDialog.Header><ConfirmDialog.Body><span role="status">{s("statusLabel")}</span></ConfirmDialog.Body><ConfirmDialog.Footer><ConfirmDialog.CancelAction>{s("cancelLabel")}</ConfirmDialog.CancelAction><ConfirmDialog.ConfirmAction>{s("confirmLabel")}</ConfirmDialog.ConfirmAction></ConfirmDialog.Footer></ConfirmDialog>
+          <ConfirmDialog
+            open={b("open")}
+            onOpenChange={(open) => patch("open", open)}
+            onConfirm={() => patch("open", false)}
+            busy={b("busy")}
+            tone={s("tone") as "neutral" | "danger"}
+            aria-label={s("title") ? undefined : s("aria-label")}
+          >
+            {(s("title") || s("description")) && (
+              <ConfirmDialog.Header>
+                {s("title") && (
+                  <ConfirmDialog.Title>{s("title")}</ConfirmDialog.Title>
+                )}
+                {s("description") && (
+                  <ConfirmDialog.Description>
+                    {s("description")}
+                  </ConfirmDialog.Description>
+                )}
+              </ConfirmDialog.Header>
+            )}
+            {(s("cancelLabel") || s("confirmLabel")) && (
+              <ConfirmDialog.Footer>
+                {s("cancelLabel") && (
+                  <ConfirmDialog.CancelAction>
+                    {s("cancelLabel")}
+                  </ConfirmDialog.CancelAction>
+                )}
+                {s("confirmLabel") && (
+                  <ConfirmDialog.ConfirmAction>
+                    {s("confirmLabel")}
+                  </ConfirmDialog.ConfirmAction>
+                )}
+              </ConfirmDialog.Footer>
+            )}
+          </ConfirmDialog>
         </>
       );
       break;
@@ -421,7 +509,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "toast":
       node = (
         <>
-          <Button onClick={() => patch("open", true)}>显示提示</Button>
+          <Button onClick={() => patch("open", true)}>
+            <Button.Label>显示提示</Button.Label>
+          </Button>
           <Toast
             open={b("open")}
             onOpenChange={(open) => patch("open", open)}
@@ -442,7 +532,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "toast-region":
       node = (
         <>
-          <Button onClick={() => patch("open", true)}>显示提示</Button>
+          <Button onClick={() => patch("open", true)}>
+            <Button.Label>显示提示</Button.Label>
+          </Button>
           <ToastRegion aria-label={s("aria-label")}>
             <Toast
               open={b("open")}
@@ -469,7 +561,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           max={n("max")}
         >
           {s("label") && <Progress.Label>{s("label")}</Progress.Label>}
-          {s("valueLabel") && <Progress.Value>{s("valueLabel")}</Progress.Value>}
+          {s("valueLabel") && (
+            <Progress.Value>{s("valueLabel")}</Progress.Value>
+          )}
         </Progress>
       );
       break;
@@ -485,14 +579,42 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           {s("description") && (
             <EmptyState.Description>{s("description")}</EmptyState.Description>
           )}
-          {b("showActions") && (<EmptyState.Actions><Button><Button.Icon><Icon name="plus" /></Button.Icon><Button.Label>{s("actionLabel")}</Button.Label></Button></EmptyState.Actions>)}
+          {b("showActions") && (
+            <EmptyState.Actions>
+              <Button>
+                <Button.Icon>
+                  <Icon name="plus" />
+                </Button.Icon>
+                <Button.Label>{s("actionLabel")}</Button.Label>
+              </Button>
+            </EmptyState.Actions>
+          )}
         </EmptyState>
       );
       break;
     case "upload":
       node = (
         <div className="single-upload">
-          <FileDropzone accept={s("accept")} multiple={b("multiple")} disabled={b("disabled")} maxSize={n("maxSize")} onFiles={setFiles}><FileDropzone.Description>{s("label") || undefined}</FileDropzone.Description><FileDropzone.Trigger>{s("buttonLabel")}</FileDropzone.Trigger><FileDropzone.Error>{s("error") || undefined}</FileDropzone.Error></FileDropzone>
+          <FileDropzone
+            accept={s("accept")}
+            multiple={b("multiple")}
+            disabled={b("disabled")}
+            maxSize={n("maxSize")}
+            onFiles={setFiles}
+          >
+            <FileDropzone.Icon>
+              <Icon name={s("icon") as IconName} />
+            </FileDropzone.Icon>
+            {s("label") && (
+              <FileDropzone.Description>{s("label")}</FileDropzone.Description>
+            )}
+            <FileDropzone.Trigger>{s("buttonLabel")}</FileDropzone.Trigger>
+            {b("showError") && (
+              <FileDropzone.Error>
+                {s("errorSource") === "custom" ? s("error") : undefined}
+              </FileDropzone.Error>
+            )}
+          </FileDropzone>
           {files.length > 0 && (
             <span role="status">
               {files.map((file) => file.name).join("、")}
@@ -503,37 +625,108 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "selection":
       node = (
-        <SelectionBar variant={s("variant") as "contained" | "plain"} count={n("count")} total={n("total")} busy={b("busy")} aria-label={s("aria-label") || undefined}><SelectionBar.Description>{s("summary").replaceAll("{count}", String(n("count"))) || undefined}</SelectionBar.Description><SelectionBar.Actions><SelectionBar.SelectAllAction onClick={() => patch("count", n("total"))}>{s("selectAllLabel") || undefined}</SelectionBar.SelectAllAction><SelectionBar.ClearAction onClick={() => patch("count", 0)}>{s("clearLabel") || undefined}</SelectionBar.ClearAction><SelectionBar.DoneAction onClick={() => patch("count", 0)}>{s("doneLabel") || undefined}</SelectionBar.DoneAction></SelectionBar.Actions></SelectionBar>
+        <SelectionBar
+          variant={s("variant") as "contained" | "plain"}
+          count={n("count")}
+          total={n("total")}
+          busy={b("busy")}
+        >
+          {s("summary") && (
+            <SelectionBar.Description>
+              {s("summary").replaceAll("{count}", String(n("count")))}
+            </SelectionBar.Description>
+          )}
+          {(s("selectAllLabel") || s("clearLabel") || s("doneLabel")) && (
+            <SelectionBar.Actions>
+              {s("selectAllLabel") && (
+                <SelectionBar.SelectAllAction
+                  onClick={() => patch("count", n("total"))}
+                >
+                  {s("selectAllLabel")}
+                </SelectionBar.SelectAllAction>
+              )}
+              {s("clearLabel") && (
+                <SelectionBar.ClearAction onClick={() => patch("count", 0)}>
+                  {s("clearLabel")}
+                </SelectionBar.ClearAction>
+              )}
+              {s("doneLabel") && (
+                <SelectionBar.DoneAction onClick={() => patch("count", 0)}>
+                  {s("doneLabel")}
+                </SelectionBar.DoneAction>
+              )}
+            </SelectionBar.Actions>
+          )}
+        </SelectionBar>
       );
       break;
     case "text":
       node = (
-        <ExpandableCode collapsedHeight={n("collapsedHeight")} aria-label={s("aria-label")}><ExpandableCode.Body>{s("code")}</ExpandableCode.Body><ExpandableCode.CopyAction>复制</ExpandableCode.CopyAction><ExpandableCode.ExpandAction>{s("expandLabel")}</ExpandableCode.ExpandAction><ExpandableCode.CollapseAction>{s("collapseLabel")}</ExpandableCode.CollapseAction></ExpandableCode>
+        <ExpandableCode
+          collapsedHeight={n("collapsedHeight")}
+          aria-label={s("aria-label")}
+        >
+          <ExpandableCode.Body>{s("code")}</ExpandableCode.Body>
+          {s("copyLabel") && (
+            <ExpandableCode.CopyAction>
+              {s("copyLabel")}
+            </ExpandableCode.CopyAction>
+          )}
+          {s("expandLabel") && (
+            <ExpandableCode.ExpandAction>
+              {s("expandLabel")}
+            </ExpandableCode.ExpandAction>
+          )}
+          {s("collapseLabel") && (
+            <ExpandableCode.CollapseAction>
+              {s("collapseLabel")}
+            </ExpandableCode.CollapseAction>
+          )}
+        </ExpandableCode>
       );
       break;
     case "navigation":
       node = (
-        <Pager variant={s("variant") as "contained" | "plain"}>{((item) => item && <Pager.Previous href={item.href}>{item.title}</Pager.Previous>)(b("previous") ? { title: "按钮", href: "#buttons" } : undefined)}{((item) => item && <Pager.Next href={item.href}>{item.title}</Pager.Next>)(b("next") ? { title: "输入", href: "#input" } : undefined)}</Pager>
+        <Pager variant={s("variant") as "contained" | "plain"}>
+          {s("previousLabel") && (
+            <Pager.Previous href={s("previousHref") || undefined}>
+              {s("previousLabel")}
+            </Pager.Previous>
+          )}
+          {s("nextLabel") && (
+            <Pager.Next href={s("nextHref") || undefined}>
+              {s("nextLabel")}
+            </Pager.Next>
+          )}
+        </Pager>
       );
       break;
     case "action-row":
       node = (
         <ActionRow>
           <Button size={s("size") as "md" | "sm"} disabled={b("disabled")}>
-            {s("children")}
+            <Button.Label>{s("children")}</Button.Label>
           </Button>
           <ButtonGroup aria-label="切换项目">
-            <IconButton
+            <Button
               size={s("size") as "md" | "sm"}
-              icon="chevron-left"
               aria-label="上一项"
-            />
-            <IconButton
+              shape="square"
+            >
+              <Button.Icon>
+                <Icon name={"chevron-left"} />
+              </Button.Icon>
+            </Button>
+            <Button
               size={s("size") as "md" | "sm"}
-              icon="chevron-right"
               aria-label="下一项"
               disabled
-            />
+              shape="square"
+            >
+              <Button.Icon>
+                <Icon name={"chevron-right"} />
+              </Button.Icon>
+            </Button>
           </ButtonGroup>
         </ActionRow>
       );
@@ -589,7 +782,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           href={s("href")}
         >
           {s("description") && (
-            <NavigationCard.Description>{s("description")}</NavigationCard.Description>
+            <NavigationCard.Description>
+              {s("description")}
+            </NavigationCard.Description>
           )}
           <NavigationCard.Title>{s("title")}</NavigationCard.Title>
         </NavigationCard>
@@ -597,20 +792,34 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "showcase":
       node = (
-        <ShowcaseCard href={s("href")}><ShowcaseCard.Title>{s("title")}</ShowcaseCard.Title><ShowcaseCard.Description>{s("description")}</ShowcaseCard.Description><ShowcaseCard.Media>
-          <span
-            style={{
-              whiteSpace: "pre-wrap",
-              fontSize: 24,
-              lineHeight: 1.6,
-              padding: 24,
-            }}
-          >
-            {s("children")}
-          </span>
-        </ShowcaseCard.Media>{((link) => link && <ShowcaseCard.ExternalLink href={link.href}>{link.label}</ShowcaseCard.ExternalLink>)(s("externalLabel")
+        <ShowcaseCard href={s("href")}>
+          <ShowcaseCard.Title>{s("title")}</ShowcaseCard.Title>
+          <ShowcaseCard.Description>
+            {s("description")}
+          </ShowcaseCard.Description>
+          <ShowcaseCard.Media>
+            <span
+              style={{
+                whiteSpace: "pre-wrap",
+                fontSize: 24,
+                lineHeight: 1.6,
+                padding: 24,
+              }}
+            >
+              {s("children")}
+            </span>
+          </ShowcaseCard.Media>
+          {((link) =>
+            link && (
+              <ShowcaseCard.ExternalLink href={link.href}>
+                {link.label}
+              </ShowcaseCard.ExternalLink>
+            ))(
+            s("externalLabel")
               ? { label: s("externalLabel"), href: s("externalHref") }
-              : undefined)}</ShowcaseCard>
+              : undefined,
+          )}
+        </ShowcaseCard>
       );
       break;
     case "links":
@@ -656,7 +865,9 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "layout":
       node = (
         <Layout className="example-row" aria-label={s("aria-label")}>
-          <Button>{s("children")}</Button>
+          <Button>
+            <Button.Label>{s("children")}</Button.Label>
+          </Button>
         </Layout>
       );
       break;
@@ -682,7 +893,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       );
       break;
   }
-  const code = exampleCode(entry, args);
+  const code = mode === "custom" ? treeCode(tree) : exampleCode(entry, args);
   return (
     <>
       <section aria-label="组件展示" className="component-practice">
@@ -719,9 +930,12 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
             <Button
               aria-expanded={apiOpen}
               aria-controls={apiId}
-              onClick={() => setApiOpen((open) => !open)}
+              onClick={() => {
+                setApiOpen((open) => !open);
+                setConfigurationRevision((revision) => revision + 1);
+              }}
             >
-              {apiOpen ? "收起 API" : "展开 API"}
+              <Button.Label>{apiOpen ? "收起 API" : "展开 API"}</Button.Label>
             </Button>
           </div>
           <Surface
@@ -734,31 +948,53 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
               aria-label="组件预览"
             >
               <div className={`single-example single-example--${entry.id}`}>
-                {node}
+                {mode === "custom" ? (
+                  <TreePreview root={tree} onChange={setTree} key={tree.id} />
+                ) : (
+                  node
+                )}
               </div>
             </div>
           </Surface>
-          <ApiPanel
+          <CustomConfiguration
+            key={configurationRevision}
             id={apiId}
             hidden={!apiOpen}
-            entry={entry}
-            fields={fields}
-            args={args}
-            patch={patch}
-            selectOptions={(field) =>
-              ["segments", "tabs", "select"].includes(entry.id) &&
-              field.key === "value"
-                ? choices("entries")
-                : (field.options?.map((value) => ({
-                    value,
-                    label: value,
-                  })) ?? null)
+            root={tree}
+            onChange={setTree}
+            mode={mode}
+            onModeChange={(next) => {
+              setConfigurationRevision((revision) => revision + 1);
+              if (next === "custom") setTree(treeFromExample(entry, args));
+              else {
+                setArgs(presetArgs(entry, preset));
+                setFiles([]);
+              }
+              setMode(next);
+            }}
+            preset={preset}
+            presets={
+              entry.id === "buttons"
+                ? [
+                    { value: "button", label: "按钮" },
+                    { value: "copy", label: "复制按钮" },
+                    { value: "share", label: "分享按钮" },
+                  ]
+                : [{ value: "button", label: entry.title }]
             }
-            fieldDisabled={(key) =>
-              entry.id === "confirm-dialog" && key === "open" && b("busy")
-            }
+            onPresetChange={(next) => {
+              setPreset(next);
+              setConfigurationRevision((revision) => revision + 1);
+              const initial = presetArgs(entry, next);
+              setArgs(initial);
+              setTree(treeFromExample(entry, initial));
+              setFiles([]);
+            }}
             onReset={() => {
-              setArgs(exampleArgs(entry));
+              setConfigurationRevision((revision) => revision + 1);
+              const initial = presetArgs(entry, preset);
+              setArgs(initial);
+              setTree(treeFromExample(entry, initial));
               setFiles([]);
             }}
           />
@@ -767,7 +1003,12 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       <Disclosure className="usage-code">
         <Disclosure.Trigger>用法</Disclosure.Trigger>
         <Disclosure.Actions>
-          <CopyButton text={code} emphasis="quiet"><CopyButton.Label>复制</CopyButton.Label><CopyButton.Feedback state="success">已复制</CopyButton.Feedback><CopyButton.Feedback state="pending">正在复制</CopyButton.Feedback><CopyButton.Feedback state="error">复制失败</CopyButton.Feedback></CopyButton>
+          <CopyButton text={code} emphasis="quiet">
+            <CopyButton.Label>复制</CopyButton.Label>
+            <CopyButton.Feedback state="success">已复制</CopyButton.Feedback>
+            <CopyButton.Feedback state="pending">正在复制</CopyButton.Feedback>
+            <CopyButton.Feedback state="error">复制失败</CopyButton.Feedback>
+          </CopyButton>
         </Disclosure.Actions>
         <Disclosure.Body>
           <pre

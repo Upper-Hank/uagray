@@ -29,9 +29,7 @@ function useNamedControl(name: string, children: ReactNode, labelled: boolean) {
   const missing = !hasContent(children) && !labelled;
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || !missing) return;
-    console.error(
-      `[uagray] ${name} 没有可见 Label 时，控件必须有可访问名称`,
-    );
+    console.error(`[uagray] ${name} 没有可见 Label 时，控件必须有可访问名称`);
   }, [labelled, missing, name]);
 }
 import {
@@ -295,11 +293,12 @@ function SegmentedControlRoot({
   useLayoutEffect(() => {
     if (value !== undefined || defaultValue !== undefined) return;
     const buttons = [
-      ...(root.current?.querySelectorAll<HTMLButtonElement>(
-        '[role="radio"]',
-      ) ?? []),
+      ...(root.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]') ??
+        []),
     ];
-    if (buttons.some((button) => button.getAttribute("aria-checked") === "true"))
+    if (
+      buttons.some((button) => button.getAttribute("aria-checked") === "true")
+    )
       return;
     const first = buttons.find((button) => button.disabled === false);
     if (first?.dataset.uiValue) setUncontrolled(first.dataset.uiValue);
@@ -334,46 +333,39 @@ function SegmentedControlRoot({
         : event.key === "ArrowLeft" || event.key === "ArrowUp"
           ? -1
           : 0;
-    if (
-      direction === 0 &&
-      event.key !== "Home" &&
-      event.key !== "End"
-    )
-      return;
+    if (direction === 0 && event.key !== "Home" && event.key !== "End") return;
     event.preventDefault();
     const nextIndex =
       event.key === "Home"
         ? indexes[0]
         : event.key === "End"
           ? indexes.at(-1)!
-          : indexes[
-              (position + direction + indexes.length) % indexes.length
-            ];
+          : indexes[(position + direction + indexes.length) % indexes.length];
     const next = buttons[nextIndex];
     if (next.dataset.uiValue) select(next.dataset.uiValue);
     next.focus();
   };
   return (
     <CompositionRoot value={composition.value}>
-    <SegmentedContext.Provider value={{ value: selected, select }}>
-      <motion.div
-        {...props}
-        layout={reduced ? false : true}
-        transition={transition}
-        style={{ borderRadius: "var(--ui-selection-radius)", ...style }}
-        className={cx("ui-segments ui-selection-track", className)}
-        role="radiogroup"
-        aria-label={name}
-        ref={(node) => {
-          root.current = node;
-          assignRef(ref, node);
-        }}
-        onKeyDown={compose(onKeyDown, handleKeyDown)}
-      >
-        <SelectionIndicator bounds={bounds} />
-        {children}
-      </motion.div>
-    </SegmentedContext.Provider>
+      <SegmentedContext.Provider value={{ value: selected, select }}>
+        <motion.div
+          {...props}
+          layout={reduced ? false : true}
+          transition={transition}
+          style={{ borderRadius: "var(--ui-selection-radius)", ...style }}
+          className={cx("ui-segments ui-selection-track", className)}
+          role="radiogroup"
+          aria-label={name}
+          ref={(node) => {
+            root.current = node;
+            assignRef(ref, node);
+          }}
+          onKeyDown={compose(onKeyDown, handleKeyDown)}
+        >
+          <SelectionIndicator bounds={bounds} />
+          {children}
+        </motion.div>
+      </SegmentedContext.Provider>
     </CompositionRoot>
   );
 }
@@ -452,7 +444,8 @@ function TabsRoot({
       ...(root.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ??
         []),
     ];
-    if (tabs.some((tab) => tab.getAttribute("aria-selected") === "true")) return;
+    if (tabs.some((tab) => tab.getAttribute("aria-selected") === "true"))
+      return;
     const first = tabs.find((tab) => tab.disabled === false);
     if (first?.dataset.uiValue) setUncontrolled(first.dataset.uiValue);
   }, [children, defaultValue, selected, value]);
@@ -485,26 +478,29 @@ function TabsRoot({
   });
   return (
     <CompositionRoot value={composition.value}>
-    <TabsContext.Provider
-      value={{ value: selected, name, select, tabId, panelId }}
-    >
-      <div
-        {...props}
-        ref={(node) => {
-          root.current = node;
-          assignRef(ref, node);
-        }}
-        className={cx("ui-tabs", className)}
-        style={style}
+      <TabsContext.Provider
+        value={{ value: selected, name, select, tabId, panelId }}
       >
-        {children}
-      </div>
-    </TabsContext.Provider>
+        <div
+          {...props}
+          ref={(node) => {
+            root.current = node;
+            assignRef(ref, node);
+          }}
+          className={cx("ui-tabs", className)}
+          style={style}
+        >
+          {children}
+        </div>
+      </TabsContext.Provider>
     </CompositionRoot>
   );
 }
 
-export type TabsListProps = Omit<ComponentPropsWithRef<"div">, keyof MotionProps> & {
+export type TabsListProps = Omit<
+  ComponentPropsWithRef<"div">,
+  keyof MotionProps
+> & {
   children: ReactNode;
 };
 function TabsList({ children, className, ...props }: TabsListProps) {
@@ -548,26 +544,15 @@ function TabsList({ children, className, ...props }: TabsListProps) {
         : null;
     const position = target ? tabs.indexOf(target) : -1;
     const direction =
-      event.key === "ArrowRight"
-        ? 1
-        : event.key === "ArrowLeft"
-          ? -1
-          : 0;
-    if (
-      direction === 0 &&
-      event.key !== "Home" &&
-      event.key !== "End"
-    )
-      return;
+      event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (direction === 0 && event.key !== "Home" && event.key !== "End") return;
     event.preventDefault();
     const nextIndex =
       event.key === "Home"
         ? indexes[0]
         : event.key === "End"
           ? indexes.at(-1)!
-          : indexes[
-              (position + direction + indexes.length) % indexes.length
-            ];
+          : indexes[(position + direction + indexes.length) % indexes.length];
     const next = tabs[nextIndex];
     if (next.dataset.uiValue) context.select(next.dataset.uiValue);
     next.focus();
@@ -676,28 +661,124 @@ export const Tabs = Object.assign(TabsRoot, {
   Content: TabsContent,
 });
 
-const SelectionContext = createContext<{ count: number; total?: number; busy: boolean } | null>(null);
+const SelectionContext = createContext<{
+  count: number;
+  total?: number;
+  busy: boolean;
+} | null>(null);
 const selectionRules: readonly SlotRule[] = [
-  { name: "count", min: 0, max: 1 }, { name: "description", min: 0, max: 1 }, { name: "actions", min: 0, max: 1 },
-  { name: "select-all", min: 0, max: 1 }, { name: "clear", min: 0, max: 1 }, { name: "done", min: 0, max: 1 },
+  { name: "count", min: 0, max: 1 },
+  { name: "description", min: 0, max: 1 },
+  { name: "actions", min: 0, max: 1 },
+  { name: "select-all", min: 0, max: 1 },
+  { name: "clear", min: 0, max: 1 },
+  { name: "done", min: 0, max: 1 },
 ];
-function SelectionCount({ children }: { children?: ReactNode }) { useSlot("SelectionBar", "count"); const context = useContext(SelectionContext); return <span>{children ?? context?.count}</span>; }
-function SelectionDescription({ children }: { children: ReactNode }) { useSlot("SelectionBar", "description", { present: hasContent(children) }); return <span>{children}</span>; }
-function SelectionActions({ children }: { children: ReactNode }) { useSlot("SelectionBar", "actions", { present: hasContent(children) }); return <span className="ui-selection-actions">{children}</span>; }
-function SelectionAction({ role, children, disabled, busy, ...props }: ComponentPropsWithRef<typeof Button> & { role: "select-all" | "clear" | "done" }) {
-  const context = useContext(SelectionContext); useSlot("SelectionBar", role, { present: hasContent(children) });
-  const unavailable = role === "select-all" ? context?.total === 0 : role === "clear" ? context?.count === 0 : false;
-  return <Button size="sm" {...props} disabled={disabled || unavailable || context?.busy} busy={busy}>{children}</Button>;
+function SelectionCount({ children, ...props }: ComponentPropsWithRef<"span">) {
+  useSlot("SelectionBar", "count");
+  const context = useContext(SelectionContext);
+  return <span {...props}>{children ?? context?.count}</span>;
 }
-function SelectionSelectAll(props: ComponentPropsWithRef<typeof Button>) { return <SelectionAction {...props} role="select-all" />; }
-function SelectionClear(props: ComponentPropsWithRef<typeof Button>) { return <SelectionAction {...props} role="clear" />; }
-function SelectionDone(props: ComponentPropsWithRef<typeof Button>) { return <SelectionAction {...props} role="done" />; }
-export function SelectionBar({ count, total, busy = false, children, variant, tone, className, style, "aria-label": ariaLabel = "批量操作", ...props }: Omit<ComponentPropsWithRef<"div">, keyof MotionProps | "children"> & { style?: CSSProperties; count: number; total?: number; busy?: boolean; children: ReactNode; variant?: "contained" | "plain"; /** @deprecated Use variant. */ tone?: "soft" | "plain" }) {
-  const { reduced, transition } = useUiMotion(); const composition = useComposition("SelectionBar", selectionRules);
-  return <CompositionRoot value={composition.value}><SelectionContext.Provider value={{ count, total, busy }}>
-    <motion.div {...props} role="group" aria-label={ariaLabel} aria-busy={busy} className={cx("ui-selection-bar", `ui-selection-bar--${variant ?? (tone === "soft" ? "contained" : "plain")}`, className)}
-      layout={reduced ? false : true} transition={transition} style={{ borderRadius: "var(--ui-radius-card)", ...style }}>{children}</motion.div>
-  </SelectionContext.Provider></CompositionRoot>;
+function SelectionDescription({
+  children,
+  ...props
+}: ComponentPropsWithRef<"span"> & { children: ReactNode }) {
+  useSlot("SelectionBar", "description", { present: hasContent(children) });
+  return hasContent(children) ? <span {...props}>{children}</span> : null;
+}
+function SelectionActions({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"span"> & { children: ReactNode }) {
+  useSlot("SelectionBar", "actions", { present: hasContent(children) });
+  return hasContent(children) ? (
+    <span {...props} className={cx("ui-selection-actions", className)}>
+      {children}
+    </span>
+  ) : null;
+}
+function SelectionAction({
+  actionKind,
+  children,
+  disabled,
+  busy,
+  ...props
+}: ComponentPropsWithRef<typeof Button> & {
+  actionKind: "select-all" | "clear" | "done";
+}) {
+  const context = useContext(SelectionContext);
+  useSlot("SelectionBar", actionKind, { present: hasContent(children) });
+  const unavailable =
+    actionKind === "select-all"
+      ? context?.total === 0
+      : actionKind === "clear"
+        ? context?.count === 0
+        : false;
+  return (
+    <Button
+      size="sm"
+      {...props}
+      disabled={disabled || unavailable || context?.busy}
+      busy={busy}
+    >
+      {children}
+    </Button>
+  );
+}
+function SelectionSelectAll(props: ComponentPropsWithRef<typeof Button>) {
+  return <SelectionAction {...props} actionKind="select-all" />;
+}
+function SelectionClear(props: ComponentPropsWithRef<typeof Button>) {
+  return <SelectionAction {...props} actionKind="clear" />;
+}
+function SelectionDone(props: ComponentPropsWithRef<typeof Button>) {
+  return <SelectionAction {...props} actionKind="done" />;
+}
+export function SelectionBar({
+  count,
+  total,
+  busy = false,
+  children,
+  variant,
+  tone,
+  className,
+  style,
+  "aria-label": ariaLabel = "批量操作",
+  ...props
+}: Omit<ComponentPropsWithRef<"div">, keyof MotionProps | "children"> & {
+  style?: CSSProperties;
+  count: number;
+  total?: number;
+  busy?: boolean;
+  children: ReactNode;
+  variant?: "contained" | "plain";
+  /** @deprecated Use variant. */ tone?: "soft" | "plain";
+}) {
+  const { reduced, transition } = useUiMotion();
+  const composition = useComposition("SelectionBar", selectionRules);
+  return (
+    <CompositionRoot value={composition.value}>
+      <SelectionContext.Provider value={{ count, total, busy }}>
+        <motion.div
+          {...props}
+          role="group"
+          aria-label={ariaLabel}
+          aria-busy={busy}
+          className={cx(
+            "ui-selection-bar",
+            `ui-selection-bar--${variant ?? (tone === "soft" ? "contained" : "plain")}`,
+            className,
+          )}
+          layout={reduced ? false : true}
+          transition={transition}
+          style={{ borderRadius: "var(--ui-radius-card)", ...style }}
+        >
+          {children}
+        </motion.div>
+      </SelectionContext.Provider>
+    </CompositionRoot>
+  );
 }
 SelectionBar.Count = SelectionCount;
 SelectionBar.Description = SelectionDescription;

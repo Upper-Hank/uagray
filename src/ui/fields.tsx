@@ -448,6 +448,12 @@ function SelectRoot({
   ...props
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement>();
+  useImperativeHandle(ref, () => trigger.current!);
+  useLayoutEffect(() => {
+    setPortalContainer(trigger.current?.closest("dialog") ?? undefined);
+  }, []);
   const { reduced, enter, exit } = useUiMotion();
   const { required: fieldRequired, ...attrs } = useFieldAttributes({
     ...props,
@@ -473,7 +479,7 @@ function SelectRoot({
       <SelectPrimitive.Trigger
         {...props}
         {...attrs}
-        ref={ref}
+        ref={trigger}
         className={cx("ui-select-trigger ui-input", className)}
         aria-required={fieldRequired || undefined}
       >
@@ -482,7 +488,7 @@ function SelectRoot({
           <Icon name="chevron-down" size={14} />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
-      <SelectPrimitive.Portal>
+      <SelectPrimitive.Portal container={portalContainer}>
         <SelectPrimitive.Content
           asChild
           position="popper"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { IconButton } from "./ui";
+import { Icon, Button } from "./ui";
 type Theme = "light" | "dark";
 const preferenceKey = "uagray-theme";
 function storedTheme(): Theme | null {
@@ -46,11 +46,15 @@ export function ThemeToggle() {
     setTheme(next);
   }
   return (
-    <IconButton
+    <Button
       aria-label={theme === "dark" ? "切换为浅色" : "切换为暗色"}
-      icon={theme === "dark" ? "sun" : "moon"}
       onClick={toggle}
       aria-pressed={theme === "dark"}
-    />
+      shape="square"
+    >
+      <Button.Icon>
+        <Icon name={theme === "dark" ? "sun" : "moon"} />
+      </Button.Icon>
+    </Button>
   );
 }

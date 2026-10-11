@@ -64,10 +64,7 @@ export function useComposition(
   validateRef.current = validate;
   const register = useCallback((entry: RegisterEntry) => {
     const key = nextKey++;
-    registrationsRef.current = [
-      ...registrationsRef.current,
-      { ...entry, key },
-    ];
+    registrationsRef.current = [...registrationsRef.current, { ...entry, key }];
     setRegistrations(registrationsRef.current);
     return () => {
       registrationsRef.current = registrationsRef.current.filter(
@@ -153,7 +150,17 @@ export function useSlot(
   const nearest = useContext(CompositionContext);
   const ownerKey = typeof owner === "string" ? owner : owner.join("\0");
   let context = nearest;
-  while (context && !ownerKey.split("\0").includes(context.owner)) context = context.parent ?? null;
+  const owners = ownerKey.split("\0");
+  const canCross = (outer: string, inner: string) =>
+    (outer === "CopyButton" && inner === "Button") ||
+    (outer === "ConfirmDialog" && inner === "Dialog");
+  while (context && !owners.includes(context.owner)) {
+    if (!owners.some((outer) => canCross(outer, context!.owner))) {
+      context = null;
+      break;
+    }
+    context = context.parent ?? null;
+  }
   const present = options.present ?? true;
   const id = options.id;
   const active =

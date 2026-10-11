@@ -12,8 +12,8 @@ import {
 } from "react";
 import { motion, useAnimationControls, type MotionProps } from "framer-motion";
 import { motionDistance, useUiMotion } from "./motion";
-import { Button, IconButton } from "./components";
-import { Icon } from "./icons";
+import { Button } from "./components";
+import { Icon, IconSizeContext } from "./icons";
 import { assignRef, compose, cx, hasContent } from "./host";
 import {
   CompositionRegion,
@@ -247,8 +247,7 @@ function DialogFrame({
         ["title", "description", "body", "footer"].includes(item.slot) &&
         item.present,
     );
-    if (!content)
-      messages.push(`[uagray] ${owner} 至少需要一个有内容的区域`);
+    if (!content) messages.push(`[uagray] ${owner} 至少需要一个有内容的区域`);
     const title = registrations.some(
       (item) => item.slot === "title" && item.present,
     );
@@ -273,7 +272,8 @@ function DialogFrame({
       if (node.open === false) {
         controls.set({
           opacity: reduced ? 1 : 0,
-          x: variant === "drawer" && reduced === false ? motionDistance.edge : 0,
+          x:
+            variant === "drawer" && reduced === false ? motionDistance.edge : 0,
           y:
             variant === "dialog" && reduced === false
               ? motionDistance.floating
@@ -288,9 +288,7 @@ function DialogFrame({
         .start({
           opacity: 0,
           x:
-            variant === "drawer" && reduced === false
-              ? motionDistance.edge
-              : 0,
+            variant === "drawer" && reduced === false ? motionDistance.edge : 0,
           y:
             variant === "dialog" && reduced === false
               ? motionDistance.floating
@@ -307,58 +305,64 @@ function DialogFrame({
   }, [open, controls, reduced, enter, exit, variant]);
   return (
     <CompositionRoot value={composition.value}>
-    <DialogContext.Provider
-      value={{
-        baseId,
-        open,
-        dismissible,
-        closeLabel,
-        onOpenChange,
-      }}
-    >
-      <motion.dialog
-        {...props}
-        className={cx(`ui-dialog ui-dialog--${variant}`, className)}
-        style={style}
-        ref={(node) => {
-          ref.current = node;
-          assignRef(externalRef, node);
+      <DialogContext.Provider
+        value={{
+          baseId,
+          open,
+          dismissible,
+          closeLabel,
+          onOpenChange,
         }}
-        animate={controls}
-        tabIndex={props.tabIndex ?? -1}
-        data-state={open ? "open" : "closed"}
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        onCancel={compose(onCancel, (event) => {
-          if (event.defaultPrevented) return;
-          event.preventDefault();
-          if (open && dismissible) onOpenChange(false);
-        })}
-        onClose={compose(onClose, () => {
-          if (open) onOpenChange(false);
-        })}
-        onClick={compose(onClick, (event) => {
-          if (event.defaultPrevented) return;
-          if (open && event.target === event.currentTarget && dismissible)
-            onOpenChange(false);
-        })}
       >
-        <div
-          className="ui-dialog-inner"
-          inert={open === false ? true : undefined}
-          aria-hidden={open === false ? true : undefined}
+        <motion.dialog
+          {...props}
+          className={cx(`ui-dialog ui-dialog--${variant}`, className)}
+          style={style}
+          ref={(node) => {
+            ref.current = node;
+            assignRef(externalRef, node);
+          }}
+          animate={controls}
+          tabIndex={props.tabIndex ?? -1}
+          data-state={open ? "open" : "closed"}
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          onCancel={compose(onCancel, (event) => {
+            if (event.defaultPrevented) return;
+            event.preventDefault();
+            if (open && dismissible) onOpenChange(false);
+          })}
+          onClose={compose(onClose, () => {
+            if (open) onOpenChange(false);
+          })}
+          onClick={compose(onClick, (event) => {
+            if (event.defaultPrevented) return;
+            if (open && event.target === event.currentTarget && dismissible)
+              onOpenChange(false);
+          })}
         >
-          <IconButton
-            className="ui-dialog-close"
-            aria-label={closeLabel}
-            icon="close"
-            onClick={() => onOpenChange(false)}
-            disabled={dismissible === false}
-          />
-          {children}
-        </div>
-      </motion.dialog>
-    </DialogContext.Provider>
+          <div
+            className="ui-dialog-inner"
+            inert={open === false ? true : undefined}
+            aria-hidden={open === false ? true : undefined}
+          >
+            <IconSizeContext.Provider value={null}>
+              <Button
+                className="ui-dialog-close"
+                aria-label={closeLabel}
+                onClick={() => onOpenChange(false)}
+                disabled={dismissible === false}
+                shape="square"
+              >
+                <Button.Icon>
+                  <Icon name={"close"} />
+                </Button.Icon>
+              </Button>
+              {children}
+            </IconSizeContext.Provider>
+          </div>
+        </motion.dialog>
+      </DialogContext.Provider>
     </CompositionRoot>
   );
 }
@@ -459,21 +463,96 @@ Drawer.Description = DialogDescription;
 Drawer.Body = DialogBody;
 Drawer.Footer = DialogFooter;
 
-const ConfirmContext = createContext<{ busy: boolean; tone: "neutral" | "danger"; close: () => void; confirm: () => void } | null>(null);
-const confirmRules: readonly SlotRule[] = [{ name: "cancel", min: 0, max: 1 }, { name: "confirm", min: 0, max: 1 }];
-function ConfirmCancel({ children, onClick, disabled, ...props }: ComponentPropsWithRef<typeof Button>) {
-  const context = useContext(ConfirmContext); useSlot("ConfirmDialog", "cancel", { present: hasContent(children) });
-  return <Button {...props} disabled={disabled || context?.busy} onClick={compose(onClick, event => { if (!event.defaultPrevented) context?.close(); })}>{children}</Button>;
+const ConfirmContext = createContext<{
+  busy: boolean;
+  tone: "neutral" | "danger";
+  close: () => void;
+  confirm: () => void;
+} | null>(null);
+const confirmRules: readonly SlotRule[] = [
+  { name: "cancel", min: 0, max: 1 },
+  { name: "confirm", min: 0, max: 1 },
+];
+function ConfirmCancel({
+  children,
+  onClick,
+  disabled,
+  ...props
+}: ComponentPropsWithRef<typeof Button>) {
+  const context = useContext(ConfirmContext);
+  useSlot("ConfirmDialog", "cancel", { present: hasContent(children) });
+  return (
+    <Button
+      {...props}
+      disabled={disabled || context?.busy}
+      onClick={compose(onClick, (event) => {
+        if (!event.defaultPrevented) context?.close();
+      })}
+    >
+      {children}
+    </Button>
+  );
 }
-function ConfirmAction({ children, onClick, disabled, ...props }: ComponentPropsWithRef<typeof Button>) {
-  const context = useContext(ConfirmContext); useSlot("ConfirmDialog", "confirm", { present: hasContent(children) });
-  return <Button emphasis="strong" tone={context?.tone} {...props} busy={context?.busy} disabled={disabled} onClick={compose(onClick, event => { if (!event.defaultPrevented) context?.confirm(); })}>{children}</Button>;
+function ConfirmAction({
+  children,
+  onClick,
+  disabled,
+  ...props
+}: ComponentPropsWithRef<typeof Button>) {
+  const context = useContext(ConfirmContext);
+  useSlot("ConfirmDialog", "confirm", { present: hasContent(children) });
+  return (
+    <Button
+      emphasis="strong"
+      tone={context?.tone}
+      {...props}
+      busy={context?.busy}
+      disabled={disabled}
+      onClick={compose(onClick, (event) => {
+        if (!event.defaultPrevented) context?.confirm();
+      })}
+    >
+      {children}
+    </Button>
+  );
 }
-export function ConfirmDialog({ open, onOpenChange, onConfirm, busy = false, tone, danger, children, ...props }: Omit<DialogProps, "dismissible" | "variant"> & { onConfirm: () => void; busy?: boolean; tone?: "neutral" | "danger"; /** @deprecated Use tone. */ danger?: boolean }) {
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  busy = false,
+  tone,
+  danger,
+  children,
+  ...props
+}: Omit<DialogProps, "dismissible" | "variant"> & {
+  onConfirm: () => void;
+  busy?: boolean;
+  tone?: "neutral" | "danger";
+  /** @deprecated Use tone. */ danger?: boolean;
+}) {
   const composition = useComposition("ConfirmDialog", open ? confirmRules : []);
-  return <CompositionRoot value={composition.value}><ConfirmContext.Provider value={{ busy, tone: tone ?? (danger ? "danger" : "neutral"), close: () => onOpenChange(false), confirm: onConfirm }}>
-    <Dialog {...props} open={open} onOpenChange={onOpenChange} dismissible={!busy}>{children}</Dialog>
-  </ConfirmContext.Provider></CompositionRoot>;
+  return (
+    <CompositionRoot value={composition.value}>
+      <ConfirmContext.Provider
+        value={{
+          busy,
+          tone: tone ?? (danger ? "danger" : "neutral"),
+          close: () => onOpenChange(false),
+          confirm: onConfirm,
+        }}
+      >
+        <Dialog
+          {...props}
+          open={open}
+          onOpenChange={onOpenChange}
+          dismissible={!busy}
+        >
+          {children}
+        </Dialog>
+      </ConfirmContext.Provider>
+    </CompositionRoot>
+  );
 }
 ConfirmDialog.Header = DialogHeader;
 ConfirmDialog.Title = DialogTitle;

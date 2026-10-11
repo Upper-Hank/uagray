@@ -1,5 +1,6 @@
 export * from "./components";
-export * from "./icons";
+export { Icon, iconNames, DEFAULT_ICON_WEIGHT } from "./icons";
+export type { IconName } from "./icons";
 export { Layout } from "./motion";
 export * from "./fields";
 export * from "./selection";

@@ -1123,3 +1123,90 @@
   flex-wrap: wrap;
   gap: var(--ui-gap-control);
 }
+
+.configuration-mode {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-space-4);
+}
+.custom-configuration,
+.content-node-editor,
+.content-node-list,
+.content-nodes {
+  display: grid;
+  gap: var(--ui-space-4);
+  min-width: 0;
+}
+.custom-configuration {
+  margin-top: var(--ui-space-6);
+}
+.content-tree-heading,
+.content-tree-actions,
+.content-node-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-control);
+  min-width: 0;
+}
+.content-tree-heading {
+  justify-content: space-between;
+  margin-top: var(--ui-space-4);
+}
+.content-tree-heading h3 {
+  margin: 0;
+  font-size: var(--ui-font-size-control);
+  font-weight: var(--ui-font-weight-medium);
+}
+.content-node-row {
+  position: relative;
+  flex-wrap: wrap;
+}
+.content-node-row[data-dragging] {
+  z-index: 1;
+}
+.content-node-handle {
+  flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.content-node-handle:active {
+  cursor: grabbing;
+}
+.content-node-delete {
+  flex-shrink: 0;
+}
+.content-node-trigger {
+  flex: 1;
+  min-width: 0;
+}
+.content-node-trigger .ui-button-content {
+  justify-content: flex-start;
+  min-width: 0;
+}
+.content-node-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-muted);
+}
+.content-node-editor > .ui-button {
+  justify-self: start;
+}
+.content-node-editor .api-param-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.content-node-editor .api-param {
+  max-width: none;
+}
+.content-editor-error {
+  margin: 0;
+  color: var(--ui-danger);
+  font-size: var(--ui-font-size-control);
+}
+
+.optional-value-control {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-control);
+}

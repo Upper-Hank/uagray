@@ -1,27 +1,44 @@
 import { expect, it } from "vitest";
 import ts from "typescript";
 import { componentEntries, exampleArgs } from "./playground-catalog";
+import { treeFromExample, newNode } from "./playground-tree";
+import { treeCode } from "./playground-tree-view";
 import { exampleCode } from "./playground-code";
 
 it("typechecks generated examples against the public components", () => {
-  const root = decodeURIComponent(
-    new URL("../", import.meta.url).pathname,
-  );
+  const root = decodeURIComponent(new URL("../", import.meta.url).pathname);
   const examples = componentEntries.map((entry) => ({
     id: entry.id,
     code: exampleCode(entry, exampleArgs(entry)),
   }));
+  examples.push(
+    ...componentEntries.map((entry) => ({
+      id: `custom-${entry.id}`,
+      code: treeCode(treeFromExample(entry)),
+    })),
+  );
   const button = componentEntries.find((entry) => entry.id === "buttons")!;
   for (const action of ["copy", "share"])
     examples.push({
       id: action,
       code: exampleCode(button, { ...exampleArgs(button), action }),
     });
+  for (const action of ["copy", "share"])
+    examples.push({
+      id: `custom-${action}`,
+      code: treeCode(
+        treeFromExample(button, { ...exampleArgs(button), action }),
+      ),
+    });
+  const nested = treeFromExample(
+    componentEntries.find((entry) => entry.id === "dialog")!,
+  );
+  nested.children
+    .find((node) => node.type === "Dialog.Body")!
+    .children.push(newNode("Input"), newNode("ShareButton"), newNode("Field"));
+  examples.push({ id: "nested-dialog", code: treeCode(nested) });
   const files = new Map(
-    examples.map(({ id, code }) => [
-      `${root}.generated-api/${id}.tsx`,
-      code,
-    ]),
+    examples.map(({ id, code }) => [`${root}.generated-api/${id}.tsx`, code]),
   );
   const options: ts.CompilerOptions = {
     strict: true,

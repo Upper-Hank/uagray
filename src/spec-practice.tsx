@@ -71,14 +71,14 @@ export function SpecPractice({ id }: { id: string }) {
         aria-pressed={layoutFormat === "portrait"}
         onClick={() => setLayoutFormat("portrait")}
       >
-        竖版
+        <Button.Label>竖版</Button.Label>
       </Button>
       <Button
         emphasis="quiet"
         aria-pressed={layoutFormat === "landscape"}
         onClick={() => setLayoutFormat("landscape")}
       >
-        横版
+        <Button.Label>横版</Button.Label>
       </Button>
     </ButtonGroup>
   );
@@ -91,7 +91,7 @@ export function SpecPractice({ id }: { id: string }) {
       {orientation}
       <span className="spec-divider" aria-hidden="true" />
       <Button emphasis="quiet" onClick={() => setLayoutFormat("portrait")}>
-        重置
+        <Button.Label>重置</Button.Label>
       </Button>
     </Surface>
   );
@@ -107,14 +107,29 @@ export function SpecPractice({ id }: { id: string }) {
           demo={
             <div className="spec-demo-stack">
               <ButtonGroup aria-label="操作反馈">
-                <Button onClick={() => setItemCount((current) => current + 1)}>{((icon: Parameters<typeof Icon>[0]["name"] | undefined) => icon === undefined ? null : <Button.Icon><Icon name={icon} /></Button.Icon>)("plus")}<Button.Label>
-                  添加
-                </Button.Label></Button>
-                <Button disabled={itemCount === 0} onClick={() =>
+                <Button onClick={() => setItemCount((current) => current + 1)}>
+                  {((icon: Parameters<typeof Icon>[0]["name"] | undefined) =>
+                    icon === undefined ? null : (
+                      <Button.Icon>
+                        <Icon name={icon} />
+                      </Button.Icon>
+                    ))("plus")}
+                  <Button.Label>添加</Button.Label>
+                </Button>
+                <Button
+                  disabled={itemCount === 0}
+                  onClick={() =>
                     setItemCount((current) => Math.max(0, current - 1))
-                  }>{((icon: Parameters<typeof Icon>[0]["name"] | undefined) => icon === undefined ? null : <Button.Icon><Icon name={icon} /></Button.Icon>)("close")}<Button.Label>
-                  移除
-                </Button.Label></Button>
+                  }
+                >
+                  {((icon: Parameters<typeof Icon>[0]["name"] | undefined) =>
+                    icon === undefined ? null : (
+                      <Button.Icon>
+                        <Icon name={icon} />
+                      </Button.Icon>
+                    ))("close")}
+                  <Button.Label>移除</Button.Label>
+                </Button>
               </ButtonGroup>
               <div
                 className="spec-feedback-items"
@@ -138,10 +153,29 @@ export function SpecPractice({ id }: { id: string }) {
         <Rule
           title="选择是持续状态"
           demo={
-            <SegmentedControl aria-label="示例分类" value={format} onValueChange={setFormat}>{[
-    { value: "portrait", label: "全部", count: 8 },
-    { value: "landscape", label: "收藏", count: 3 },
-].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
+            <SegmentedControl
+              aria-label="示例分类"
+              value={format}
+              onValueChange={setFormat}
+            >
+              {[
+                { value: "portrait", label: "全部", count: 8 },
+                { value: "landscape", label: "收藏", count: 3 },
+              ].map((item) => (
+                <SegmentedControl.Item
+                  key={item.value}
+                  value={item.value}
+                  disabled={(item as { disabled?: boolean }).disabled}
+                >
+                  <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+                  {(item as { count?: number | string }).count != null ? (
+                    <SegmentedControl.Count>
+                      {(item as { count?: number | string }).count}
+                    </SegmentedControl.Count>
+                  ) : null}
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl>
           }
         >
           <p>
@@ -157,12 +191,19 @@ export function SpecPractice({ id }: { id: string }) {
           title="可访问语义与焦点"
           demo={
             <div className="spec-demo-stack">
-              <Checkbox checked={checks.focus ?? false} onChange={(event) => {
-        setChecked("focus", event.target.checked);
-        save("focus", false);
-    }}>接收通知</Checkbox>
+              <Checkbox
+                checked={checks.focus ?? false}
+                onChange={(event) => {
+                  setChecked("focus", event.target.checked);
+                  save("focus", false);
+                }}
+              >
+                接收通知
+              </Checkbox>
               <Button onClick={() => save("focus", true)}>
-                {saved.focus ? "已保存" : "保存设置"}
+                <Button.Label>
+                  {saved.focus ? "已保存" : "保存设置"}
+                </Button.Label>
               </Button>
             </div>
           }
@@ -192,13 +233,19 @@ export function SpecPractice({ id }: { id: string }) {
               treatment="physical"
               className="ui-tool-surface ui-toolbar-row spec-tools spec-tools--slider"
             >
-              <Slider className="ui-toolbar-field" layout="inline" value={value} onValueChange={setValue} formatValue={(n) => `${n}%`}>
+              <Slider
+                className="ui-toolbar-field"
+                layout="inline"
+                value={value}
+                onValueChange={setValue}
+                formatValue={(n) => `${n}%`}
+              >
                 <Slider.Label>缩放</Slider.Label>
                 <Slider.Value />
               </Slider>
               <span className="spec-divider" aria-hidden="true" />
               <Button emphasis="quiet" onClick={() => setValue(50)}>
-                重置
+                <Button.Label>重置</Button.Label>
               </Button>
             </Surface>
           }
@@ -220,10 +267,12 @@ export function SpecPractice({ id }: { id: string }) {
                 aria-label="布局变化示例"
               >
                 <Button onClick={() => setExpanded(!expanded)}>
-                  {expanded ? "收起完整项目名称" : "展开名称"}
+                  <Button.Label>
+                    {expanded ? "收起完整项目名称" : "展开名称"}
+                  </Button.Label>
                 </Button>
                 <Button emphasis="quiet" onClick={() => setExpanded(false)}>
-                  重置
+                  <Button.Label>重置</Button.Label>
                 </Button>
               </Layout>
             </Surface>
@@ -272,12 +321,18 @@ export function SpecPractice({ id }: { id: string }) {
     );
 
   const editableName = (key: string) => (
-    <Field><Field.Label>空间名称</Field.Label><Field.Control>
-      <Input value={names[key] ?? "工作空间"} onChange={(event) => {
-        setName(key, event.target.value);
-        save(key, false);
-    }}/>
-    </Field.Control></Field>
+    <Field>
+      <Field.Label>空间名称</Field.Label>
+      <Field.Control>
+        <Input
+          value={names[key] ?? "工作空间"}
+          onChange={(event) => {
+            setName(key, event.target.value);
+            save(key, false);
+          }}
+        />
+      </Field.Control>
+    </Field>
   );
   return (
     <div className="spec-document">
@@ -438,7 +493,9 @@ export function SpecPractice({ id }: { id: string }) {
                 emphasis="quiet"
                 onClick={() => setEditingProject((current) => !current)}
               >
-                {editingProject ? "完成编辑" : "编辑"}
+                <Button.Label>
+                  {editingProject ? "完成编辑" : "编辑"}
+                </Button.Label>
               </Button>
             </div>
           </Surface>
@@ -455,12 +512,19 @@ export function SpecPractice({ id }: { id: string }) {
         demo={
           <div className="spec-inline-form">
             {editableName("settings")}
-            <Switch checked={checks.settings ?? false} onChange={(event) => {
-        setChecked("settings", event.target.checked);
-        save("settings", false);
-    }}>接收通知</Switch>
+            <Switch
+              checked={checks.settings ?? false}
+              onChange={(event) => {
+                setChecked("settings", event.target.checked);
+                save("settings", false);
+              }}
+            >
+              接收通知
+            </Switch>
             <Button onClick={() => save("settings", true)}>
-              {saved.settings ? "已保存" : "保存设置"}
+              <Button.Label>
+                {saved.settings ? "已保存" : "保存设置"}
+              </Button.Label>
             </Button>
           </div>
         }
@@ -486,10 +550,29 @@ export function SpecPractice({ id }: { id: string }) {
         code="P08"
         title="交互反馈跟随行为语义"
         demo={
-          <SegmentedControl aria-label="项目范围" value={format} onValueChange={setFormat}>{[
-    { value: "portrait", label: "全部", count: 8 },
-    { value: "landscape", label: "收藏", count: 3 },
-].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
+          <SegmentedControl
+            aria-label="项目范围"
+            value={format}
+            onValueChange={setFormat}
+          >
+            {[
+              { value: "portrait", label: "全部", count: 8 },
+              { value: "landscape", label: "收藏", count: 3 },
+            ].map((item) => (
+              <SegmentedControl.Item
+                key={item.value}
+                value={item.value}
+                disabled={(item as { disabled?: boolean }).disabled}
+              >
+                <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+                {(item as { count?: number | string }).count != null ? (
+                  <SegmentedControl.Count>
+                    {(item as { count?: number | string }).count}
+                  </SegmentedControl.Count>
+                ) : null}
+              </SegmentedControl.Item>
+            ))}
+          </SegmentedControl>
         }
       >
         <p>
@@ -509,9 +592,15 @@ export function SpecPractice({ id }: { id: string }) {
             role="group"
             aria-label="操作强调层级"
           >
-            <Button emphasis="strong">提交</Button>
-            <Button>预览</Button>
-            <Button emphasis="quiet">取消</Button>
+            <Button emphasis="strong">
+              <Button.Label>提交</Button.Label>
+            </Button>
+            <Button>
+              <Button.Label>预览</Button.Label>
+            </Button>
+            <Button emphasis="quiet">
+              <Button.Label>取消</Button.Label>
+            </Button>
           </div>
         }
       >
@@ -531,7 +620,9 @@ export function SpecPractice({ id }: { id: string }) {
             {editableName("extension")}
             <ButtonGroup aria-label="编辑操作" variant="plain">
               <Button onClick={() => save("extension", true)}>
-                {saved.extension ? "已保存" : "保存"}
+                <Button.Label>
+                  {saved.extension ? "已保存" : "保存"}
+                </Button.Label>
               </Button>
               <Button
                 emphasis="quiet"
@@ -540,7 +631,7 @@ export function SpecPractice({ id }: { id: string }) {
                   save("extension", false);
                 }}
               >
-                重置
+                <Button.Label>重置</Button.Label>
               </Button>
             </ButtonGroup>
           </Surface>

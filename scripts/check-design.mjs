@@ -498,6 +498,28 @@ export function checkDesign(sources) {
       "预览外圆角 = 内圆角 + padding + border",
     );
   });
+  check(
+    "content-editor-controls",
+    "src/app.css",
+    [".content-node-trigger"],
+    () => {
+      const button = context(components, [".ui-button"]);
+      const node = context("src/app.css", [".content-node-trigger"], button);
+      equal(
+        scalar(node.height, node),
+        scalar(button.height, button),
+        "节点入口保留普通控件外高",
+      );
+      equal(
+        scalar(node["border-radius"], node),
+        scalar(button["border-radius"], button),
+        "节点入口沿用普通控件圆角",
+      );
+      const row = context("src/app.css", [".content-node-row"]);
+      if (row["flex-wrap"] !== "wrap")
+        throw new Error("节点操作需按任务换行，不压缩子控件");
+    },
+  );
   check("toolbar-height", components, [".ui-selection-track"], () => {
     const button = context(components, [".ui-button"]),
       track = context(components, [".ui-selection-track"]);

@@ -74,6 +74,7 @@
   --ui-scrollbar-thumb-hover: var(--ui-gray-400);
   --ui-size-scrollbar: 8px;
   --ui-danger: #b83b3b;
+  --ui-danger-on-fill: var(--ui-danger-hover);
   --ui-danger-hover: #a32f2f;
   --ui-danger-surface: #fbefef;
   --ui-success: #476b51;
@@ -184,6 +185,7 @@
   --ui-action-hover: #d4d4d4;
   --ui-on-action: #171717;
   --ui-danger: #f09c9c;
+  --ui-danger-on-fill: var(--ui-danger);
   --ui-danger-action: #9b3333;
   --ui-danger-hover: #b04343;
   --ui-danger-surface: #382525;

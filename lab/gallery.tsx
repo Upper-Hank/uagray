@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import {
+  Button,
   ActionRow,
   Badge,
   EmptyState,
@@ -7,7 +8,6 @@ import {
   Heading,
   Text,
   Icon,
-  IconButton,
   NavigationCard,
   PageShell,
   Pager,
@@ -163,21 +163,40 @@ export default function GalleryApp() {
       <div className="gallery-header-tools">
         {pieceId === null && (
           <div className="gallery-browse-controls">
-            <SegmentedControl aria-label="作品分类" value={category} onValueChange={setCategory}>{[
-    { value: "all", label: "全部", count: matches.length },
-    {
-        value: "component",
-        label: "组件",
-        count: matches.filter((item) => item.category === "component")
-            .length,
-    },
-    {
-        value: "tool",
-        label: "工具",
-        count: matches.filter((item) => item.category === "tool")
-            .length,
-    },
-].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
+            <SegmentedControl
+              aria-label="作品分类"
+              value={category}
+              onValueChange={setCategory}
+            >
+              {[
+                { value: "all", label: "全部", count: matches.length },
+                {
+                  value: "component",
+                  label: "组件",
+                  count: matches.filter((item) => item.category === "component")
+                    .length,
+                },
+                {
+                  value: "tool",
+                  label: "工具",
+                  count: matches.filter((item) => item.category === "tool")
+                    .length,
+                },
+              ].map((item) => (
+                <SegmentedControl.Item
+                  key={item.value}
+                  value={item.value}
+                  disabled={(item as { disabled?: boolean }).disabled}
+                >
+                  <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+                  {(item as { count?: number | string }).count != null ? (
+                    <SegmentedControl.Count>
+                      {(item as { count?: number | string }).count}
+                    </SegmentedControl.Count>
+                  ) : null}
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl>
             <SearchField
               aria-label="搜索作品"
               placeholder="搜索作品…"
@@ -187,80 +206,179 @@ export default function GalleryApp() {
             />
           </div>
         )}
-        <IconButton
+        <Button
           aria-label={dark ? "切换浅色外观" : "切换深色外观"}
-          icon={dark ? "sun" : "moon"}
           onClick={() => setDark((value) => !value)}
-        />
+          shape="square"
+        >
+          <Button.Icon>
+            <Icon name={dark ? "sun" : "moon"} />
+          </Button.Icon>
+        </Button>
       </div>
     </>
   );
   return (
-    <PageShell className="gallery-shell" mainId="gallery-main">{controls ? <PageShell.Header>{controls}</PageShell.Header> : null}<PageShell.Body>
-      {pieceId === null ? (<>
-          <h1 className="ui-sr-only">组件与小工具</h1>
-          {visible.length ? (<div className="gallery-grid">
-              {visible.map((item) => (<ShowcaseCard key={item.id} href={pieceHref(item.id)} className="gallery-piece" style={{ "--gallery-preview-aspect": item.aspect } as CSSProperties}><ShowcaseCard.Title>{item.title}</ShowcaseCard.Title><ShowcaseCard.Description>{item.summary}</ShowcaseCard.Description><ShowcaseCard.Media>
-                  <PiecePreview piece={item}/>
-                </ShowcaseCard.Media></ShowcaseCard>))}
-            </div>) : (<EmptyState><EmptyState.Title>没有找到作品</EmptyState.Title><EmptyState.Description>换一个关键词，或查看其他分类。</EmptyState.Description></EmptyState>)}
-        </>) : piece ? (<article className="gallery-detail">
-          <Surface className="gallery-stage">
-            <PieceExperience id={piece.id} key={piece.id}/>
-          </Surface>
-          <div className="gallery-detail-heading">
-            <div>
-              <Heading level={1} variant="page">
-                {piece.title}
-              </Heading>
-              <Text>{piece.summary}</Text>
-              <div className="gallery-used">
-                <span>使用</span>
-                {piece.components.map((name) => (<Badge key={name}>{name}</Badge>))}
+    <PageShell className="gallery-shell" mainId="gallery-main">
+      {controls ? <PageShell.Header>{controls}</PageShell.Header> : null}
+      <PageShell.Body>
+        {pieceId === null ? (
+          <>
+            <h1 className="ui-sr-only">组件与小工具</h1>
+            {visible.length ? (
+              <div className="gallery-grid">
+                {visible.map((item) => (
+                  <ShowcaseCard
+                    key={item.id}
+                    href={pieceHref(item.id)}
+                    className="gallery-piece"
+                    style={
+                      {
+                        "--gallery-preview-aspect": item.aspect,
+                      } as CSSProperties
+                    }
+                  >
+                    <ShowcaseCard.Title>{item.title}</ShowcaseCard.Title>
+                    <ShowcaseCard.Description>
+                      {item.summary}
+                    </ShowcaseCard.Description>
+                    <ShowcaseCard.Media>
+                      <PiecePreview piece={item} />
+                    </ShowcaseCard.Media>
+                  </ShowcaseCard>
+                ))}
               </div>
+            ) : (
+              <EmptyState>
+                <EmptyState.Title>没有找到作品</EmptyState.Title>
+                <EmptyState.Description>
+                  换一个关键词，或查看其他分类。
+                </EmptyState.Description>
+              </EmptyState>
+            )}
+          </>
+        ) : piece ? (
+          <article className="gallery-detail">
+            <Surface className="gallery-stage">
+              <PieceExperience id={piece.id} key={piece.id} />
+            </Surface>
+            <div className="gallery-detail-heading">
+              <div>
+                <Heading level={1} variant="page">
+                  {piece.title}
+                </Heading>
+                <Text>{piece.summary}</Text>
+                <div className="gallery-used">
+                  <span>使用</span>
+                  {piece.components.map((name) => (
+                    <Badge key={name}>{name}</Badge>
+                  ))}
+                </div>
+              </div>
+              <ActionRow className="gallery-detail-actions">
+                <ShareButton
+                  url={new URL(pieceHref(piece.id), window.location.href).href}
+                >
+                  <ShareButton.Label>分享</ShareButton.Label>
+                  <ShareButton.Feedback state="success">
+                    已复制
+                  </ShareButton.Feedback>
+                  <ShareButton.Feedback state="pending">
+                    正在复制
+                  </ShareButton.Feedback>
+                  <ShareButton.Feedback state="error">
+                    复制失败
+                  </ShareButton.Feedback>
+                </ShareButton>
+                <Pager aria-label="作品翻页">
+                  <Pager.Previous
+                    href={previous ? pieceHref(previous.id) : undefined}
+                  >
+                    {previous?.title ?? "上一页"}
+                  </Pager.Previous>
+                  <Pager.Next href={next ? pieceHref(next.id) : undefined}>
+                    {next?.title ?? "下一页"}
+                  </Pager.Next>
+                </Pager>
+              </ActionRow>
             </div>
-            <ActionRow className="gallery-detail-actions">
-              <ShareButton url={new URL(pieceHref(piece.id), window.location.href).href}><ShareButton.Label>分享</ShareButton.Label><ShareButton.Feedback state="success">已复制</ShareButton.Feedback><ShareButton.Feedback state="pending">正在复制</ShareButton.Feedback><ShareButton.Feedback state="error">复制失败</ShareButton.Feedback></ShareButton>
-              <Pager aria-label="作品翻页">{((item) => item && <Pager.Previous href={item.href}>{item.title}</Pager.Previous>)(previous
-            ? { title: previous.title, href: pieceHref(previous.id) }
-            : undefined)}{((item) => item && <Pager.Next href={item.href}>{item.title}</Pager.Next>)(next
-            ? { title: next.title, href: pieceHref(next.id) }
-            : undefined)}</Pager>
-            </ActionRow>
-          </div>
-          <section className="gallery-about">
-            <Heading>关于这个作品</Heading>
-            <Text>{piece.about}</Text>
-          </section>
-          <div className="gallery-supporting-previews">
-            {piece.features.map((feature, position) => (<figure key={feature}>
-                <Surface className="gallery-snapshot">
-                  <PiecePreview piece={piece} variation={position}/>
-                </Surface>
-                <figcaption>{feature}</figcaption>
-              </figure>))}
-          </div>
-          <DescriptionList>
-            <div>
-              <dt>设计关注</dt>
-              <dd>{piece.features.join("、")}</dd>
+            <section className="gallery-about">
+              <Heading>关于这个作品</Heading>
+              <Text>{piece.about}</Text>
+            </section>
+            <div className="gallery-supporting-previews">
+              {piece.features.map((feature, position) => (
+                <figure key={feature}>
+                  <Surface className="gallery-snapshot">
+                    <PiecePreview piece={piece} variation={position} />
+                  </Surface>
+                  <figcaption>{feature}</figcaption>
+                </figure>
+              ))}
             </div>
-            <div>
-              <dt>构建方式</dt>
-              <dd>React、Uagray 组件与原生 CSS</dd>
-            </div>
-          </DescriptionList>
-          <nav className="gallery-next-pieces" aria-label="相邻作品">
-            {previous && (<NavigationCard direction="previous" href={pieceHref(previous.id)}><NavigationCard.Description>上一个作品</NavigationCard.Description>{previous.title ? <NavigationCard.Title>{previous.title}</NavigationCard.Title> : null}</NavigationCard>)}
-            {next && (<NavigationCard direction="next" href={pieceHref(next.id)}><NavigationCard.Description>下一个作品</NavigationCard.Description>{next.title ? <NavigationCard.Title>{next.title}</NavigationCard.Title> : null}</NavigationCard>)}
-          </nav>
-        </article>) : (<EmptyState><EmptyState.Title>没有找到这个作品</EmptyState.Title><EmptyState.Description>它可能已被移除，返回目录查看其他作品。</EmptyState.Description><EmptyState.Actions><a href={pieceHref()}>返回作品目录</a></EmptyState.Actions></EmptyState>)}
-    </PageShell.Body><PageShell.Footer><>
+            <DescriptionList>
+              <div>
+                <dt>设计关注</dt>
+                <dd>{piece.features.join("、")}</dd>
+              </div>
+              <div>
+                <dt>构建方式</dt>
+                <dd>React、Uagray 组件与原生 CSS</dd>
+              </div>
+            </DescriptionList>
+            <nav className="gallery-next-pieces" aria-label="相邻作品">
+              {previous && (
+                <NavigationCard
+                  direction="previous"
+                  href={pieceHref(previous.id)}
+                >
+                  <NavigationCard.Description>
+                    上一个作品
+                  </NavigationCard.Description>
+                  {previous.title ? (
+                    <NavigationCard.Title>
+                      {previous.title}
+                    </NavigationCard.Title>
+                  ) : null}
+                </NavigationCard>
+              )}
+              {next && (
+                <NavigationCard direction="next" href={pieceHref(next.id)}>
+                  <NavigationCard.Description>
+                    下一个作品
+                  </NavigationCard.Description>
+                  {next.title ? (
+                    <NavigationCard.Title>{next.title}</NavigationCard.Title>
+                  ) : null}
+                </NavigationCard>
+              )}
+            </nav>
+          </article>
+        ) : (
+          <EmptyState>
+            <EmptyState.Title>没有找到这个作品</EmptyState.Title>
+            <EmptyState.Description>
+              它可能已被移除，返回目录查看其他作品。
+            </EmptyState.Description>
+            <EmptyState.Actions>
+              <a href={pieceHref()}>返回作品目录</a>
+            </EmptyState.Actions>
+          </EmptyState>
+        )}
+      </PageShell.Body>
+      <PageShell.Footer>
+        <>
           <span>Fieldnotes © 2026</span>
-          <a href="https://lab.anishfn.ink/" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://lab.anishfn.ink/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             信息架构参考：anish’s lab
             <span className="ui-sr-only">（在新标签页打开）</span>
           </a>
-        </></PageShell.Footer></PageShell>
+        </>
+      </PageShell.Footer>
+    </PageShell>
   );
 }

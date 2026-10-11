@@ -13,7 +13,8 @@ import {
   parseColor,
   type Color,
 } from "react-aria-components/ColorPicker";
-import { IconButton, Surface } from "./components";
+import { Surface, Button } from "./components";
+import { Icon } from "./icons";
 import { Field, Input, NumberInput, Select } from "./fields";
 
 export function normalizeHex(value: string): string | null {
@@ -169,13 +170,17 @@ export function ColorPicker({
             <ColorThumb className="ui-color-thumb" />
           </ColorArea>
           <div className="ui-color-picker-sliders">
-            <IconButton
-              icon="eyedropper"
+            <Button
               aria-label={Dropper ? "吸管取色" : "当前浏览器不支持吸管取色"}
               emphasis="quiet"
               disabled={disabled || !Dropper || picking}
               onClick={sample}
-            />
+              shape="square"
+            >
+              <Button.Icon>
+                <Icon name={"eyedropper"} />
+              </Button.Icon>
+            </Button>
             <div className="ui-color-picker-tracks">
               <ColorSlider
                 aria-label="色相"
@@ -268,17 +273,19 @@ export function ColorPicker({
                           {channelColor.getChannelName(channel, "zh-CN")}
                         </Field.Label>
                         <Field.Control>
-                        <NumberInput
-                          value={Math.round(
-                            channelColor.getChannelValue(channel),
-                          )}
-                          min={range.minValue}
-                          max={range.maxValue}
-                          step={range.step}
-                          onValueChange={(next) =>
-                            commit(channelColor.withChannelValue(channel, next))
-                          }
-                        />
+                          <NumberInput
+                            value={Math.round(
+                              channelColor.getChannelValue(channel),
+                            )}
+                            min={range.minValue}
+                            max={range.maxValue}
+                            step={range.step}
+                            onValueChange={(next) =>
+                              commit(
+                                channelColor.withChannelValue(channel, next),
+                              )
+                            }
+                          />
                         </Field.Control>
                       </Field>
                     </div>

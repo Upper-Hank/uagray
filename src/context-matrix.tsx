@@ -1,5 +1,23 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Alert, Badge, Button, ButtonGroup, Checkbox, Disclosure, FileDropzone, Input, NavigationCard, Radio, SearchField, SegmentedControl, Select, Slider, Surface, Switch, Icon } from "./ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonGroup,
+  Checkbox,
+  Disclosure,
+  FileDropzone,
+  Input,
+  NavigationCard,
+  Radio,
+  SearchField,
+  SegmentedControl,
+  Select,
+  Slider,
+  Surface,
+  Switch,
+  Icon,
+} from "./ui";
 
 const contexts = [
   { id: "background", label: "页面" },
@@ -50,7 +68,7 @@ function PlainGroup() {
           aria-pressed={value === id}
           onClick={() => setValue(id)}
         >
-          {label}
+          <Button.Label>{label}</Button.Label>
         </Button>
       ))}
     </ButtonGroup>
@@ -72,11 +90,26 @@ function Search() {
 function Segments() {
   const [value, setValue] = useState("week");
   return (
-    <SegmentedControl aria-label="周期" value={value} onValueChange={setValue}>{[
-    { value: "day", label: "日" },
-    { value: "week", label: "周" },
-    { value: "month", label: "月" },
-].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
+    <SegmentedControl aria-label="周期" value={value} onValueChange={setValue}>
+      {[
+        { value: "day", label: "日" },
+        { value: "week", label: "周" },
+        { value: "month", label: "月" },
+      ].map((item) => (
+        <SegmentedControl.Item
+          key={item.value}
+          value={item.value}
+          disabled={(item as { disabled?: boolean }).disabled}
+        >
+          <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+          {(item as { count?: number | string }).count != null ? (
+            <SegmentedControl.Count>
+              {(item as { count?: number | string }).count}
+            </SegmentedControl.Count>
+          ) : null}
+        </SegmentedControl.Item>
+      ))}
+    </SegmentedControl>
   );
 }
 
@@ -89,27 +122,48 @@ const sections: Section[] = [
     rows: [
       {
         label: "strong",
-        render: () => <Button emphasis="strong">提交</Button>,
+        render: () => (
+          <Button emphasis="strong">
+            <Button.Label>提交</Button.Label>
+          </Button>
+        ),
       },
       {
         label: "default",
         render: () => (
           <>
-            <Button>保存</Button>
-            <Button >{((icon) => icon === undefined ? null : <Button.Icon><Icon name={icon as Parameters<typeof Icon>[0]["name"]} /></Button.Icon>)("plus")}<Button.Label>添加</Button.Label></Button>
+            <Button>
+              <Button.Label>保存</Button.Label>
+            </Button>
+            <Button>
+              {((icon) =>
+                icon === undefined ? null : (
+                  <Button.Icon>
+                    <Icon name={icon as Parameters<typeof Icon>[0]["name"]} />
+                  </Button.Icon>
+                ))("plus")}
+              <Button.Label>添加</Button.Label>
+            </Button>
           </>
         ),
       },
-      { label: "quiet", render: () => <Button emphasis="quiet">取消</Button> },
+      {
+        label: "quiet",
+        render: () => (
+          <Button emphasis="quiet">
+            <Button.Label>取消</Button.Label>
+          </Button>
+        ),
+      },
       {
         label: "danger",
         render: () => (
           <>
             <Button emphasis="strong" tone="danger">
-              删除
+              <Button.Label>删除</Button.Label>
             </Button>
             <Button emphasis="quiet" tone="danger">
-              移除
+              <Button.Label>移除</Button.Label>
             </Button>
           </>
         ),
@@ -118,9 +172,11 @@ const sections: Section[] = [
         label: "disabled",
         render: () => (
           <>
-            <Button disabled>保存</Button>
+            <Button disabled>
+              <Button.Label>保存</Button.Label>
+            </Button>
             <Button emphasis="strong" disabled>
-              提交
+              <Button.Label>提交</Button.Label>
             </Button>
           </>
         ),
@@ -129,9 +185,15 @@ const sections: Section[] = [
         label: "操作组",
         render: () => (
           <ButtonGroup aria-label="编辑">
-            <Button>撤销</Button>
-            <Button>重做</Button>
-            <Button emphasis="strong">完成</Button>
+            <Button>
+              <Button.Label>撤销</Button.Label>
+            </Button>
+            <Button>
+              <Button.Label>重做</Button.Label>
+            </Button>
+            <Button emphasis="strong">
+              <Button.Label>完成</Button.Label>
+            </Button>
           </ButtonGroup>
         ),
       },
@@ -149,10 +211,20 @@ const sections: Section[] = [
       {
         label: "选择器",
         render: () => (
-          <Select aria-label="排序" defaultValue="recent">{[
-    { value: "recent", label: "最近更新" },
-    { value: "name", label: "名称" },
-].map(item => <Select.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}>{item.label}</Select.Item>)}</Select>
+          <Select aria-label="排序" defaultValue="recent">
+            {[
+              { value: "recent", label: "最近更新" },
+              { value: "name", label: "名称" },
+            ].map((item) => (
+              <Select.Item
+                key={item.value}
+                value={item.value}
+                disabled={(item as { disabled?: boolean }).disabled}
+              >
+                {item.label}
+              </Select.Item>
+            ))}
+          </Select>
         ),
       },
       {
@@ -199,7 +271,14 @@ const sections: Section[] = [
       {
         label: "提示",
         height: 88,
-        render: () => <Alert tone="success"><Alert.Icon><Icon name="check" size={16}/></Alert.Icon><Alert.Body>更改已保存。</Alert.Body></Alert>,
+        render: () => (
+          <Alert tone="success">
+            <Alert.Icon>
+              <Icon name="check" size={16} />
+            </Alert.Icon>
+            <Alert.Body>更改已保存。</Alert.Body>
+          </Alert>
+        ),
       },
     ],
   },
@@ -210,24 +289,40 @@ const sections: Section[] = [
         label: "折叠",
         height: 168,
         render: () => (
-          <Disclosure defaultOpen><Disclosure.Trigger>发布设置</Disclosure.Trigger><Disclosure.Body>
-            <div className="matrix-region-content">
-              <Badge tone="success">已同步</Badge>
-              <Button>编辑</Button>
-            </div>
-          </Disclosure.Body></Disclosure>
+          <Disclosure defaultOpen>
+            <Disclosure.Trigger>发布设置</Disclosure.Trigger>
+            <Disclosure.Body>
+              <div className="matrix-region-content">
+                <Badge tone="success">已同步</Badge>
+                <Button>
+                  <Button.Label>编辑</Button.Label>
+                </Button>
+              </div>
+            </Disclosure.Body>
+          </Disclosure>
         ),
       },
       {
         label: "上传",
         height: 216,
-        render: () => <FileDropzone onFiles={() => {}}><FileDropzone.Description>{"拖入文件"}</FileDropzone.Description><FileDropzone.Trigger>选择文件</FileDropzone.Trigger><FileDropzone.Error /></FileDropzone>,
+        render: () => (
+          <FileDropzone onFiles={() => {}}>
+            <FileDropzone.Icon>
+              <Icon name="plus" />
+            </FileDropzone.Icon>
+            <FileDropzone.Description>{"拖入文件"}</FileDropzone.Description>
+            <FileDropzone.Trigger>选择文件</FileDropzone.Trigger>
+            <FileDropzone.Error />
+          </FileDropzone>
+        ),
       },
       {
         label: "导航",
         height: 112,
         render: () => (
-          <NavigationCard direction="next" href="#context-matrix"><NavigationCard.Title>下一节</NavigationCard.Title></NavigationCard>
+          <NavigationCard direction="next" href="#context-matrix">
+            <NavigationCard.Title>下一节</NavigationCard.Title>
+          </NavigationCard>
         ),
       },
     ],

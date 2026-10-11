@@ -116,11 +116,15 @@ const regionRemains = (args: Args, except: string) => {
   const footer = except === "footer" ? false : args.footer;
   return Boolean(
     String(title ?? "").trim() ||
-      String(description ?? "").trim() ||
-      String(body ?? "").trim() ||
-      footer === true,
+    String(description ?? "").trim() ||
+    String(body ?? "").trim() ||
+    footer === true,
   );
 };
+const confirmRemains = (args: Args, except: string) =>
+  ["title", "description", "confirmLabel", "cancelLabel"].some(
+    (key) => key !== except && String(args[key] ?? "").trim(),
+  );
 const items = (key: string, exampleValue: ChoiceItem[]): Control => ({
   key,
   exampleValue,
@@ -208,12 +212,8 @@ const meta: Record<string, EntryMeta> = {
     defaults: {
       tone: "neutral",
       busy: false,
-      confirmLabel: "确认",
-      cancelLabel: "取消",
-      busyLabel: "处理中…",
-      statusLabel: "操作处理中",
     },
-    required: ["open", "title"],
+    required: ["open"],
     callbacks: ["onOpenChange(open: boolean)", "onConfirm()"],
   },
   badge: {
@@ -230,7 +230,7 @@ const meta: Record<string, EntryMeta> = {
     example: ["indeterminate"],
   },
   upload: {
-    defaults: { multiple: false, disabled: false, buttonLabel: "选择文件" },
+    defaults: { multiple: false, disabled: false },
     callbacks: ["onFiles(files: File[])", "onReject(message: string)"],
   },
   selection: {
@@ -238,17 +238,16 @@ const meta: Record<string, EntryMeta> = {
       busy: false,
       variant: "plain",
       "aria-label": "批量操作",
-      selectAllLabel: "全选",
-      clearLabel: "清空",
-      doneLabel: "完成",
     },
     required: ["count"],
-    callbacks: ["onSelectAll()", "onClear()", "onDone()"],
+    callbacks: [
+      "SelectAllAction.onClick(event)",
+      "ClearAction.onClick(event)",
+      "DoneAction.onClick(event)",
+    ],
   },
   text: {
     defaults: {
-      expandLabel: "展开全文",
-      collapseLabel: "收起全文",
       collapsedHeight: 210,
       "aria-label": "可展开文本",
     },
@@ -286,7 +285,7 @@ const meta: Record<string, EntryMeta> = {
   disclosure: {
     callbacks: ["onOpenChange(open: boolean)"],
   },
-  "empty-state": { example: ["showActions"] },
+  "empty-state": {},
   cards: { required: ["direction", "href"] },
   showcase: {
     required: ["title", "href", "children"],
@@ -339,35 +338,40 @@ const entry = (
           ? "example"
           : "prop",
     type:
-      id === "buttons" && field.key === "icon"
-        ? "IconName | undefined"
-        : [
-              "title",
-              "label",
-              "description",
-              "children",
-              "hint",
-              "error",
-              "valueLabel",
-              "summary",
-            ].includes(field.key) && !meta[id]?.example?.includes(field.key)
-          ? "ReactNode"
-          : field.key === "icon" || (id === "icons" && field.key === "name")
-            ? field.type.startsWith("IconName")
-              ? field.type
-              : "IconName"
-            : field.type,
+      field.scope === "slot" &&
+      (["text", "textarea"].includes(field.control) || field.key === "icon") &&
+      field.key !== "code" &&
+      !field.key.endsWith("Href")
+        ? "ReactNode"
+        : id === "buttons" && field.key === "icon"
+          ? "IconName | undefined"
+          : [
+                "title",
+                "label",
+                "description",
+                "children",
+                "hint",
+                "error",
+                "valueLabel",
+                "summary",
+              ].includes(field.key) && !meta[id]?.example?.includes(field.key)
+            ? "ReactNode"
+            : field.key === "icon" || (id === "icons" && field.key === "name")
+              ? field.type.startsWith("IconName")
+                ? field.type
+                : "IconName"
+              : field.type,
     componentDefault: meta[id]?.defaults?.[field.key],
     required:
       field.required || (meta[id]?.required?.includes(field.key) ?? false),
-    description:
-      field.description,
-    when: field.when ?? (
-      id === "showcase" && field.key === "externalHref"
+    description: field.description,
+    when:
+      field.when ??
+      (id === "showcase" && field.key === "externalHref"
         ? (args) => !!args.externalLabel
         : id === "progress" && field.key === "value"
-            ? (args) => !args.indeterminate
-            : undefined),
+          ? (args) => !args.indeterminate
+          : undefined),
     group:
       field.group ??
       ([
@@ -418,7 +422,13 @@ export const exampleArgs = (entry: ComponentEntry): Args =>
     entry.fields.map((field) => [field.key, field.exampleValue]),
   );
 export const visibleFields = (entry: ComponentEntry, args: Args) =>
-  entry.fields.filter((field) => !field.when || field.when(args));
+  entry.fields
+    .filter((field) => !field.when || field.when(args))
+    .map((field) =>
+      entry.id === "buttons" && field.key === "size" && args.action !== "button"
+        ? { ...field, componentDefault: "sm" }
+        : field,
+    );
 export function normalizeArgs(entry: ComponentEntry, args: Args): Args {
   const next = { ...args };
   if (entry.id === "heading")
@@ -435,7 +445,8 @@ export function normalizeArgs(entry: ComponentEntry, args: Args): Args {
   }
   if (entry.id === "selection")
     next.count = Math.max(0, Math.min(Number(next.count), Number(next.total)));
-  if (entry.id === "buttons" && !String(next.children ?? "").trim()) next.count = "";
+  if (entry.id === "buttons" && !String(next.children ?? "").trim())
+    next.count = "";
   if (entry.id === "progress")
     next.value = Math.min(Number(next.value), Number(next.max));
   if (["segments", "tabs", "select"].includes(entry.id)) {
@@ -484,19 +495,48 @@ export const componentEntries: ComponentEntry[] = [
     disabled,
   ]),
   entry("buttons", "Button", "Button", [
-    { ...choice("action", "button", ["button", "copy", "share"]), scope: "example" },
-    slot("children", "Like", "Label", { requiredWhen: args => !args.icon || args.icon === "none", removable: args => Boolean(args.icon && args.icon !== "none" && !args.count) }),
-    { ...choice("icon", "none", ["none", ...iconNames]), scope: "slot", label: "Icon", group: "content" },
-    slot("count", "", "Count", { when: args => Boolean(args.children) }),
+    {
+      ...choice("action", "button", ["button", "copy", "share"]),
+      scope: "example",
+    },
+    slot("children", "Like", "Label", {
+      requiredWhen: (args) => !args.icon || args.icon === "none",
+      removable: (args) =>
+        Boolean(
+          args.icon && args.icon !== "none" && !String(args.count ?? "").trim(),
+        ),
+    }),
+    {
+      ...choice("icon", "none", ["none", ...iconNames]),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+    },
+    slot("count", "", "Count", { when: (args) => Boolean(args.children) }),
     text("aria-label", ""),
     choice("shape", "inline", ["inline", "square"]),
     choice("emphasis", "default", ["strong", "default", "quiet"]),
-    choice("tone", "neutral", ["neutral", "danger"]), size, disabled, bool("busy"),
-    { ...text("text", "值得保存的内容"), when: args => args.action === "copy" },
-    { ...text("url", "https://example.com"), when: args => args.action === "share" },
-    slot("copiedLabel", "已复制", "Feedback · success", { when: args => args.action !== "button" }),
-    slot("copyingLabel", "正在复制…", "Feedback · pending", { when: args => args.action !== "button" }),
-    slot("copyFailedLabel", "复制失败", "Feedback · error", { when: args => args.action !== "button" }),
+    choice("tone", "neutral", ["neutral", "danger"]),
+    size,
+    disabled,
+    bool("busy"),
+    {
+      ...text("text", "值得保存的内容"),
+      when: (args) => args.action === "copy",
+    },
+    {
+      ...text("url", "https://example.com"),
+      when: (args) => args.action === "share",
+    },
+    slot("copiedLabel", "已复制", "Feedback · success", {
+      when: (args) => args.action !== "button",
+    }),
+    slot("copyingLabel", "正在复制…", "Feedback · pending", {
+      when: (args) => args.action !== "button",
+    }),
+    slot("copyFailedLabel", "复制失败", "Feedback · error", {
+      when: (args) => args.action !== "button",
+    }),
   ]),
   entry("icon-button", "Button", "Icon button", [
     text("aria-label", "添加"),
@@ -569,7 +609,12 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("slider", "Slider", "Slider", [
     slot("label", "Size", "Label", { removable: () => true }),
-    { ...bool("reading", true), scope: "slot", label: "Value", group: "content" },
+    {
+      ...bool("reading", true),
+      scope: "slot",
+      label: "Value",
+      group: "content",
+    },
     choice("variant", "filled", ["filled", "track"]),
     choice("layout", "field", ["field", "inline", "bare"]),
     number("value", 140, 16, 256),
@@ -642,12 +687,22 @@ export const componentEntries: ComponentEntry[] = [
     bool("open"),
   ]),
   entry("confirm-dialog", "ConfirmDialog", "Confirm dialog", [
-    slot("title", "删除文件？", "Title"),
-    slot("description", "此操作无法撤销。", "Description"),
-    slot("confirmLabel", "确认删除", "ConfirmAction"),
-    slot("cancelLabel", "取消", "CancelAction"),
+    slot("title", "删除文件？", "Title", {
+      removable: (args) => confirmRemains(args, "title"),
+    }),
+    slot("description", "此操作无法撤销。", "Description", {
+      removable: (args) => confirmRemains(args, "description"),
+    }),
+    slot("confirmLabel", "确认删除", "ConfirmAction", {
+      removable: (args) => confirmRemains(args, "confirmLabel"),
+    }),
+    slot("cancelLabel", "取消", "CancelAction", {
+      removable: (args) => confirmRemains(args, "cancelLabel"),
+    }),
     text("aria-label", "确认操作"),
-    choice("tone", "danger", ["neutral", "danger"]), bool("busy"), bool("open"),
+    choice("tone", "danger", ["neutral", "danger"]),
+    bool("busy"),
+    bool("open"),
   ]),
   entry("badge", "Badge", "Badge", [
     slot("label", "内容", "Label", { required: true }),
@@ -720,33 +775,88 @@ export const componentEntries: ComponentEntry[] = [
       group: "content",
       removable: () => true,
     },
-    bool("showActions"),
+    {
+      ...bool("showActions"),
+      scope: "slot",
+      label: "Actions",
+      group: "content",
+    },
+    slot("actionLabel", "添加文件", "Actions.Button.Label", {
+      required: true,
+      when: (args) => args.showActions === true,
+    }),
   ]),
   entry("upload", "FileDropzone", "File dropzone", [
-    { ...choice("icon", "plus", iconNames), scope: "slot", label: "Icon", group: "content", required: true },
+    {
+      ...choice("icon", "plus", iconNames),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+      required: true,
+    },
     slot("label", "", "Description"),
     slot("buttonLabel", "选择文件", "Trigger", { required: true }),
-    { ...bool("showError", true), scope: "slot", label: "Error", group: "content" },
-    text("accept", ".svg,.png"), bool("multiple"),
-    number("maxSize", 5 * 1024 * 1024, 1, 20 * 1024 * 1024, 1024), disabled,
+    {
+      ...bool("showError", true),
+      scope: "slot",
+      label: "Error",
+      group: "content",
+    },
+    {
+      ...choice("errorSource", "auto", ["auto", "custom"]),
+      scope: "slot",
+      label: "Error.source",
+      group: "content",
+      when: (args) => args.showError === true,
+    },
+    slot("error", "", "Error.children", {
+      when: (args) => args.showError === true && args.errorSource === "custom",
+    }),
+    text("accept", ".svg,.png"),
+    bool("multiple"),
+    number("maxSize", 5 * 1024 * 1024, 1, 20 * 1024 * 1024, 1024),
+    disabled,
   ]),
   entry("selection", "SelectionBar", "Selection bar", [
     choice("variant", "plain", ["contained", "plain"]),
     slot("summary", "已选择 {count} 项", "Description"),
     slot("selectAllLabel", "全选", "SelectAllAction"),
-    slot("clearLabel", "清空", "ClearAction"), slot("doneLabel", "完成", "DoneAction"),
-    number("count", 4, 0, 10), number("total", 10, 0, 100), bool("busy"),
+    slot("clearLabel", "清空", "ClearAction"),
+    slot("doneLabel", "完成", "DoneAction"),
+    number("count", 4, 0, 10),
+    number("total", 10, 0, 100),
+    bool("busy"),
   ]),
   entry("text", "ExpandableCode", "Expandable text", [
-    slot("code", "A small interface, quiet by design.\n\n" + "Use space to establish hierarchy.\n".repeat(10), "Body", { required: true, type: "string" }),
+    slot(
+      "code",
+      "A small interface, quiet by design.\n\n" +
+        "Use space to establish hierarchy.\n".repeat(10),
+      "Body",
+      { required: true, type: "string" },
+    ),
     slot("copyLabel", "复制", "CopyAction"),
-    slot("expandLabel", "展开全文", "ExpandAction"), slot("collapseLabel", "收起全文", "CollapseAction"),
-    text("aria-label", "可展开文本"), number("collapsedHeight", 180, 80, 320),
+    slot("expandLabel", "展开全文", "ExpandAction"),
+    slot("collapseLabel", "收起全文", "CollapseAction"),
+    text("aria-label", "可展开文本"),
+    number("collapsedHeight", 180, 80, 320),
   ]),
   entry("navigation", "Pager", "Page navigation", [
     choice("variant", "contained", ["contained", "plain"]),
-    slot("previousLabel", "按钮", "Previous"), text("previousHref", "#buttons"),
-    slot("nextLabel", "输入", "Next"), text("nextHref", "#input"),
+    slot("previousLabel", "按钮", "Previous"),
+    {
+      ...text("previousHref", "#buttons"),
+      scope: "slot",
+      label: "Previous.href",
+      group: "content",
+    },
+    slot("nextLabel", "输入", "Next"),
+    {
+      ...text("nextHref", "#input"),
+      scope: "slot",
+      label: "Next.href",
+      group: "content",
+    },
   ]),
   entry("action-row", "ActionRow", "Action row", [
     text("children", "分享"),
@@ -787,9 +897,18 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("showcase", "ShowcaseCard", "Showcase card", [
     slot("title", "字与留白", "Title", { required: true }),
-    slot("externalLabel", "", "ExternalLink"), text("externalHref", "https://icon.upper.website"),
-    slot("description", "以字号、行距与留白建立阅读层次。", "Description"), text("href", "#text"),
-    slot("children", "Aa  字\n\n字与留白\nType & Space\n0123456789", "Media", { required: true }),
+    slot("externalLabel", "", "ExternalLink"),
+    {
+      ...text("externalHref", "https://icon.upper.website"),
+      scope: "slot",
+      label: "ExternalLink.href",
+      group: "content",
+    },
+    slot("description", "以字号、行距与留白建立阅读层次。", "Description"),
+    text("href", "#text"),
+    slot("children", "Aa  字\n\n字与留白\nType & Space\n0123456789", "Media", {
+      required: true,
+    }),
   ]),
   entry("links", "ExternalLinks", "External links", [
     {
@@ -854,5 +973,10 @@ export function descriptionRows(args: Args) {
 export function presetArgs(entry: ComponentEntry, action: string): Args {
   const args = exampleArgs(entry);
   if (entry.id !== "buttons") return args;
-  return { ...args, action, children: action === "copy" ? "复制" : action === "share" ? "分享" : "Like", icon: action === "button" ? "none" : action === "copy" ? "copy" : "share" };
+  return {
+    ...args,
+    action,
+    children: action === "copy" ? "复制" : action === "share" ? "分享" : "Like",
+    icon: action === "button" ? "none" : action === "copy" ? "copy" : "share",
+  };
 }

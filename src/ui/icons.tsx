@@ -1,5 +1,12 @@
-import { createContext, useContext, type ComponentPropsWithoutRef } from "react";
-export const IconSizeContext = createContext<{size: number; max?: number} | null>(null);
+import {
+  createContext,
+  useContext,
+  type ComponentPropsWithoutRef,
+} from "react";
+export const IconSizeContext = createContext<{
+  size: number;
+  max?: number;
+} | null>(null);
 import {
   Icon as UplusIcon,
   type IconName as UplusIconName,
@@ -10,9 +17,7 @@ export type IconName = UplusIconName;
 export const DEFAULT_ICON_WEIGHT = 1;
 
 /** Current install is the source of truth. */
-export const iconNames = iconMeta
-  .filter((meta) => !meta.deprecated)
-  .map((meta) => meta.name as IconName);
+export const iconNames = iconMeta.map((meta) => meta.name as IconName);
 
 export function Icon({
   name,
@@ -22,11 +27,14 @@ export function Icon({
   ...props
 }: Omit<ComponentPropsWithoutRef<typeof UplusIcon>, "name" | "size"> & {
   name: IconName;
-  /** Numeric CSS pixels. Combination-derived sizing is intentionally unresolved. */
+  /** Numeric CSS pixels. Defaults follow the enclosing control; enclosing constraints cap explicit sizes. */
   size?: number;
 }) {
   const inherited = useContext(IconSizeContext);
-  const resolvedSize = Math.min(size ?? inherited?.size ?? 18, inherited?.max ?? Infinity);
+  const resolvedSize = Math.min(
+    size ?? inherited?.size ?? 18,
+    inherited?.max ?? Infinity,
+  );
   return (
     <UplusIcon
       name={name}

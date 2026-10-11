@@ -28,6 +28,8 @@ Space 编号表示尺度顺序，不表示编号乘以 4。Size 与 Space 分开
 | region / region-hover          | surface / surface-hover                             | raised / raised-hover                         | surface / surface-hover                     |
 | region-control*、region-*-fill | 对应区块内部环境资源                                | 同左                                          | 同左                                        |
 
+`danger-on-fill` 是危险浅底的配对前景：浅色主题读取 `danger-hover`，暗色主题读取 `danger`；default 危险按钮与环境的 `danger-fill` 成对使用。quiet 与 strong 保留各自的前景入口。
+
 区块读取 region，并把 region-* 应用为子项的 control、selected 与状态填充。控件与区块的职责、合法嵌套及强调见 [环境与表面](design-system.md#环境与表面)。Slider 的 track、Switch 的 switch-surface 与 thumb 使用各自语义入口，不能用区块交替规则替代控件内部状态。
 
 edge、elevation 分别定义内侧 1px 边缘与外侧投影；shadow 是其组合便利值，不授权每个对象同时使用。border-soft 可用于合法对象边缘或内容分隔；preview-border 保留为兼容别名。使用条件见 [边界语言](design-system.md#边界语言)。

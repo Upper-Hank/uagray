@@ -15,7 +15,8 @@ import {
 } from "react";
 import { AnimatePresence, motion, type MotionProps } from "framer-motion";
 import { motionDistance, PresenceSurface, useUiMotion } from "./motion";
-import { IconButton } from "./components";
+import { Button } from "./components";
+import { Icon } from "./icons";
 import { assignRef, compose, cx, hasContent } from "./host";
 import {
   CompositionRoot,
@@ -180,8 +181,7 @@ export function Alert({
 }) {
   const composition = useComposition("Alert", alertRules, (registrations) =>
     registrations.some(
-      (item) =>
-        (item.slot === "title" || item.slot === "body") && item.present,
+      (item) => (item.slot === "title" || item.slot === "body") && item.present,
     )
       ? []
       : ["[uagray] Alert 需要有内容的 Title 或 Body"],
@@ -218,12 +218,7 @@ function ProgressLabel({
   const id = suppliedId ?? (context ? `${context.id}-label` : generated);
   useSlot("Progress", "label", { id, present: hasContent(children) });
   return (
-    <label
-      {...props}
-      id={id}
-      htmlFor={context?.id}
-      className={cx(className)}
-    >
+    <label {...props} id={id} htmlFor={context?.id} className={cx(className)}>
       {children}
     </label>
   );
@@ -265,7 +260,8 @@ export function Progress({
     value === undefined ? undefined : Math.max(0, Math.min(value, upper));
   const id = useId();
   const composition = useComposition("Progress", progressRules);
-  const labelId = slotIds(composition.registrations, "label").join(" ") || undefined;
+  const labelId =
+    slotIds(composition.registrations, "label").join(" ") || undefined;
   const name = labelledBy ?? labelId;
   return (
     <CompositionRoot value={composition.value}>
@@ -352,7 +348,6 @@ EmptyState.Title = EmptyStateTitle;
 EmptyState.Description = EmptyStateDescription;
 EmptyState.Actions = EmptyStateActions;
 
-
 function ToastIcon({ children }: { children: ReactNode }) {
   useSlot("Toast", "icon", { present: hasContent(children) });
   return <>{children}</>;
@@ -424,50 +419,55 @@ export function Toast({
   }, [open, paused, duration]);
   return (
     <CompositionRoot value={composition.value}>
-    <AnimatePresence initial={false}>
-      {open && (
-        <PresenceSurface
-          {...props}
-          ref={ref}
-          className={cx(
-            "ui-toast",
-            stacked && "ui-toast--stacked",
-            `ui-tone--${tone}`,
-            className,
-          )}
-          role={tone === "danger" ? "alert" : "status"}
-          aria-live={tone === "danger" ? "assertive" : "polite"}
-          initial={{ opacity: 0, y: reduced ? 0 : motionDistance.floating }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{
-            opacity: 0,
-            y: reduced ? 0 : motionDistance.floating,
-            transition: exit,
-          }}
-          transition={enter}
-          layout={reduced ? false : true}
-          style={{ borderRadius: "var(--ui-radius-card)", ...style }}
-          onPointerEnter={compose(onPointerEnter, () => setHovered(true))}
-          onPointerLeave={compose(onPointerLeave, () => setHovered(false))}
-          onFocus={compose(onFocus, () => setFocused(true))}
-          onBlur={compose(onBlur, (event) => {
-            if (
-              event.currentTarget.contains(event.relatedTarget as Node | null) ===
-              false
-            )
-              setFocused(false);
-          })}
-        >
-          {children}
-          <IconButton
-            aria-label={closeLabel}
-            icon="close"
-            emphasis="quiet"
-            onClick={() => onOpenChange(false)}
-          />
-        </PresenceSurface>
-      )}
-    </AnimatePresence>
+      <AnimatePresence initial={false}>
+        {open && (
+          <PresenceSurface
+            {...props}
+            ref={ref}
+            className={cx(
+              "ui-toast",
+              stacked && "ui-toast--stacked",
+              `ui-tone--${tone}`,
+              className,
+            )}
+            role={tone === "danger" ? "alert" : "status"}
+            aria-live={tone === "danger" ? "assertive" : "polite"}
+            initial={{ opacity: 0, y: reduced ? 0 : motionDistance.floating }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{
+              opacity: 0,
+              y: reduced ? 0 : motionDistance.floating,
+              transition: exit,
+            }}
+            transition={enter}
+            layout={reduced ? false : true}
+            style={{ borderRadius: "var(--ui-radius-card)", ...style }}
+            onPointerEnter={compose(onPointerEnter, () => setHovered(true))}
+            onPointerLeave={compose(onPointerLeave, () => setHovered(false))}
+            onFocus={compose(onFocus, () => setFocused(true))}
+            onBlur={compose(onBlur, (event) => {
+              if (
+                event.currentTarget.contains(
+                  event.relatedTarget as Node | null,
+                ) === false
+              )
+                setFocused(false);
+            })}
+          >
+            {children}
+            <Button
+              aria-label={closeLabel}
+              emphasis="quiet"
+              onClick={() => onOpenChange(false)}
+              shape="square"
+            >
+              <Button.Icon>
+                <Icon name={"close"} />
+              </Button.Icon>
+            </Button>
+          </PresenceSurface>
+        )}
+      </AnimatePresence>
     </CompositionRoot>
   );
 }

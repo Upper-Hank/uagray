@@ -148,8 +148,8 @@ for (const [name, file, before, after, code] of [
   [
     "interaction weight change",
     "src/ui/components.css",
-    '.ui-button:hover:not(:disabled, [aria-busy="true"]) {',
-    '.ui-button:hover:not(:disabled, [aria-busy="true"]) { font-weight: 500;',
+    '.ui-button:hover:not(:disabled, [aria-busy="true"], [aria-disabled="true"]) {',
+    '.ui-button:hover:not(:disabled, [aria-busy="true"], [aria-disabled="true"]) { font-weight: 500;',
     "state-weight",
   ],
   [

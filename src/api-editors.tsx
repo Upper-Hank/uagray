@@ -121,8 +121,10 @@ export function ContentBlock({
             setOpen(true);
           }}
         >
-          <Icon name={value ? "menu" : "plus"} size={16} />
-          <span className="api-content-summary">{value || "添加内容"}</span>
+          <Button.Label>
+            <Icon name={value ? "menu" : "plus"} size={16} />
+            <span className="api-content-summary">{value || "添加内容"}</span>
+          </Button.Label>
         </Button>
         {!!value && canRemove && (
           <Button
@@ -131,7 +133,7 @@ export function ContentBlock({
             disabled={disabled}
             onClick={() => onChange("")}
           >
-            移除
+            <Button.Label>移除</Button.Label>
           </Button>
         )}
       </div>
@@ -159,7 +161,9 @@ export function ContentBlock({
             ))}
         </Dialog.Body>
         <Dialog.Footer>
-          <Button onClick={() => setOpen(false)}>取消</Button>
+          <Button onClick={() => setOpen(false)}>
+            <Button.Label>取消</Button.Label>
+          </Button>
           <Button
             emphasis="strong"
             disabled={disabled || (!!required && !draft.trim())}
@@ -168,7 +172,7 @@ export function ContentBlock({
               setOpen(false);
             }}
           >
-            保存
+            <Button.Label>保存</Button.Label>
           </Button>
         </Dialog.Footer>
       </Dialog>
@@ -197,13 +201,15 @@ export function CollectionBlock({
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <Icon name="grid" size={16} />
-        <span className="api-content-summary">
-          {items.length
-            ? items.map((item) => item.label || item.value).join(" · ")
-            : "添加内容"}
-        </span>
-        <span className="api-collection-count">{items.length} 项</span>
+        <Button.Label>
+          <Icon name="grid" size={16} />
+          <span className="api-content-summary">
+            {items.length
+              ? items.map((item) => item.label || item.value).join(" · ")
+              : "添加内容"}
+          </span>
+          <span className="api-collection-count">{items.length} 项</span>
+        </Button.Label>
       </Button>
       <Dialog open={open} onOpenChange={setOpen} aria-label={`编辑 ${name}`}>
         <Dialog.Header>
@@ -220,7 +226,9 @@ export function CollectionBlock({
           )}
         </Dialog.Body>
         <Dialog.Footer>
-          <Button onClick={() => setOpen(false)}>完成</Button>
+          <Button onClick={() => setOpen(false)}>
+            <Button.Label>完成</Button.Label>
+          </Button>
         </Dialog.Footer>
       </Dialog>
     </>
@@ -246,7 +254,8 @@ export function IconChoice({
     iconNames.includes(name as IconName);
   const caption = (name: string) =>
     name === "auto" ? "组件默认" : name === "none" ? "无图标" : name;
-  const name = field.scope === "slot" ? (field.label ?? field.key) : `API ${field.key}`;
+  const name =
+    field.scope === "slot" ? (field.label ?? field.key) : `API ${field.key}`;
   return (
     <>
       <Button
@@ -258,60 +267,60 @@ export function IconChoice({
           setOpen(true);
         }}
       >
-        {isIcon(value) && <Icon name={value} size={18} />}
-        {value ? caption(value) : "添加图标"}
+        <Button.Label>
+          {isIcon(value) && <Icon name={value} size={18} />}
+          {value ? caption(value) : "添加图标"}
+        </Button.Label>
       </Button>
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        aria-label={`选择 ${name}`}
-      >
+      <Dialog open={open} onOpenChange={setOpen} aria-label={`选择 ${name}`}>
         <Dialog.Header>
           <Dialog.Title>{`选择 ${name}`}</Dialog.Title>
         </Dialog.Header>
         <Dialog.Body>
-        {open && (
-          <div className="api-icon-picker">
-            <Input
-              autoFocus
-              aria-label="搜索图标"
-              placeholder="搜索图标名称"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <div className="api-icon-grid">
-              {options
-                .filter(
-                  (option) =>
-                    option.value !== "" &&
-                    (option.value.includes(search.trim().toLowerCase()) ||
-                      caption(option.value).includes(search.trim())),
-                )
-                .map((option) => (
-                  <Button
-                    key={option.value}
-                    disabled={disabled || option.disabled}
-                    aria-pressed={value === option.value}
-                    onClick={() => {
-                      onChange(option.value);
-                      setOpen(false);
-                    }}
-                  >
-                    {isIcon(option.value) && (
-                      <Icon name={option.value} size={18} />
-                    )}
-                    <span>{caption(option.value)}</span>
-                  </Button>
-                ))}
+          {open && (
+            <div className="api-icon-picker">
+              <Input
+                autoFocus
+                aria-label="搜索图标"
+                placeholder="搜索图标名称"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <div className="api-icon-grid">
+                {options
+                  .filter(
+                    (option) =>
+                      option.value !== "" &&
+                      (option.value.includes(search.trim().toLowerCase()) ||
+                        caption(option.value).includes(search.trim())),
+                  )
+                  .map((option) => (
+                    <Button
+                      key={option.value}
+                      disabled={disabled || option.disabled}
+                      aria-pressed={value === option.value}
+                      onClick={() => {
+                        onChange(option.value);
+                        setOpen(false);
+                      }}
+                    >
+                      <Button.Label>
+                        {isIcon(option.value) && (
+                          <Icon name={option.value} size={18} />
+                        )}
+                        <span>{caption(option.value)}</span>
+                      </Button.Label>
+                    </Button>
+                  ))}
+              </div>
+              {!options.some(
+                (option) =>
+                  option.value !== "" &&
+                  (option.value.includes(search.trim().toLowerCase()) ||
+                    caption(option.value).includes(search.trim())),
+              ) && <p>没有匹配的图标</p>}
             </div>
-            {!options.some(
-              (option) =>
-                option.value !== "" &&
-                (option.value.includes(search.trim().toLowerCase()) ||
-                  caption(option.value).includes(search.trim())),
-            ) && <p>没有匹配的图标</p>}
-          </div>
-        )}
+          )}
         </Dialog.Body>
         {options.some((option) => option.value === "") && value !== "" && (
           <Dialog.Footer>
@@ -321,7 +330,7 @@ export function IconChoice({
                 setOpen(false);
               }}
             >
-              移除图标
+              <Button.Label>移除图标</Button.Label>
             </Button>
           </Dialog.Footer>
         )}

@@ -53,17 +53,27 @@ function Pulse() {
         <Progress aria-label="阅读计划进度" value={done} max={12} />
       </section>
       <div className="gallery-tool-row">
-        <Field><Field.Label>已读篇数</Field.Label><Field.Control>
-          <NumberInput value={done} onValueChange={setDone} min={0} max={12}/>
-        </Field.Control></Field>
+        <Field>
+          <Field.Label>已读篇数</Field.Label>
+          <Field.Control>
+            <NumberInput
+              value={done}
+              onValueChange={setDone}
+              min={0}
+              max={12}
+            />
+          </Field.Control>
+        </Field>
         <ButtonGroup variant="plain" aria-label="阅读计划操作">
           <Button
             onClick={() => setDone((value) => Math.min(12, value + 1))}
             disabled={done === 12}
           >
-            完成一篇
+            <Button.Label>完成一篇</Button.Label>
           </Button>
-          <Button onClick={() => setDone(0)}>下一轮</Button>
+          <Button onClick={() => setDone(0)}>
+            <Button.Label>下一轮</Button.Label>
+          </Button>
         </ButtonGroup>
       </div>
     </div>
@@ -81,11 +91,30 @@ function Reading() {
         ))}
       </article>
       <div className="gallery-tool-row">
-        <SegmentedControl aria-label="阅读尺度" value={size} onValueChange={setSize}>{[
-    { value: "compact", label: "紧凑" },
-    { value: "standard", label: "标准" },
-    { value: "relaxed", label: "宽松" },
-].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
+        <SegmentedControl
+          aria-label="阅读尺度"
+          value={size}
+          onValueChange={setSize}
+        >
+          {[
+            { value: "compact", label: "紧凑" },
+            { value: "standard", label: "标准" },
+            { value: "relaxed", label: "宽松" },
+          ].map((item) => (
+            <SegmentedControl.Item
+              key={item.value}
+              value={item.value}
+              disabled={(item as { disabled?: boolean }).disabled}
+            >
+              <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+              {(item as { count?: number | string }).count != null ? (
+                <SegmentedControl.Count>
+                  {(item as { count?: number | string }).count}
+                </SegmentedControl.Count>
+              ) : null}
+            </SegmentedControl.Item>
+          ))}
+        </SegmentedControl>
         <CopyButton text={readingText}>复制便笺</CopyButton>
       </div>
     </div>
@@ -114,7 +143,9 @@ function Palette() {
           <CopyButton text={color} size="md">
             复制颜色
           </CopyButton>
-          <Button onClick={() => setColor("#6B7F73")}>恢复基准色</Button>
+          <Button onClick={() => setColor("#6B7F73")}>
+            <Button.Label>恢复基准色</Button.Label>
+          </Button>
         </ButtonGroup>
       </div>
     </div>
@@ -163,15 +194,30 @@ export function FocusTimer() {
         />
       </section>
       <div className="gallery-tool-row">
-        <Select aria-label="专注时长" value={String(minutes)} disabled={deadline !== null} onValueChange={(value) => {
-        const next = Number(value);
-        setMinutes(next);
-        setRemaining(next * 60);
-    }}>{[
-    { value: "1", label: "1 分钟" },
-    { value: "15", label: "15 分钟" },
-    { value: "25", label: "25 分钟" },
-].map(item => <Select.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}>{item.label}</Select.Item>)}</Select>
+        <Select
+          aria-label="专注时长"
+          value={String(minutes)}
+          disabled={deadline !== null}
+          onValueChange={(value) => {
+            const next = Number(value);
+            setMinutes(next);
+            setRemaining(next * 60);
+          }}
+        >
+          {[
+            { value: "1", label: "1 分钟" },
+            { value: "15", label: "15 分钟" },
+            { value: "25", label: "25 分钟" },
+          ].map((item) => (
+            <Select.Item
+              key={item.value}
+              value={item.value}
+              disabled={(item as { disabled?: boolean }).disabled}
+            >
+              {item.label}
+            </Select.Item>
+          ))}
+        </Select>
         <ButtonGroup variant="plain" aria-label="计时操作">
           <Button
             emphasis="strong"
@@ -188,11 +234,13 @@ export function FocusTimer() {
               }
             }}
           >
-            {deadline !== null
-              ? "暂停"
-              : remaining < minutes * 60 && remaining > 0
-                ? "继续"
-                : "开始"}
+            <Button.Label>
+              {deadline !== null
+                ? "暂停"
+                : remaining < minutes * 60 && remaining > 0
+                  ? "继续"
+                  : "开始"}
+            </Button.Label>
           </Button>
           <Button
             onClick={() => {
@@ -200,7 +248,7 @@ export function FocusTimer() {
               setRemaining(minutes * 60);
             }}
           >
-            重置
+            <Button.Label>重置</Button.Label>
           </Button>
         </ButtonGroup>
       </div>
@@ -228,8 +276,23 @@ function Profile() {
         <Text variant="supporting">{member.email}</Text>
       </section>
       <div className="gallery-tool-row">
-        <Select aria-label="成员" value={person} onValueChange={setPerson}>{people.map(item => <Select.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}>{item.label}</Select.Item>)}</Select>
-        <Switch checked={available} onChange={(event) => setAvailable(event.target.checked)}>可以协作</Switch>
+        <Select aria-label="成员" value={person} onValueChange={setPerson}>
+          {people.map((item) => (
+            <Select.Item
+              key={item.value}
+              value={item.value}
+              disabled={(item as { disabled?: boolean }).disabled}
+            >
+              {item.label}
+            </Select.Item>
+          ))}
+        </Select>
+        <Switch
+          checked={available}
+          onChange={(event) => setAvailable(event.target.checked)}
+        >
+          可以协作
+        </Switch>
         <CopyButton text={`${member.label} · ${member.role} · ${member.email}`}>
           复制联系信息
         </CopyButton>
@@ -250,14 +313,28 @@ function Checklist() {
     <div className="gallery-experience">
       <section className="gallery-checklist">
         <Heading>发布前的最后几件事</Heading>
-        <Progress value={done} max={Math.max(1, items.length)}><Progress.Label>准备进度</Progress.Label>{`${done} / ${items.length}` ? <Progress.Value>{`${done} / ${items.length}`}</Progress.Value> : null}</Progress>
+        <Progress value={done} max={Math.max(1, items.length)}>
+          <Progress.Label>准备进度</Progress.Label>
+          {`${done} / ${items.length}` ? (
+            <Progress.Value>{`${done} / ${items.length}`}</Progress.Value>
+          ) : null}
+        </Progress>
         <ul>
           {items.map((item) => (
             <li key={item.id}>
-              <Checkbox checked={item.done} onChange={(event) => {
-        const checked = event.target.checked;
-        setItems((previous) => previous.map((row) => row.id === item.id ? { ...row, done: checked } : row));
-    }}>{item.text}</Checkbox>
+              <Checkbox
+                checked={item.done}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setItems((previous) =>
+                    previous.map((row) =>
+                      row.id === item.id ? { ...row, done: checked } : row,
+                    ),
+                  );
+                }}
+              >
+                {item.text}
+              </Checkbox>
             </li>
           ))}
         </ul>
@@ -283,7 +360,7 @@ function Checklist() {
         />
         <ButtonGroup variant="plain" aria-label="清单操作">
           <Button type="submit" emphasis="strong" disabled={!draft.trim()}>
-            添加
+            <Button.Label>添加</Button.Label>
           </Button>
           <Button
             onClick={() =>
@@ -291,7 +368,7 @@ function Checklist() {
             }
             disabled={done === 0}
           >
-            清除已完成
+            <Button.Label>清除已完成</Button.Label>
           </Button>
         </ButtonGroup>
       </form>

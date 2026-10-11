@@ -68,7 +68,7 @@ export function OptionsEditor({
           ]);
         }}
       >
-        添加选项
+        <Button.Label>添加选项</Button.Label>
       </Button>
     </div>
   );
@@ -174,7 +174,7 @@ function OptionRow({
           disabled={!onMoveUp}
           onClick={onMoveUp}
         >
-          上移
+          <Button.Label>上移</Button.Label>
         </Button>
         <Button
           size="sm"
@@ -183,7 +183,7 @@ function OptionRow({
           disabled={!onMoveDown}
           onClick={onMoveDown}
         >
-          下移
+          <Button.Label>下移</Button.Label>
         </Button>
         <Button
           size="sm"
@@ -191,7 +191,7 @@ function OptionRow({
           aria-label={`删除 ${name}`}
           onClick={onRemove}
         >
-          删除
+          <Button.Label>删除</Button.Label>
         </Button>
       </div>
       {mode === "tabs" && (

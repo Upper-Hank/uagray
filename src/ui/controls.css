@@ -370,6 +370,8 @@
   align-items: center;
 }
 .ui-disclosure-actions {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
   padding-inline-end: var(--ui-space-6);
 }

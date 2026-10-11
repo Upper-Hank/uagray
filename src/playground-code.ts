@@ -13,7 +13,11 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   const literal = (value: Value) => `{${JSON.stringify(value)}}`;
   const string = (key: string) => String(args[key] ?? "");
   let name = entry.name;
-  let props: Record<string, Value | undefined> = { ...args };
+  let props: Record<string, Value | undefined> = Object.fromEntries(
+    entry.fields
+      .filter((field) => field.scope === "prop")
+      .map((field) => [field.key, args[field.key]]),
+  );
   for (const field of entry.fields) {
     if (field.scope !== "prop") delete props[field.key];
   }
@@ -57,33 +61,18 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     state("value", "onValueChange");
   }
   if (entry.id === "buttons") {
+    name =
+      args.action === "copy"
+        ? "CopyButton"
+        : args.action === "share"
+          ? "ShareButton"
+          : "Button";
     delete props.action;
-    if (args.action === "copy") {
-      name = "CopyButton";
-      props = {
-        text: args.text,
-        size: args.size,
-        emphasis: args.emphasis,
-        copiedLabel: args.copiedLabel,
-        copyingLabel: args.copyingLabel,
-        copyFailedLabel: args.copyFailedLabel,
-      };
-      children = string("children");
-    } else if (args.action === "share") {
-      name = "ShareButton";
-      props = { url: args.url };
-      children = undefined;
-    } else {
-      delete props.text;
-      delete props.url;
-      delete props.showCount;
-      delete props.copiedLabel;
-      delete props.copyingLabel;
-      delete props.copyFailedLabel;
-      if (!args.showCount) delete props.count;
-      if (args.icon === "none") delete props.icon;
-    }
+    if (name !== "CopyButton") delete props.text;
+    if (name !== "ShareButton") delete props.url;
+    if (!string("aria-label")) delete props["aria-label"];
   }
+  if (entry.id === "icon-button") name = "Button";
   if (entry.id === "input") props["aria-label"] = "输入示例";
   if (entry.id === "number-input") {
     props["aria-label"] = "数字输入示例";
@@ -101,17 +90,6 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   if (entry.id === "radio") props.name = "choice";
   if (["select", "segments", "tabs"].includes(entry.id))
     state("value", "onValueChange");
-  if (entry.id === "showcase") {
-    rawChildren = true;
-    children = `<span style={{ whiteSpace: "pre-wrap", fontSize: 24, lineHeight: 1.6, padding: 24 }}>${escapeText(string("children"))}</span>`;
-    delete props.externalLabel;
-    delete props.externalHref;
-    if (args.externalLabel)
-      expressions.externalLink = JSON.stringify({
-        label: args.externalLabel,
-        href: args.externalHref,
-      });
-  }
   if (entry.id === "slider") {
     if (string("label").trim() === "") props["aria-label"] = "value";
     state("value", "onValueChange");
@@ -123,13 +101,10 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     )
   )
     state("open", "onOpenChange");
-  if (
-    (entry.id === "dialog" || entry.id === "drawer") &&
-    args.footer === true
-  )
+  if ((entry.id === "dialog" || entry.id === "drawer") && args.footer === true)
     imports.add("Button");
   if (entry.id === "confirm-dialog") {
-    children = undefined;
+    if (string("title")) delete props["aria-label"];
     expressions.onConfirm = "() => setOpen(false)";
   }
 
@@ -158,18 +133,12 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     children = `<Button>${escapeText(string("children"))}</Button>`;
   }
   if (entry.id === "shell") props.mainId = "workspace-main";
-  if (entry.id === "navigation") {
-    props = { variant: args.variant };
-    if (args.previous)
-      expressions.previous = '{ title: "按钮", href: "#buttons" }';
-    if (args.next) expressions.next = '{ title: "输入", href: "#input" }';
-  }
   if (entry.id === "action-row") {
     props = {};
-    for (const component of ["Button", "ButtonGroup", "IconButton"])
+    for (const component of ["Button", "ButtonGroup", "Icon"])
       imports.add(component);
     rawChildren = true;
-    children = `<Button size=${JSON.stringify(args.size)} disabled={${Boolean(args.disabled)}}>{${JSON.stringify(string("children"))}}</Button>\n<ButtonGroup aria-label="切换项目">\n<IconButton size=${JSON.stringify(args.size)} icon="chevron-left" aria-label="上一项" />\n<IconButton size=${JSON.stringify(args.size)} icon="chevron-right" aria-label="下一项" disabled />\n</ButtonGroup>`;
+    children = `<Button size=${JSON.stringify(args.size)} disabled={${Boolean(args.disabled)}}>{${JSON.stringify(string("children"))}}</Button>\n<ButtonGroup aria-label="切换项目">\n<Button shape="square" size=${JSON.stringify(args.size)} aria-label="上一项"><Button.Icon><Icon name="chevron-left" /></Button.Icon></Button>\n<Button shape="square" size=${JSON.stringify(args.size)} aria-label="下一项" disabled><Button.Icon><Icon name="chevron-right" /></Button.Icon></Button>\n</ButtonGroup>`;
   }
   if (entry.id === "text-list") {
     rawChildren = true;
@@ -191,13 +160,6 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     helpers.push(`const [count, setCount] = useState(${args.count});`);
     delete props.count;
     expressions.count = "count";
-    if (string("summary").includes("{count}")) {
-      delete props.summary;
-      expressions.summary = `${JSON.stringify(string("summary"))}.replaceAll("{count}", String(count))`;
-    }
-    expressions.onSelectAll = `() => setCount(${args.total})`;
-    expressions.onClear = "() => setCount(0)";
-    expressions.onDone = "() => setCount(0)";
   }
   const composed = compositionMarkup(entry.id, args, string);
   if (composed) {
@@ -250,11 +212,172 @@ function compositionMarkup(
   args: Args,
   text: (key: string) => string,
 ): { markup: string; imports: string[] } | undefined {
-  const piece = (key: string) => escapeText(text(key).trim());
+  const piece = (key: string) => escapeText(text(key));
   const present = (key: string) => text(key).trim().length > 0;
   const icon = (name: string) =>
     `<Icon name=${JSON.stringify(name)} size={16} />`;
   const items = choiceItems(args.entries);
+  if (id === "buttons" || id === "icon-button") {
+    const owner =
+      id === "icon-button"
+        ? "Button"
+        : args.action === "copy"
+          ? "CopyButton"
+          : args.action === "share"
+            ? "ShareButton"
+            : "Button";
+    const hasIcon = present("icon") && text("icon") !== "none";
+    return {
+      imports: hasIcon ? ["Icon"] : [],
+      markup: [
+        hasIcon
+          ? `<${owner}.Icon><Icon name=${JSON.stringify(text("icon"))} /></${owner}.Icon>`
+          : "",
+        id === "buttons" && present("children")
+          ? `<${owner}.Label>${piece("children")}</${owner}.Label>`
+          : "",
+        id === "buttons" && present("count")
+          ? `<${owner}.Count>${piece("count")}</${owner}.Count>`
+          : "",
+        ...(owner === "Button"
+          ? []
+          : [
+              ["copiedLabel", "success"],
+              ["copyingLabel", "pending"],
+              ["copyFailedLabel", "error"],
+            ].map(([key, state]) =>
+              present(key)
+                ? `<${owner}.Feedback state="${state}">${piece(key)}</${owner}.Feedback>`
+                : "",
+            )),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "confirm-dialog") {
+    const header = [
+      present("title")
+        ? `<ConfirmDialog.Title>${piece("title")}</ConfirmDialog.Title>`
+        : "",
+      present("description")
+        ? `<ConfirmDialog.Description>${piece("description")}</ConfirmDialog.Description>`
+        : "",
+    ].filter(Boolean);
+    const actions = [
+      present("cancelLabel")
+        ? `<ConfirmDialog.CancelAction>${piece("cancelLabel")}</ConfirmDialog.CancelAction>`
+        : "",
+      present("confirmLabel")
+        ? `<ConfirmDialog.ConfirmAction>${piece("confirmLabel")}</ConfirmDialog.ConfirmAction>`
+        : "",
+    ].filter(Boolean);
+    return {
+      imports: [],
+      markup: [
+        header.length
+          ? `<ConfirmDialog.Header>\n${header.join("\n")}\n</ConfirmDialog.Header>`
+          : "",
+        actions.length
+          ? `<ConfirmDialog.Footer>\n${actions.join("\n")}\n</ConfirmDialog.Footer>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "upload")
+    return {
+      imports: ["Icon"],
+      markup: [
+        `<FileDropzone.Icon><Icon name=${JSON.stringify(text("icon"))} /></FileDropzone.Icon>`,
+        present("label")
+          ? `<FileDropzone.Description>${piece("label")}</FileDropzone.Description>`
+          : "",
+        `<FileDropzone.Trigger>${piece("buttonLabel")}</FileDropzone.Trigger>`,
+        args.showError
+          ? text("errorSource") === "custom"
+            ? `<FileDropzone.Error>{${JSON.stringify(text("error"))}}</FileDropzone.Error>`
+            : "<FileDropzone.Error />"
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  if (id === "selection") {
+    const actions = [
+      ["selectAllLabel", "SelectAllAction", `setCount(${args.total})`],
+      ["clearLabel", "ClearAction", "setCount(0)"],
+      ["doneLabel", "DoneAction", "setCount(0)"],
+    ]
+      .filter(([key]) => present(key))
+      .map(
+        ([key, role, call]) =>
+          `<SelectionBar.${role} onClick={() => ${call}}>${piece(key)}</SelectionBar.${role}>`,
+      );
+    return {
+      imports: [],
+      markup: [
+        present("summary")
+          ? `<SelectionBar.Description>{${JSON.stringify(text("summary"))}.replaceAll("{count}", String(count))}</SelectionBar.Description>`
+          : "",
+        actions.length
+          ? `<SelectionBar.Actions>\n${actions.join("\n")}\n</SelectionBar.Actions>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "text")
+    return {
+      imports: [],
+      markup: [
+        `<ExpandableCode.Body>{${JSON.stringify(text("code"))}}</ExpandableCode.Body>`,
+        ...[
+          ["copyLabel", "CopyAction"],
+          ["expandLabel", "ExpandAction"],
+          ["collapseLabel", "CollapseAction"],
+        ].map(([key, role]) =>
+          present(key)
+            ? `<ExpandableCode.${role}>${piece(key)}</ExpandableCode.${role}>`
+            : "",
+        ),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  if (id === "navigation")
+    return {
+      imports: [],
+      markup: [
+        ["previousLabel", "previousHref", "Previous"],
+        ["nextLabel", "nextHref", "Next"],
+      ]
+        .map(([key, href, role]) =>
+          present(key)
+            ? `<Pager.${role}${present(href) ? ` href=${JSON.stringify(text(href))}` : ""}>${piece(key)}</Pager.${role}>`
+            : "",
+        )
+        .filter(Boolean)
+        .join("\n"),
+    };
+  if (id === "showcase")
+    return {
+      imports: [],
+      markup: [
+        `<ShowcaseCard.Title>${piece("title")}</ShowcaseCard.Title>`,
+        present("description")
+          ? `<ShowcaseCard.Description>${piece("description")}</ShowcaseCard.Description>`
+          : "",
+        `<ShowcaseCard.Media><span style={{ whiteSpace: "pre-wrap", fontSize: 24, lineHeight: 1.6, padding: 24 }}>${escapeText(text("children"))}</span></ShowcaseCard.Media>`,
+        present("externalLabel")
+          ? `<ShowcaseCard.ExternalLink href=${JSON.stringify(text("externalHref"))}>${piece("externalLabel")}</ShowcaseCard.ExternalLink>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
   if (id === "fields") {
     return {
       imports: ["Input"],
@@ -348,7 +471,9 @@ function compositionMarkup(
   if (id === "dialog" || id === "drawer") {
     const owner = id === "dialog" ? "Dialog" : "Drawer";
     const heading = [
-      present("title") ? `<${owner}.Title>${piece("title")}</${owner}.Title>` : "",
+      present("title")
+        ? `<${owner}.Title>${piece("title")}</${owner}.Title>`
+        : "",
       present("description")
         ? `<${owner}.Description>${piece("description")}</${owner}.Description>`
         : "",
@@ -359,7 +484,9 @@ function compositionMarkup(
         heading.length
           ? `<${owner}.Header>\n${heading.join("\n")}\n</${owner}.Header>`
           : "",
-        present("body") ? `<${owner}.Body>${piece("body")}</${owner}.Body>` : "",
+        present("body")
+          ? `<${owner}.Body>${piece("body")}</${owner}.Body>`
+          : "",
         args.footer === true
           ? `<${owner}.Footer>\n<Button onClick={() => setOpen(false)}>关闭示例</Button>\n</${owner}.Footer>`
           : "",
@@ -406,7 +533,7 @@ function compositionMarkup(
     return {
       imports: [
         ...(present("icon") ? ["Icon"] : []),
-        ...(args.showActions === true ? ["Button"] : []),
+        ...(args.showActions === true ? ["Button", "Icon"] : []),
       ],
       markup: [
         present("icon")
@@ -417,7 +544,7 @@ function compositionMarkup(
           ? `<EmptyState.Description>${piece("description")}</EmptyState.Description>`
           : "",
         args.showActions === true
-          ? `<EmptyState.Actions>\n<Button icon="plus">添加文件</Button>\n</EmptyState.Actions>`
+          ? `<EmptyState.Actions>\n<Button><Button.Icon><Icon name="plus" /></Button.Icon><Button.Label>${piece("actionLabel")}</Button.Label></Button>\n</EmptyState.Actions>`
           : "",
       ]
         .filter(Boolean)

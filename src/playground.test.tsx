@@ -11,56 +11,17 @@ import {
 import { Playground } from "./playground";
 import { componentEntries } from "./playground-catalog";
 import { exampleCode } from "./playground-code";
+import {
+  treeFromExample,
+  validateTree,
+  allowedTypes,
+  newNode,
+  makeNode,
+  normalizeTree,
+  removable,
+} from "./playground-tree";
+import { treeCode } from "./playground-tree-view";
 import { Badge, Alert, EmptyState, Input, SearchField, Icon } from "./ui";
-it("keeps selection actions named and updates the example summary", () => {
-  const entry = componentEntries.find((item) => item.id === "selection")!;
-  render(<Playground entry={entry} />);
-  const bar = within(screen.getByRole("group", { name: "批量操作" }));
-  expect(bar.getByText("已选择 4 项")).toBeTruthy();
-  fireEvent.click(bar.getByRole("button", { name: "全选" }));
-  expect(bar.getByText("已选择 10 项")).toBeTruthy();
-  fireEvent.click(bar.getByRole("button", { name: "清空" }));
-  expect(bar.getByText("已选择 0 项")).toBeTruthy();
-  expect(
-    (bar.getByRole("button", { name: "清空" }) as HTMLButtonElement).disabled,
-  ).toBe(true);
-  expect(
-    exampleCode(entry, { summary: "已选择 {count} 项", count: 4, total: 10 }),
-  ).toContain('.replaceAll("{count}", String(count))');
-});
-it("closes and reopens the toast region example with matching generated state", () => {
-  const entry = componentEntries.find((item) => item.id === "toast-region")!;
-  render(<Playground entry={entry} />);
-  expect(
-    screen
-      .getAllByRole("status")
-      .filter((node) => node.classList.contains("ui-toast")),
-  ).toHaveLength(1);
-  fireEvent.click(screen.getByRole("button", { name: "关闭提示" }));
-  expect((screen.getByLabelText("API open") as HTMLInputElement).checked).toBe(
-    false,
-  );
-  fireEvent.click(screen.getByRole("button", { name: "显示提示" }));
-  expect((screen.getByLabelText("API open") as HTMLInputElement).checked).toBe(
-    true,
-  );
-  const code = exampleCode(entry, {
-    "aria-label": "通知",
-    children: "测试提示",
-    open: false,
-  });
-  expect(code).toContain("useState(false)");
-  expect(code).toContain("open={open} onOpenChange={setOpen}");
-  expect(code).not.toContain("onOpenChange={() => {}}");
-});
-function editContent(name: string, value: string) {
-  fireEvent.click(
-    screen.getByRole("button", { name: new RegExp(`^(编辑|添加) ${name}$`) }),
-  );
-  const dialog = screen.getByRole("dialog", { name: `编辑 ${name}` });
-  fireEvent.change(within(dialog).getByRole("textbox"), { target: { value } });
-  fireEvent.click(screen.getByRole("button", { name: "保存" }));
-}
 beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
     configurable: true,
@@ -97,50 +58,17 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-it("collapses API configuration while preserving edits and uses a gray reset button", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "input")!}
-    />,
-  );
-  fireEvent.change(screen.getByLabelText("API value"), {
-    target: { value: "保留配置" },
-  });
-  const collapse = screen.getByRole("button", { name: "收起 API" });
-  const preview = screen.getByRole("group", { name: "Preview" });
-  expect(preview.contains(collapse)).toBe(true);
-  expect(
-    preview.contains(screen.getByRole("radiogroup", { name: "画布环境" })),
-  ).toBe(true);
-  const panelId = collapse.getAttribute("aria-controls")!;
-  fireEvent.click(collapse);
-  expect(screen.queryByRole("group", { name: "API 配置" })).toBeNull();
-  expect(document.getElementById(panelId)?.hidden).toBe(true);
-  expect(
-    (
-      within(screen.getByRole("region", { name: "组件预览" })).getByRole(
-        "textbox",
-      ) as HTMLInputElement
-    ).value,
-  ).toBe("保留配置");
-  const expand = screen.getByRole("button", { name: "展开 API" });
-  expect(expand.getAttribute("aria-expanded")).toBe("false");
-  fireEvent.click(expand);
-  expect((screen.getByLabelText("API value") as HTMLInputElement).value).toBe(
-    "保留配置",
-  );
-  const reset = screen.getByRole("button", { name: "重置示例" });
-  expect(reset.classList.contains("ui-button--quiet")).toBe(false);
-  fireEvent.click(reset);
-  expect((screen.getByLabelText("API value") as HTMLInputElement).value).toBe(
-    "",
-  );
-});
+
 it("omits optional copy in generated examples and preserves explicitly supplied copy", () => {
   for (const [id, key, copy, markup] of [
     ["alert", "title", "网络连接", "<Alert.Title>网络连接</Alert.Title>"],
     ["progress", "valueLabel", "48%", "<Progress.Value>48%</Progress.Value>"],
-    ["cards", "description", "下一篇", "<NavigationCard.Description>下一篇</NavigationCard.Description>"],
+    [
+      "cards",
+      "description",
+      "下一篇",
+      "<NavigationCard.Description>下一篇</NavigationCard.Description>",
+    ],
   ] as const) {
     const entry = componentEntries.find((item) => item.id === id)!;
     const args = Object.fromEntries(
@@ -148,7 +76,9 @@ it("omits optional copy in generated examples and preserves explicitly supplied 
     );
     expect(exampleCode(entry, { ...args, [key]: "" })).not.toContain(markup);
     expect(exampleCode(entry, { ...args, [key]: copy })).toContain(markup);
-    expect(exampleCode(entry, { ...args, [key]: copy })).not.toContain(`${key}=`);
+    expect(exampleCode(entry, { ...args, [key]: copy })).not.toContain(
+      `${key}=`,
+    );
   }
   for (const [id, key, copy] of [
     ["selection", "summary", "2 个文件"],
@@ -160,246 +90,13 @@ it("omits optional copy in generated examples and preserves explicitly supplied 
     );
     expect(exampleCode(entry, { ...args, [key]: "" })).not.toContain(`${key}=`);
     expect(exampleCode(entry, { ...args, [key]: copy })).toContain(
-      `${key}={${JSON.stringify(copy)}}`,
+      id === "selection"
+        ? `<SelectionBar.Description>{${JSON.stringify(copy)}.replaceAll("{count}", String(count))}</SelectionBar.Description>`
+        : `<FileDropzone.Description>${copy}</FileDropzone.Description>`,
     );
   }
 });
-it("keeps API configuration inside the practice area and resets edits", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "input")!}
-    />,
-  );
-  const practice = screen.getByRole("region", { name: "组件展示" });
-  const controls = within(practice).getByRole("group", { name: "API 配置" });
-  const preview = within(practice).getByRole("group", { name: "Preview" });
-  expect(preview.contains(controls)).toBe(true);
-  expect(
-    preview.contains(screen.getByRole("region", { name: "组件预览" })),
-  ).toBe(true);
-  expect(within(controls).queryByText("契约")).toBeNull();
-  expect(controls.querySelector("details, summary")).toBeNull();
-  expect(
-    within(controls).queryByRole("button", { name: "事件与回调" }),
-  ).toBeNull();
-  expect(screen.queryByRole("button", { name: "API" })).toBeNull();
-  fireEvent.change(within(controls).getByLabelText("API value"), {
-    target: { value: "保留" },
-  });
-  expect(
-    (
-      within(screen.getByRole("region", { name: "组件预览" })).getByRole(
-        "textbox",
-      ) as HTMLInputElement
-    ).value,
-  ).toBe("保留");
-  fireEvent.click(within(controls).getByRole("button", { name: "重置示例" }));
-  expect((screen.getByLabelText("API value") as HTMLInputElement).value).toBe(
-    "",
-  );
-});
-it("switches the shared canvas background independently from grouped API values", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "buttons")!}
-    />,
-  );
-  const preview = screen.getByRole("region", { name: "组件预览" });
-  const canvas = preview.closest(".practice-stage")!;
-  const controls = screen.getByRole("group", { name: "API 配置" });
-  expect(canvas.contains(controls)).toBe(false);
-  expect(
-    within(controls).getByRole("button", { name: "编辑 children" }),
-  ).toBeTruthy();
-  expect(
-    within(controls).getByRole("radiogroup", { name: "API emphasis" }),
-  ).toBeTruthy();
-  expect(
-    within(controls).getByRole("switch", { name: "API disabled" }),
-  ).toBeTruthy();
-  editContent("children", "保存");
-  const code = screen.getByLabelText("示例代码").textContent;
-  fireEvent.click(screen.getByRole("radio", { name: "白层" }));
-  expect(canvas.classList.contains("ui-surface--raised")).toBe(true);
-  expect(within(preview).getByRole("button", { name: /保存/ })).toBeTruthy();
-  expect(screen.getByLabelText("示例代码").textContent).toBe(code);
-  fireEvent.click(within(controls).getByRole("button", { name: "重置示例" }));
-  expect(
-    screen.getByRole("radio", { name: "白层" }).getAttribute("aria-checked"),
-  ).toBe("true");
-  expect(within(preview).getByRole("button", { name: /Like/ })).toBeTruthy();
-});
-it("preserves original API keys while selecting tone through color samples", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "alert")!}
-    />,
-  );
-  const panel = screen.getByRole("group", { name: "API 配置" });
-  expect(within(panel).getByText("Title")).toBeTruthy();
-  expect(within(panel).getByText("Body")).toBeTruthy();
-  expect(within(panel).getByText("tone")).toBeTruthy();
-  expect(
-    (within(panel).getByRole("radio", { name: "neutral" }) as HTMLInputElement)
-      .checked,
-  ).toBe(true);
-  expect(document.querySelector("pre")!.textContent).toContain(
-    'tone={"neutral"}',
-  );
-});
-it("renders one button and synchronizes configuration, example and copied code", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "buttons")!}
-    />,
-  );
-  const stage = screen.getByRole("region", { name: "组件预览" });
-  expect(within(stage).getAllByRole("button")).toHaveLength(1);
-  editContent("children", "保存");
-  fireEvent.click(screen.getByRole("switch", { name: "API showCount" }));
-  fireEvent.change(screen.getByLabelText("API count"), {
-    target: { value: "14" },
-  });
-  const button = within(stage).getByRole("button", { name: /保存/ });
-  expect(button.textContent).toContain("14");
-  fireEvent.click(screen.getByRole("switch", { name: "API disabled" }));
-  expect((button as HTMLButtonElement).disabled).toBe(true);
-  const code = document.querySelector("pre")!.textContent!;
-  expect(code).toContain("保存");
-  expect(code).toContain("count={14}");
-  expect(code).toContain("disabled={true}");
-  fireEvent.click(screen.getByRole("button", { name: "重置示例" }));
-  expect(within(stage).getByRole("button", { name: /Like/ })).toBeTruthy();
-});
-it("switches real tab content and keeps edited panels in generated code", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "tabs")!}
-    />,
-  );
-  const preview = screen.getByRole("region", { name: "组件预览" });
-  expect(within(preview).getByRole("tabpanel").textContent).toBe("项目内容");
-  fireEvent.click(within(preview).getByRole("tab", { name: "文件" }));
-  expect(within(preview).getByRole("tabpanel").textContent).toBe("文件内容");
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Item" }));
-  fireEvent.change(screen.getByLabelText("API Item 2 content"), {
-    target: { value: "6 个文件" },
-  });
-  expect(within(preview).getByRole("tabpanel").textContent).toBe("6 个文件");
-  const code = document.querySelector("pre")!.textContent!;
-  expect(code).toContain('<Tabs.Content value="1">6 个文件</Tabs.Content>');
-  expect(code).not.toContain("items=");
-  fireEvent.click(screen.getByRole("button", { name: "重置示例" }));
-  expect(within(preview).getByRole("tabpanel").textContent).toBe("项目内容");
-});
-it("keeps input content linked to its value API without adding companion controls to the example", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "input")!}
-    />,
-  );
-  const stage = screen.getByRole("region", { name: "组件预览" });
-  fireEvent.change(within(stage).getByRole("textbox"), {
-    target: { value: "abc" },
-  });
-  expect((screen.getByLabelText("API value") as HTMLInputElement).value).toBe(
-    "abc",
-  );
-  fireEvent.click(screen.getByRole("switch", { name: "API readOnly" }));
-  expect(
-    (within(stage).getByRole("textbox") as HTMLInputElement).readOnly,
-  ).toBe(true);
-  expect(within(stage).getAllByRole("textbox")).toHaveLength(1);
-});
-it("normalizes range limits so the API, output and generated snippet stay consistent", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "slider")!}
-    />,
-  );
-  fireEvent.change(screen.getByLabelText("API min"), {
-    target: { value: "256" },
-  });
-  expect((screen.getByLabelText("API max") as HTMLInputElement).value).toBe(
-    "257",
-  );
-  expect(screen.getByText("256px")).toBeTruthy();
-  expect(document.querySelector("pre")!.textContent).toContain("max={257}");
-  const value = screen.getByLabelText("API value") as HTMLInputElement;
-  expect(value.min).toBe("256");
-  expect(value.max).toBe("257");
-  fireEvent.change(screen.getByLabelText("API max"), {
-    target: { value: "400" },
-  });
-  fireEvent.change(value, { target: { value: "350" } });
-  expect(value.value).toBe("350");
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    "useState(350)",
-  );
-});
-it("edits slider values from the fixed API panel and toggles disabled", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "slider")!}
-    />,
-  );
-  const preview = within(screen.getByRole("region", { name: "组件预览" }));
-  const controls = screen.getByRole("group", { name: "API 配置" });
-  fireEvent.click(screen.getByRole("radio", { name: "页面" }));
-  expect(
-    screen
-      .getByRole("region", { name: "组件预览" })
-      .closest(".practice-stage")!
-      .classList.contains("practice-stage--background-base"),
-  ).toBe(true);
-  editContent("Label", "");
-  expect(preview.getByRole("slider", { name: "value" })).toBeTruthy();
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    'aria-label={"value"}',
-  );
-  const value = screen.getByLabelText("API value");
-  const stepper = within(value.closest(".ui-number-input")! as HTMLElement);
-  fireEvent.click(stepper.getByRole("button", { name: "增加" }));
-  expect((value as HTMLInputElement).value).toBe("141");
-  fireEvent.click(stepper.getByRole("button", { name: "减少" }));
-  expect((value as HTMLInputElement).value).toBe("140");
-  const disabled = within(controls).getByRole("switch", {
-    name: "API disabled",
-  });
-  fireEvent.click(disabled);
-  expect((disabled as HTMLInputElement).checked).toBe(true);
-  expect((preview.getByRole("slider") as HTMLInputElement).disabled).toBe(true);
-  fireEvent.click(disabled);
-  expect((preview.getByRole("slider") as HTMLInputElement).disabled).toBe(
-    false,
-  );
-});
-it("keeps example controls separate and changes the Button action conditionally", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "buttons")!}
-    />,
-  );
-  const controls = screen.getByRole("group", { name: "API 配置" });
-  expect(
-    within(controls).getByRole("region", { name: "示例配置" }),
-  ).toBeTruthy();
-  expect(screen.queryByLabelText("API text")).toBeNull();
-  fireEvent.click(
-    within(screen.getByRole("radiogroup", { name: "API action" })).getByRole(
-      "radio",
-      { name: "copy" },
-    ),
-  );
-  expect(screen.getByRole("button", { name: "编辑 text" })).toBeTruthy();
-  expect(screen.queryByRole("radiogroup", { name: "API emphasis" })).toBeNull();
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    "<CopyButton",
-  );
-  expect(screen.getByLabelText("示例代码").textContent).not.toContain(
-    "action=",
-  );
-});
+
 it("only enables field focus indicators through Tab navigation, never typing or pointer interaction", () => {
   render(
     <>
@@ -430,52 +127,34 @@ it("only enables field focus indicators through Tab navigation, never typing or 
 it("exposes feedback icons and preserves explicit no-icon choices in generated code", () => {
   const error = vi.spyOn(console, "error").mockImplementation(() => {});
   const { container, rerender } = render(
-    <Badge tone="success"><Badge.Icon><Icon name="heart" size={14}/></Badge.Icon>
+    <Badge tone="success">
+      <Badge.Icon>
+        <Icon name="heart" size={14} />
+      </Badge.Icon>
       完成
     </Badge>,
   );
   expect(container.querySelector(".ui-badge svg")).toBeTruthy();
   expect(container.querySelector(".ui-tone--success")).toBeTruthy();
-  rerender(<Alert><Alert.Body>内容</Alert.Body></Alert>);
+  rerender(
+    <Alert>
+      <Alert.Body>内容</Alert.Body>
+    </Alert>,
+  );
   expect(container.querySelector("svg")).toBeNull();
   expect(error.mock.calls.map((call) => String(call[0]))).toContain(
     "[uagray] Alert 缺少 icon",
   );
   error.mockClear();
-  rerender(<EmptyState><EmptyState.Title>空</EmptyState.Title></EmptyState>);
+  rerender(
+    <EmptyState>
+      <EmptyState.Title>空</EmptyState.Title>
+    </EmptyState>,
+  );
   expect(container.querySelector("svg")).toBeNull();
   expect(error).not.toHaveBeenCalled();
 });
 
-it("edits structured options without changing selection identity and rejects duplicate values", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "segments")!}
-    />,
-  );
-  const preview = within(screen.getByRole("region", { name: "组件预览" }));
-  fireEvent.click(preview.getByRole("radio", { name: "Token 12" }));
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Item" }));
-  fireEvent.change(screen.getByLabelText("API Item 2 label"), {
-    target: { value: "令牌" },
-  });
-  expect(
-    preview.getByRole("radio", { name: "令牌 12" }).getAttribute("aria-checked"),
-  ).toBe("true");
-  const id = screen.getByLabelText("API Item 2 value");
-  fireEvent.change(id, { target: { value: "0" } });
-  fireEvent.blur(id);
-  expect(screen.getByText("value 必须非空且唯一")).toBeTruthy();
-  expect(screen.getByLabelText("示例代码").textContent).toContain('value="1"');
-  fireEvent.click(
-    screen.getByRole("switch", { name: "API Item 2 disabled" }),
-  );
-  expect(
-    preview.getByRole("radio", { name: "规范" }).getAttribute("aria-checked"),
-  ).toBe("true");
-  fireEvent.click(screen.getByRole("button", { name: "重置示例" }));
-  expect(preview.getByRole("radio", { name: "Token 12" })).toBeTruthy();
-});
 it("preserves explicit zero and false while omitting an absent optional count", () => {
   const entry = componentEntries.find((entry) => entry.id === "buttons")!;
   const args = Object.fromEntries(
@@ -488,35 +167,10 @@ it("preserves explicit zero and false while omitting an absent optional count", 
     count: 0,
     disabled: false,
   });
-  expect(code).toContain("count={0}");
+  expect(code).toContain("<Button.Count>0</Button.Count>");
   expect(code).toContain("disabled={false}");
   expect(code).not.toContain("showCount=");
   expect(code).toContain('from "uagray"');
-});
-it("shows complete usage with one disclosure state and no nested expansion", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "input")!}
-    />,
-  );
-  const source = screen.getByLabelText("示例代码");
-  expect(source.textContent).toContain("return");
-  expect(screen.queryByRole("button", { name: "展开完整示例" })).toBeNull();
-  fireEvent.change(screen.getByLabelText("API value"), {
-    target: { value: "同步内容" },
-  });
-  expect(source.textContent).toContain("同步内容");
-  const toggle = screen.getByRole("button", { name: "用法" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("false");
-  fireEvent.click(toggle);
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  fireEvent.click(toggle);
-  expect(toggle.getAttribute("aria-expanded")).toBe("false");
-  const panel = document.getElementById(toggle.getAttribute("aria-controls")!);
-  expect(panel?.getAttribute("aria-hidden")).toBe("true");
-  fireEvent.click(toggle);
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  expect(source.textContent).toContain("同步内容");
 });
 
 it("generates native typography rows from the edited example without leaking helper props", () => {
@@ -541,143 +195,341 @@ it("generates native typography rows from the edited example without leaking hel
   expect(listCode).toContain("ordered={true}");
 });
 
-it("keeps content drafts out of preview and code until saved, and discards cancelled edits", async () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "buttons")!}
-    />,
-  );
-  const before = screen.getByLabelText("示例代码").textContent;
-  fireEvent.click(screen.getByRole("button", { name: "编辑 children" }));
-  fireEvent.change(screen.getByLabelText("API children"), {
-    target: { value: "草稿" },
+const entryFor = (id: string) =>
+  componentEntries.find((entry) => entry.id === id)!;
+function practice(id: string, custom = true) {
+  render(<Playground entry={entryFor(id)} />);
+  if (custom) fireEvent.click(screen.getByRole("radio", { name: "自定义" }));
+  return within(screen.getByRole("region", { name: "组件预览" }));
+}
+function choose(name: string, option: string) {
+  fireEvent.keyDown(screen.getByRole("combobox", { name }), {
+    key: "ArrowDown",
   });
-  expect(screen.getByLabelText("示例代码").textContent).toBe(before);
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog", { name: "编辑 children" })).toBeNull(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "编辑 children" }));
-  expect(
-    (screen.getByLabelText("API children") as HTMLTextAreaElement).value,
-  ).toBe("Like");
-  fireEvent.change(screen.getByLabelText("API children"), {
-    target: { value: "已保存" },
+  fireEvent.click(screen.getByRole("option", { name: option }));
+}
+function dialog() {
+  return within(screen.getByRole("dialog"));
+}
+function editTextNode(value: string) {
+  fireEvent.click(dialog().getByRole("button", { name: "编辑 文字" }));
+  fireEvent.change(dialog().getByRole("textbox", { name: "节点内容" }), {
+    target: { value },
   });
-  fireEvent.click(screen.getByRole("button", { name: "保存" }));
-  expect(screen.getByLabelText("示例代码").textContent).toContain("已保存");
+}
+function save() {
+  fireEvent.click(dialog().getByRole("button", { name: "保存" }));
+}
+function usage() {
+  return screen.getByLabelText("示例代码").textContent!;
+}
+
+it("keeps complete presets outside custom parameters and resets the selected share preset", () => {
+  const preview = practice("buttons", false);
+  expect(screen.queryByLabelText("API busy")).toBeNull();
+  choose("预设", "分享按钮");
+  expect(preview.getByRole("button", { name: "分享" })).toBeTruthy();
+  expect(usage()).toContain("<ShareButton");
+  fireEvent.click(screen.getByRole("radio", { name: "自定义" }));
+  expect(screen.queryByRole("combobox", { name: "预设" })).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "编辑 ShareButton.Label" }),
+  );
+  editTextNode("分享项目");
+  save();
+  expect(preview.getByRole("button", { name: "分享项目" })).toBeTruthy();
+  expect(usage()).toContain('"分享项目"');
+  expect(usage()).not.toContain("action=");
+  fireEvent.click(screen.getByRole("button", { name: "重置示例" }));
+  expect(preview.getByRole("button", { name: "分享" })).toBeTruthy();
 });
 
-it("limits tone samples to the component subset and uses semantic values in generated code", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "buttons")!}
-    />,
-  );
-  const tones = within(screen.getByRole("radiogroup", { name: "API tone" }));
-  expect(tones.queryByRole("radio", { name: "success" })).toBeNull();
-  fireEvent.click(tones.getByRole("radio", { name: "danger" }));
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    'tone={"danger"}',
-  );
+it("places add in the children heading and removes nodes without opening the editor", () => {
+  const preview = practice("button-group");
+  const add = screen.getByRole("button", { name: "添加节点" });
   expect(
-    within(screen.getByRole("region", { name: "状态" })).getByRole("switch", {
-      name: "API disabled",
-    }),
+    add.closest(".content-tree-heading")?.querySelector("h3")?.textContent,
+  ).toBe("children");
+  expect(screen.queryByRole("button", { name: /^上移|^下移/ })).toBeNull();
+  const handles = screen.getAllByRole("button", { name: "移动 Button" });
+  expect(handles).toHaveLength(2);
+  fireEvent.keyDown(handles[0], { key: "ArrowUp" });
+  expect(
+    preview.getAllByRole("button").map((button) => button.textContent),
+  ).toEqual(["添加", "取消"]);
+  fireEvent.click(screen.getAllByRole("button", { name: "删除 Button" })[1]);
+  expect(preview.queryByRole("button", { name: "取消" })).toBeNull();
+  expect(usage()).not.toContain('"取消"');
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.queryByRole("button", { name: "移动 Button" })).toBeNull();
+  cleanup();
+  practice("buttons");
+  expect(screen.queryByRole("button", { name: /^移动 / })).toBeNull();
+});
+
+it("keeps children settings separate from component parameters and direct edits have no back step", () => {
+  practice("checkbox");
+  fireEvent.click(screen.getByRole("button", { name: "设置 children" }));
+  expect(dialog().queryByRole("checkbox", { name: "API checked" })).toBeNull();
+  expect(dialog().queryByRole("button", { name: "返回" })).toBeNull();
+  const edit = dialog().getAllByRole("button", { name: /^编辑 / })[0];
+  fireEvent.click(edit);
+  expect(dialog().getByRole("button", { name: "返回" })).toBeTruthy();
+  fireEvent.click(dialog().getByRole("button", { name: "返回" }));
+  expect(screen.getByRole("dialog", { name: "设置 children" })).toBeTruthy();
+  fireEvent.click(dialog().getByRole("button", { name: "取消" }));
+  fireEvent.click(screen.getAllByRole("button", { name: /^编辑 / })[0]);
+  expect(dialog().queryByRole("button", { name: "返回" })).toBeNull();
+});
+
+it("commits a whole nested draft once and discards cancellation and collapsed drafts", async () => {
+  const preview = practice("buttons");
+  const original = usage();
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Button.Label" }));
+  editTextNode("未提交");
+  expect(preview.getByRole("button", { name: "Like" })).toBeTruthy();
+  expect(usage()).toBe(original);
+  fireEvent.click(dialog().getByRole("button", { name: "取消" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Button.Label" }));
+  editTextNode("保存");
+  save();
+  expect(preview.getByRole("button", { name: "保存" })).toBeTruthy();
+  expect(usage()).toContain('"保存"');
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Button.Label" }));
+  editTextNode("收起草稿");
+  fireEvent.click(screen.getByRole("button", { name: "收起 API" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "展开 API" }));
+  expect(preview.getByRole("button", { name: "保存" })).toBeTruthy();
+  expect(usage()).not.toContain("收起草稿");
+});
+
+it("adds a nested interactive field to Surface with matching state and code", () => {
+  const preview = practice("surface");
+  fireEvent.click(screen.getByRole("button", { name: "添加节点" }));
+  choose("节点类型", "Input");
+  fireEvent.change(dialog().getByRole("textbox", { name: "API placeholder" }), {
+    target: { value: "项目名称" },
+  });
+  save();
+  const input = preview.getByPlaceholderText("项目名称");
+  fireEvent.change(input, { target: { value: "Uagray" } });
+  expect(usage()).toContain("<Input");
+  expect(usage()).toContain('useState("Uagray")');
+  expect(usage()).toMatch(
+    /onChange=\{event => setValue\d+\(event.target.value\)\}/,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Input" }));
+  fireEvent.click(dialog().getByRole("switch", { name: "API readOnly" }));
+  save();
+  expect(
+    (preview.getByPlaceholderText("项目名称") as HTMLInputElement).readOnly,
+  ).toBe(true);
+});
+
+it("edits Dialog.Body children through one editor and keeps the close action working", () => {
+  const preview = practice("dialog");
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Dialog.Body" }));
+  fireEvent.click(dialog().getByRole("button", { name: "添加节点" }));
+  choose("节点类型", "Input");
+  fireEvent.change(dialog().getByRole("textbox", { name: "API placeholder" }), {
+    target: { value: "对话框输入" },
+  });
+  save();
+  expect(usage()).toContain('placeholder={"对话框输入"}');
+  fireEvent.click(preview.getByRole("button", { name: "打开" }));
+  const panel = screen.getByRole("dialog", { name: "项目设置" });
+  const input = within(panel).getByPlaceholderText("对话框输入");
+  fireEvent.change(input, { target: { value: "嵌套值" } });
+  expect(usage()).toContain('useState("嵌套值")');
+  fireEvent.click(within(panel).getByRole("button", { name: "关闭示例" }));
+  expect(
+    (screen.getByRole("switch", { name: "API open" }) as HTMLInputElement)
+      .checked,
+  ).toBe(false);
+  expect(usage()).toMatch(/onClick=\{\(\) => setOpen\d+\(false\)\}/);
+});
+
+it("restricts required nodes, duplicate slots and interactive button descendants", () => {
+  practice("buttons");
+  expect(
+    screen.queryByRole("button", { name: "删除 Button.Label" }),
+  ).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "添加节点" }));
+  fireEvent.keyDown(screen.getByRole("combobox", { name: "节点类型" }), {
+    key: "ArrowDown",
+  });
+  expect(screen.queryByRole("option", { name: "Button.Label" })).toBeNull();
+  expect(screen.getByRole("option", { name: "Button.Icon" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("option", { name: "Button.Icon" }));
+  save();
+  expect(
+    screen.queryByRole("button", { name: "删除 Button.Label" }),
+  ).toBeNull();
+  fireEvent.change(screen.getByRole("textbox", { name: "API aria-label" }), {
+    target: { value: "添加" },
+  });
+  expect(
+    screen.getByRole("button", { name: "删除 Button.Label" }),
   ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Button.Label" }));
+  fireEvent.click(dialog().getByRole("button", { name: "添加节点" }));
+  fireEvent.keyDown(screen.getByRole("combobox", { name: "节点类型" }), {
+    key: "ArrowDown",
+  });
+  expect(screen.queryByRole("option", { name: "Input" })).toBeNull();
+  expect(screen.queryByRole("option", { name: "Button" })).toBeNull();
 });
 
-it("reorders collection items while preserving the selected stable value", () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "segments")!}
-    />,
-  );
-  const preview = within(screen.getByRole("region", { name: "组件预览" }));
-  fireEvent.click(preview.getByRole("radio", { name: "Token 12" }));
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Item" }));
-  fireEvent.click(screen.getByRole("button", { name: "上移 API Item 2" }));
-  expect(
-    (screen.getByLabelText("API Item 1 label") as HTMLInputElement).value,
-  ).toBe("Token");
-  expect(
-    preview.getByRole("radio", { name: "Token 12" }).getAttribute("aria-checked"),
-  ).toBe("true");
-  expect(screen.getByLabelText("示例代码").textContent).toContain('value="1"');
+it("rejects an empty required label without changing committed content", () => {
+  const preview = practice("badge");
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Badge.Label" }));
+  editTextNode(" ");
+  save();
+  expect(dialog().getByRole("alert").textContent).toContain("Label");
+  expect(preview.getByText("内容")).toBeTruthy();
+  expect(usage()).toContain('"内容"');
 });
 
-it("selects icons from previews and omits an optional icon after removal", () => {
-  const { rerender } = render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "alert")!}
-    />,
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Icon" }));
-  fireEvent.change(screen.getByLabelText("搜索图标"), {
-    target: { value: "heart" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "heart" }));
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    'name="heart"',
-  );
-  expect(screen.getByLabelText("示例代码").textContent).toContain("<Alert.Icon>");
-  rerender(
-    <Playground
-      key="badge"
-      entry={componentEntries.find((entry) => entry.id === "badge")!}
-    />,
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Icon" }));
-  fireEvent.change(screen.getByLabelText("搜索图标"), {
-    target: { value: "heart" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "heart" }));
-  expect(screen.getByLabelText("示例代码").textContent).toContain("<Badge.Icon>");
-  fireEvent.click(screen.getByRole("button", { name: "Icon" }));
-  fireEvent.click(screen.getByRole("button", { name: "移除图标" }));
-  expect(screen.getByLabelText("示例代码").textContent).not.toContain(
-    "<Badge.Icon>",
-  );
-});
-
-it("adds and removes optional content and prevents saving empty required content", async () => {
-  render(
-    <Playground
-      entry={componentEntries.find((entry) => entry.id === "alert")!}
-    />,
-  );
-  editContent("Title", "临时标题");
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog", { name: "编辑 Title" })).toBeNull(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "移除 Title" }));
-  expect(screen.getByRole("button", { name: "添加 Title" })).toBeTruthy();
-  expect(screen.getByLabelText("示例代码").textContent).not.toContain(
-    "<Alert.Title>",
-  );
-  editContent("Title", "更新标题");
-  expect(screen.getByLabelText("示例代码").textContent).toContain(
-    "<Alert.Title>更新标题</Alert.Title>",
-  );
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog", { name: "编辑 Title" })).toBeNull(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "移除 Title" }));
-  fireEvent.click(screen.getByRole("button", { name: "编辑 Body" }));
-  const before = screen.getByLabelText("示例代码").textContent;
-  fireEvent.change(screen.getByRole("textbox"), {
-    target: { value: "" },
-  });
+it("updates root boolean APIs directly while keeping canvas environment out of code", () => {
+  const preview = practice("buttons");
+  fireEvent.click(screen.getByRole("switch", { name: "API disabled" }));
   expect(
-    (screen.getByRole("button", { name: "保存" }) as HTMLButtonElement)
+    (preview.getByRole("button", { name: "Like" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  fireEvent(
-    screen.getByRole("dialog", { name: "编辑 Body" }),
-    new Event("cancel", { bubbles: true, cancelable: true }),
+  const code = usage();
+  fireEvent.click(screen.getByRole("radio", { name: "白层" }));
+  expect(
+    preview
+      .getByRole("button", { name: "Like" })
+      .closest(".practice-stage")
+      ?.classList.contains("ui-surface--raised"),
+  ).toBe(true);
+  expect(usage()).toBe(code);
+  fireEvent.click(screen.getByRole("button", { name: "重置示例" }));
+  expect(
+    (preview.getByRole("button", { name: "Like" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(false);
+  expect(
+    screen.getByRole("radio", { name: "白层" }).getAttribute("aria-checked"),
+  ).toBe("true");
+});
+
+it("keeps a single collapsed usage disclosure and restores presets when leaving custom", () => {
+  const preview = practice("buttons");
+  fireEvent.click(screen.getByRole("button", { name: "编辑 Button.Label" }));
+  editTextNode("自定义内容");
+  save();
+  const toggle = screen.getByRole("button", { name: "用法" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(usage()).toContain("自定义内容");
+  fireEvent.click(screen.getByRole("radio", { name: "预设" }));
+  expect(preview.getByRole("button", { name: "Like" })).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "编辑 Button.Label" }),
+  ).toBeNull();
+});
+
+it("preserves Tabs association and stable identities when editing rich panel content", () => {
+  const preview = practice("tabs");
+  const edits = screen.getAllByRole("button", { name: "编辑 Tabs.Content" });
+  fireEvent.click(edits[1]);
+  fireEvent.click(dialog().getByRole("button", { name: "添加节点" }));
+  choose("节点类型", "Button");
+  save();
+  fireEvent.click(preview.getByRole("tab", { name: "文件" }));
+  expect(preview.getByRole("tabpanel").textContent).toContain("文件内容");
+  expect(preview.getByRole("tabpanel").textContent).toContain("Like");
+  expect(usage()).toContain('<Tabs.Content value={"1"}>');
+  expect(usage()).toContain("<Button.Label>");
+});
+
+it("normalizes numeric constraints and supports omission of Progress.value", () => {
+  const preview = practice("slider");
+  fireEvent.change(screen.getByRole("spinbutton", { name: "API max" }), {
+    target: { value: "100" },
+  });
+  expect((preview.getByRole("slider") as HTMLInputElement).value).toBe("100");
+  expect(usage()).toContain("useState(100)");
+  cleanup();
+  practice("progress");
+  fireEvent.click(screen.getByRole("switch", { name: "提供 value" }));
+  expect(screen.getByRole("progressbar").hasAttribute("value")).toBe(false);
+  expect(usage()).not.toContain(" value=");
+});
+
+it("preserves selection actions and count updates in a custom composition", () => {
+  const preview = practice("selection");
+  const bar = within(preview.getByRole("group", { name: "批量操作" }));
+  fireEvent.click(bar.getByRole("button", { name: "全选" }));
+  expect(bar.getByText("已选择 10 项")).toBeTruthy();
+  fireEvent.click(bar.getByRole("button", { name: "清空" }));
+  expect(bar.getByText("已选择 0 项")).toBeTruthy();
+  expect(
+    (bar.getByRole("button", { name: "清空" }) as HTMLButtonElement).disabled,
+  ).toBe(true);
+  expect(usage()).toMatch(/replaceAll\("\{count\}", String\(count\d+\)\)/);
+});
+
+it("keeps complete initial trees valid and exposes all registered roles without environment nesting", () => {
+  for (const entry of componentEntries)
+    expect(validateTree(treeFromExample(entry)), entry.id).toBeUndefined();
+  const button = treeFromExample(entryFor("buttons"));
+  expect(allowedTypes(button)).not.toContain("Button.Label");
+  expect(removable(button, button.children[0].id)).toBe(false);
+  const surface = treeFromExample(entryFor("surface"));
+  expect(allowedTypes(surface)).not.toContain("Surface");
+  expect(allowedTypes(surface)).toContain("Input");
+  const tabs = treeFromExample(entryFor("tabs"));
+  const list = tabs.children[0];
+  list.children[1].props.value = list.children[0].props.value;
+  expect(validateTree(tabs)).toBeTruthy();
+  const segment = treeFromExample(entryFor("segments"));
+  segment.children[0].props.disabled = true;
+  expect(normalizeTree(segment).props.value).toBe("1");
+  expect(allowedTypes(newNode("SelectionBar"))).toContain("SelectionBar.Count");
+  const source = makeNode("Text", {}, [
+    makeNode("#text", {}, [], "<Input /> ${x} {unsafe}"),
+  ]);
+  expect(treeCode(source)).toContain('{"<Input /> ${x} {unsafe}"}');
+});
+
+it("keeps nested fields independent and preserves selection identity when reordered", () => {
+  const preview = practice("surface");
+  for (const placeholder of ["第一个字段", "第二个字段"]) {
+    fireEvent.click(screen.getByRole("button", { name: "添加节点" }));
+    choose("节点类型", "Input");
+    fireEvent.change(
+      dialog().getByRole("textbox", { name: "API placeholder" }),
+      { target: { value: placeholder } },
+    );
+    save();
+  }
+  fireEvent.change(preview.getByPlaceholderText("第一个字段"), {
+    target: { value: "独立值" },
+  });
+  expect(
+    (preview.getByPlaceholderText("第二个字段") as HTMLInputElement).value,
+  ).toBe("");
+  expect(usage()).toContain('useState("独立值")');
+  cleanup();
+  const segments = practice("segments");
+  fireEvent.click(segments.getByRole("radio", { name: "Token 12" }));
+  fireEvent.keyDown(
+    screen.getAllByRole("button", { name: "移动 SegmentedControl.Item" })[1],
+    { key: "ArrowUp" },
   );
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog", { name: "编辑 Body" })).toBeNull(),
+  expect(
+    segments
+      .getByRole("radio", { name: "Token 12" })
+      .getAttribute("aria-checked"),
+  ).toBe("true");
+  expect(usage().indexOf('value={"1"} disabled={false}')).toBeLessThan(
+    usage().indexOf('value={"0"} disabled={false}'),
   );
-  expect(screen.getByLabelText("示例代码").textContent).toBe(before);
 });

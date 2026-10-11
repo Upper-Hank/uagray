@@ -2,7 +2,7 @@
 
 更新日期：2026-10-11。
 
-状态：用户已确认统一采用 `children` 与子组件组合组织内容。实施项的源码、配置台、生成代码、调用方和兼容层状态见 [逐组件实施清单](component-api.md#本轮工程落点记录)。本文区分已确认规则、实施范围和待讨论事项；待讨论项不是实施授权。新增组件或调整公共 API 必须完成第 10 节的设计开发清单，并记录未决问题。
+状态：用户已确认统一采用 `children` 与子组件组合组织内容。实施项的源码、配置台、生成代码、调用方和兼容层状态见 [逐组件实施清单](component-api.md#本轮工程落点记录)。本轮现有组件的内容与状态边界已落实；后续新增能力仍须独立登记。新增组件或调整公共 API 必须完成第 10 节的设计开发清单，并记录未决问题。
 
 本文是通用公共 API 规则的唯一依据。[逐组件实施清单](component-api.md) 在本文规则下维护具体组件的内容入口、数量、保留能力及实施状态；新增组件须同步登记。视觉、padding、圆角、环境与动效由 [设计规范](design-system.md) 维护；编辑器状态与代码生成由 [配置台契约](playground.md) 维护。配置台的编辑能力不决定公共 API 的内容类型。
 
@@ -12,15 +12,15 @@
 
 1. **内容统一通过组合进入。** 支持内容的组件以 `children: ReactNode` 承接文字、元素、组件及其组合。结构区域通过语义子组件表达；组件可声明允许的内容职责、数量范围与排列约束。不同时提供数据式和组合式两套公共内容接口。
 2. **父组件负责承载与交互。** 父组件管理表面、边界、padding、动效及整体交互状态。语义子组件管理对应区域的排布和关联。调用方决定区域内放什么内容。
-3. **普通属性声明外观、状态、行为和约束。** `tone`、`emphasis`、`size` 等声明意图，不直接开放 color、background、border、shadow、padding 或动效数值。公共尺寸和环境契约保持现行定义，尚未决议的命名问题见第 7 节。
+3. **普通属性声明外观、状态、行为和约束。** `tone`、`emphasis`、`size` 等声明意图，不直接开放 color、background、border、shadow、padding 或动效数值。公共尺寸和环境契约保持现行定义，组件特有语义见第 7 节。
 4. **同名属性保持相同语义。** 不以同一个自定义属性名表达不同概念；类型、支持范围与默认值须在组件契约中明确。原生属性沿用 HTML 语义。现存例外不能不加说明地推广。
 5. **可见内容与无障碍名称分开。** 可见标题、标签由内容或语义子组件承接；`aria-label` 是无障碍名称。子组件可以建立 `aria-labelledby`、`aria-describedby` 等关联，不能用一段默认业务文案代替名称。
-6. **内容不内置业务文案。** 未提供的可选内容不生成占位节点。组件自身承担的关闭、复制等功能动作可以有中文默认文案；调用方提供的 Button 文案由 Button 的 children 决定。
+6. **内容不内置业务文案。** 未提供的可选内容不生成占位节点。组件自身承担的关闭能力和复制状态播报可以有中文功能文案；调用方提供的 Button 文案由 Button 的 children 决定。
 7. **状态只由负责它的组件管理。** Root 接受当前值、初始值和变化请求；子项读取上下文，不复制一套选中状态。原生字段保留原生事件；合成值使用 `onValueChange(value)`，展开使用 `onOpenChange(open)`。
 8. **保留宿主与原生能力。** 有实际 DOM 节点的组件接受对应原生属性、className、style 与 ref。ref 指向实际节点；Select 根调用的 ref 继续指向 trigger，不因内容迁移改变。子组件使用上下文关联，不能依赖检查业务组件内部的 React 元素来发现内容。
-9. **预设与 API 自定义配置分层。** 预设是完整示例或组合的起点，不是组件属性。配置台在 API 编辑之外提供预设入口；Button 的 action、showCount 等示例辅助项不能作为 API 同级配置。预设文案属于示例值，不是组件默认业务内容。选择预设后的覆盖、保存与重置策略另行确定。
+9. **预设与 API 自定义配置分层。** 预设是完整示例或组合的起点，不是组件属性。配置台在 API 编辑之外提供预设入口；Button 的 action、showCount 等示例辅助项不能作为 API 同级配置。预设文案属于示例值，不是组件默认业务内容。选择预设覆盖完整配置并关闭草稿，重置恢复当前预设；当前不提供个人预设持久化。
 10. **图标使用完整上游能力。** 接入 `@uplus-icon/react`，图标选择覆盖当前安装版本可加载的全部图标，不维护精选白名单或少量常用项作为唯一入口。固定组件图标优先具名或单图标导入；配置台根据上游元数据提供完整选择，并使用上游动态加载入口。配置台的全量图标资源不强制进入组件包的固定图标路径。
-11. **图标保留数字尺寸。** Icon 的 size 继续为数字，单位为 CSS 像素；不改成 md/sm。省略时读取所在组合的尺寸约束，组合高度变化时，派生的按钮与图标尺寸一同变化。具体派生值优先通过共享变量和上下文传递，不在各个子项中重复写固定值；显式尺寸与父级约束的优先级仍待确认。
+11. **图标保留数字尺寸。** Icon 的 size 继续为数字，单位为 CSS 像素；不改成 md/sm。省略时读取所在组合的尺寸约束，组合高度变化时，派生的按钮与图标尺寸一同变化。具体派生值优先通过共享变量和上下文传递，不在各个子项中重复写固定值；父级空间约束优先于子项显式尺寸；传入上游的数值与实际 SVG 尺寸保持一致。
 12. **界面保持简洁。** 编辑器只呈现操作名称、内容及必要状态和错误反馈，不展示元信息、类型、必填标记、默认值、签名或解释性文案，也不转移到提示浮层。
 
 ## 2. 内容组成模型
@@ -41,7 +41,7 @@
 
 ### 自由内容
 
-Surface 等自由承载组件直接渲染 children。children 可以是单个节点或多个节点，不限定为字符串，也不要求所有组件都额外提供 Body 子组件。Button 同样使用 children，但仍须遵守原生 button 的内容边界；按钮内部的内容职责与 IconButton 合并方案见第 9 节，尚未确认。children 是内容入口，不意味着所有组件都接受同样的内容结构。
+Surface 等自由承载组件直接渲染 children。children 可以是单个节点或多个节点，不限定为字符串，也不要求所有组件都额外提供 Body 子组件。Button 同样使用 children，但仍须遵守原生 button 的内容边界；按钮使用 Icon/Label/Count；旧 IconButton 仅保留弃用包装。children 是内容入口，不意味着所有组件都接受同样的内容结构。
 
 ```tsx
 <Surface>
@@ -51,7 +51,7 @@ Surface 等自由承载组件直接渲染 children。children 可以是单个节
 </Surface>
 ```
 
-输入框、数字框等原生字段没有可渲染的 children 区域，其输入仍使用 value。CopyButton 的 text、ShareButton 的 url、链接的 href 等操作数据不等同于可见内容；是否调整这些名称另行讨论，不能机械改成 children。
+输入框、数字框等原生字段没有可渲染的 children 区域，其输入仍使用 value。CopyButton 的 text、ShareButton 的 url、链接的 href 等操作数据不等同于可见内容；这些数据属性保留，不能机械改成 children。
 
 ### 结构内容
 
@@ -105,13 +105,13 @@ Surface 等自由承载组件直接渲染 children。children 可以是单个节
 
 “必须且只有一个”是 min=1/max=1；“可有可无、最多一个”是 min=0/max=1；“默认提供但能删除”是 min=0/max=1/initialCount=1。固定数量不等于内容不可编辑。已有 children 中显式省略的可选节点不能在渲染或切换配置时被自动补回。
 
-下表记录规则表达方式；具体组件的结构、数量与实施状态以 [逐组件实施清单](component-api.md) 为准。Button 与专用动作中未决的问题不构成实施授权：
+下表记录规则表达方式；具体组件的结构、数量与实施状态以 [逐组件实施清单](component-api.md) 为准。当前动作组合遵循同一规则：
 
 | 场景               | 内容角色      | min | max | initialCount    | 编辑行为                                       |
 | ------------------ | ------------- | --- | --- | --------------- | ---------------------------------------------- |
 | Alert 要求一个图标 | Icon          | 1   | 1   | 1               | 保留一个节点，可更换图标；不能删除或添加第二个 |
 | Alert 可选标题     | Title         | 0   | 1   | 按预设为 0 或 1 | 可添加、编辑、移除；存在时不能重复添加         |
-| 确认流程的取消动作 | CancelAction  | 0   | 1   | 1               | 初始提供，可修改或移除；具体关闭路径另行约束   |
+| 确认流程的取消动作 | CancelAction  | 0   | 1   | 1               | 初始提供，可修改或移除；关闭能力不依赖取消槽位 |
 | 确认流程的确认动作 | ConfirmAction | 0   | 1   | 1               | 初始提供，可修改或移除；行为绑定由对应动作承担 |
 
 Button 推荐以 Icon、Label、Count 等语义角色管理内容，而不只提供任意 Leading/Trailing 区域。角色的默认排布由组件设计决定。纯文字简写若保留，应等价于一个 Label 槽位并计入同一上限；不能成为绕过约束的第二套内容入口。纯图标模式允许没有 Label，但需要可访问名称；Label 与 Count 的存在规则不能仅由单项数量上限表达。
@@ -124,7 +124,7 @@ Button 推荐以 Icon、Label、Count 等语义角色管理内容，而不只提
 
 配置台按内容树在操作发生前严格限制添加、删除与排列；已达到 max 时不再提供同类添加入口，处于 min 时不提供删除动作。界面继续只显示内容及操作，不展示 min/max、类型或规则解释。
 
-组件库不能用 Children.count 或逐层读取 element.type 保证任意业务 JSX 的槽位合法：React children 不包含业务组件的渲染输出。语义子组件通过上下文建立关系；数量校验、动态挂载与封装支持的具体实现需单独确定。不承诺 TypeScript 能静态验证任意 JSX 的数量，也不能静默裁掉多余内容或偷偷补业务节点。
+组件库不能用 Children.count 或逐层读取 element.type 保证任意业务 JSX 的槽位合法：React children 不包含业务组件的渲染输出。语义子组件通过上下文建立关系；数量校验、动态挂载与封装支持的通过挂载注册建立数量、归属与关联，支持封装、map 和条件渲染。不承诺 TypeScript 能静态验证任意 JSX 的数量，也不能静默裁掉多余内容或偷偷补业务节点。
 
 ### 动态内容
 
@@ -162,7 +162,7 @@ Button 的 aria-label 放在 Button，不放到 Icon、Label 或 Count 上代替
 
 ## 3. 已确认的结构入口
 
-以下是已确认的结构入口。实施项已经是可运行接口；暂缓项仍是目标，不能提前实现。全部现有公共组件的具体内容入口及本轮实施边界见 [逐组件实施清单](component-api.md)。
+以下是已确认的结构入口。现有组件已经完成对应入口实现。全部现有公共组件的具体内容入口及本轮实施边界见 [逐组件实施清单](component-api.md)。
 
 | 组件             | 目标内容入口                                                 | 承担的关系                                                        |
 | ---------------- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
@@ -198,7 +198,7 @@ Button 的 aria-label 放在 Button，不放到 Icon、Label 或 Count 上代替
 - Title 为实际标题节点，自动关联根 dialog 的可访问名称；Description 自动关联可访问说明。
 - Header、Description、Footer 可以省略；Title、Description 位于 Header，各最多一个。Body、Footer、Header 各最多一个，至少存在一个实际内容区域；没有 Title 时必须由根的 aria-label 或有效 aria-labelledby 提供名称。
 - 原 title、description、footer 业务内容属性迁移到对应子组件，不再作为第二套内容入口保留。
-- open、onOpenChange、dismissible 及关闭的原生事件取消契约保留现有行为。defaultOpen 的完整支持范围仍待讨论。
+- open、onOpenChange、dismissible 及关闭的原生事件取消契约保留现有行为。Dialog/Drawer/Toast 为受控组件，不支持 defaultOpen；Disclosure 支持 defaultOpen。
 - 关闭动作属于组件能力，不能随着省略 Header 而失去必要的关闭路径；其具体挂载位置沿用现有职责并与新的结构核对。Footer 内的业务按钮由调用方组成。
 
 ### Tabs
@@ -221,47 +221,47 @@ Button 的 aria-label 放在 Button，不放到 Icon、Label 或 Count 上代替
 - Root 管理选中值；Trigger 的 value 唯一，Content 按 value 关联，不再由数组下标关联。
 - 原 items[].content 与根 children 互相覆盖的内容模式取消。Root children 是结构树，面板正文只进入 Tabs.Content。
 - 保留既有 tablist / tab / tabpanel、方向键、焦点和减少动态效果契约。
-- 动态删除当前项、禁用当前项、面板是否保留挂载等策略尚未统一，按第 7 节确认后实施，不能把编辑器现有自动归一化当作库默认行为。
+- 动态项与面板挂载沿用当前 Tabs 行为；编辑器的选择归一化不是库层默认回调。
 
 ## 4. 通用属性：非内容部分
 
 本节维护语义和支持范围，不指定编辑器控件。各组件保留的类型、默认值和回调见逐组件清单；新的状态组合与统一空值策略仍待决定。
 
-| 类别         | 属性                                                     | 含义与现行选项                                                      |
-| ------------ | -------------------------------------------------------- | ------------------------------------------------------------------- |
-| 强调         | emphasis                                                 | strong / default / quiet；组件声明支持子集                          |
-| 语义         | tone                                                     | neutral / success / danger；组件声明支持子集                        |
-| 尺度         | size                                                     | 普通控件 md / sm，默认 md；Icon 为数字 CSS 像素，省略时继承组合约束 |
-| 结构形态     | variant                                                  | 组件支持的有限结构选项；Surface 的 soft / raised 归属待讨论         |
-| 边缘         | treatment                                                | tonal / defined / physical；只用于 Surface，合法环境由主规范约束    |
-| 排列与方向   | layout、direction                                        | 组件的有限排列选项；direction 当前为 previous / next                |
-| 当前与初始值 | value / defaultValue                                     | 字段值或选择身份；合成组件 onValueChange，原生字段 onChange         |
-| 勾选         | checked / defaultChecked                                 | 原生勾选状态，原生 onChange(event)                                  |
-| 展开         | open / defaultOpen                                       | 当前或初始打开状态；onOpenChange(open)，具体支持范围仍须确认        |
-| 交互状态     | disabled、readOnly、busy                                 | 禁止交互、只读、处理中；适用范围及组合优先级待讨论                  |
-| 数量         | count、total                                             | 当前数量与上限；作为业务状态的保留范围与显示方式待讨论              |
-| 能力         | required、multiple、dismissible、shortcut、resizable     | 表单必填、多值、允许关闭、快捷键、可纵向调整                        |
-| 数值约束     | min、max、step、maxSize、duration、collapsedHeight、rows | 数值边界；maxSize 为字节，duration 为毫秒，collapsedHeight 为像素   |
-| 操作输入     | href、url、text、code、accept、name、type                | 地址、操作数据或原生配置；同名语义与特殊处理须在组件中声明          |
-| 文本语义     | level、as、ordered                                       | 标题层级 1–6、受支持标签、有序列表能力，独立于视觉体例              |
-| 宿主与语义   | className、style、ref、id、aria-_、data-_                | 原生接入与无障碍关联；不将全部原生能力做成配置项                    |
+| 类别         | 属性                                                     | 含义与现行选项                                                               |
+| ------------ | -------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 强调         | emphasis                                                 | strong / default / quiet；组件声明支持子集                                   |
+| 语义         | tone                                                     | neutral / success / danger；组件声明支持子集                                 |
+| 尺度         | size                                                     | 普通控件 md / sm，默认 md；Icon 为数字 CSS 像素，省略时继承组合约束          |
+| 结构形态     | variant                                                  | 组件支持的有限结构选项；Surface soft/raised 表示环境，作为明确的组件特有含义 |
+| 边缘         | treatment                                                | tonal / defined / physical；只用于 Surface，合法环境由主规范约束             |
+| 排列与方向   | layout、direction                                        | 组件的有限排列选项；direction 当前为 previous / next                         |
+| 当前与初始值 | value / defaultValue                                     | 字段值或选择身份；合成组件 onValueChange，原生字段 onChange                  |
+| 勾选         | checked / defaultChecked                                 | 原生勾选状态，原生 onChange(event)                                           |
+| 展开         | open / defaultOpen                                       | 当前或初始打开状态；onOpenChange(open)，具体支持范围见逐组件清单             |
+| 交互状态     | disabled、readOnly、busy                                 | 禁止交互、只读、处理中；支持范围与能力优先级见第 9 节                        |
+| 数量         | count、total                                             | 当前数量与上限；SelectionBar 根保存业务数量，Count 槽位承担显示              |
+| 能力         | required、multiple、dismissible、shortcut、resizable     | 表单必填、多值、允许关闭、快捷键、可纵向调整                                 |
+| 数值约束     | min、max、step、maxSize、duration、collapsedHeight、rows | 数值边界；maxSize 为字节，duration 为毫秒，collapsedHeight 为像素            |
+| 操作输入     | href、url、text、code、accept、name、type                | 地址、操作数据或原生配置；同名语义与特殊处理须在组件中声明                   |
+| 文本语义     | level、as、ordered                                       | 标题层级 1–6、受支持标签、有序列表能力，独立于视觉体例                       |
+| 宿主与语义   | className、style、ref、id、aria-_、data-_                | 原生接入与无障碍关联；不将全部原生能力做成配置项                             |
 
 事件使用 on + 动作名称。onChange 只用于原生事件，不传简化值；合成值使用 onValueChange，展开使用 onOpenChange。onConfirm、onFiles、onReject、onSelectAll、onClear、onDone 与 formatValue 的现有签名已在逐组件清单记录；其他原生回调沿用对应 DOM 类型，不能只列属性名而不记录数据类型。
 
 ## 5. 内容属性迁移范围
 
-| 现有入口                                                         | 目标方向                                                       | 实施状态                                               |
-| ---------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
-| Dialog / Drawer 的 title、description、footer                    | 对应语义子组件                                                 | 已确认                                                 |
-| Select、SegmentedControl 的 options                              | Item 子组件                                                    | 内容入口已确认；触发器显示与选择行为沿用现有实现       |
-| Tabs 的 items 与根 children 面板覆盖                             | List / Trigger / Content                                       | 已确认；动态项和挂载策略待确认                         |
-| Surface 的 children                                              | 保留自由组合                                                   | 已确认，无须新建 Body                                  |
-| Button 的 children                                               | 保留 children 内容入口                                         | 已确认；内容边界及 icon/count 迁移见第 9 节            |
-| 其他 label、title、description、hint、error、summary、valueLabel | 可见内容归入 children 或语义子组件                             | 按逐组件清单实施；暂缓项不迁移                         |
-| actions、footer、controls                                        | 对应区域的子组件组合                                           | 按逐组件清单实施；专用动作暂缓                         |
-| ExternalLinks.links、Pager.previous/next、专用卡片内容属性       | 子项或区域组合                                                 | ExternalLinks 已明确；Pager/ShowcaseCard 等按清单暂缓  |
-| 内置功能文案的 *Label                                            | 组件自有功能动作仍可有默认文案；调用方动作使用 Button children | 命名、保留范围待确认                                   |
-| CopyButton.text、ShareButton.url、ExpandableCode.code 等操作数据 | 不因内容统一而机械改名                                         | CopyButton.text、ShareButton.url 已明确保留；code 暂缓 |
+| 现有入口                                                         | 目标方向                                                       | 实施状态                                                    |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------- |
+| Dialog / Drawer 的 title、description、footer                    | 对应语义子组件                                                 | 已确认                                                      |
+| Select、SegmentedControl 的 options                              | Item 子组件                                                    | 内容入口已确认；触发器显示与选择行为沿用现有实现            |
+| Tabs 的 items 与根 children 面板覆盖                             | List / Trigger / Content                                       | 已实施；动态项与挂载按现有行为                              |
+| Surface 的 children                                              | 保留自由组合                                                   | 已确认，无须新建 Body                                       |
+| Button 的 children                                               | 保留 children 内容入口                                         | 已确认；内容边界及 icon/count 迁移见第 9 节                 |
+| 其他 label、title、description、hint、error、summary、valueLabel | 可见内容归入 children 或语义子组件                             | 已按逐组件清单实施                                          |
+| actions、footer、controls                                        | 对应区域的子组件组合                                           | 由对应区域与语义动作子组件承担                              |
+| ExternalLinks.links、Pager.previous/next、专用卡片内容属性       | 子项或区域组合                                                 | 现行接口均采用子项与区域组合                                |
+| 内置功能文案的 *Label                                            | 组件自有功能动作仍可有默认文案；调用方动作使用 Button children | 仅功能播报保留默认；业务动作名称进入槽位                    |
+| CopyButton.text、ShareButton.url、ExpandableCode.code 等操作数据 | 不因内容统一而机械改名                                         | text/url 保留；code 改为 ExpandableCode.Body 的单一字符串源 |
 
 新内容 API 只维护组合式入口。旧内容数据由调用方 map 转换；不同时保留旧数组属性和新子组件作为两套公共使用方案。其他既有非内容弃用别名的删除时间不受这条规则自动影响，发布与消费迁移安排另行处理。
 
@@ -276,85 +276,66 @@ Button 的 aria-label 放在 Button，不放到 Icon、Label 或 Count 上代替
 7. 迁移验证检查内容归属、稳定身份、键盘、名称关联、ref 与回调，以及生成代码和实例一致性。按用户要求运行类型、设计检查和必要的定向测试；浏览器和大规模验证需另行获得同意。
 8. 本文是目标规范，不代表源码已符合。实施完成后再更新状态与验证记录；本次纯文档修改不运行构建或测试。
 
-## 7. 尚未明确的 API
+## 7. 组件特有边界
 
-下表是待讨论清单，不是默认决定。实施者不得自行确定新属性、默认值或子组件名单。
+- Button.size 是 md/sm；Icon.size 是数字 CSS 像素；Input 的原生 size 是字符宽度，不改为几何枚举。
+- Surface.variant 的 soft/raised 表示环境；其余 variant 按各组件实际结构声明，不共用全库选项。
+- Dialog、Drawer、Toast 使用受控 open/onOpenChange；Disclosure 支持受控及 defaultOpen。没有给全部组件增加不存在的非受控能力。
+- 0、false 是有效值；省略与 undefined 使用具体组件的默认；null 仅在公共类型允许的内容区域表示缺失，不自动转成输入值。
+- Select 的触发器、搜索、选中项删除和空选择保持现状。编辑器的条目状态及归一化不成为公共集合 Props。
+- 回调由负责交互的节点触发一次；程序化改 Props 不伪造用户事件。状态值由受控宿主更新，不同时复制到子项。
 
-| 问题                 | 现存不明确现象                                                                                     | 需要确认的决定                                                                                   |
-| -------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 内容子组件的覆盖范围 | Field/Slider/Checkbox/Alert/EmptyState/卡片等仍通过 label、title、description、icon 等属性提供内容 | 多数入口已由逐组件清单指定；特殊卡片及专用流程仍按清单暂缓                                       |
-| 内置动作与功能文案   | ConfirmDialog、SelectionBar、CopyButton 等既提供内置动作，又接受额外内容或文案                     | 哪些动作必须由组件承担，哪些改由调用方组成；*Label 保留范围                                      |
-| 图标与计数           | Button 的 icon/count 与 children 都能提供可见内容，IconButton 又有固定图标任务                     | Button 是否全部由 children 组成；IconButton 是否继续专门接受图标身份；状态数量与可见读数如何区分 |
-| size 的语义          | 普通控件为 md/sm；Icon 为数字                                                                      | 数字 size 已确认保留；需要确定父级约束与显式 size 的优先级和派生关系                             |
-| variant 的语义       | 宣称表示结构，但 Surface soft/raised 实际选择承载环境                                              | Surface 的表面意图是否单独命名；variant 可表达的范围                                             |
-| 受控与非受控         | 通用规则写 defaultOpen，但 Dialog/Drawer/Toast 等源码要求受控 open                                 | 哪些必须由宿主管理，哪些允许初始值；onOpenChange 在非受控时是否可省略                            |
-| 富内容选择项         | Item children 可以包含图标与组件，Select trigger 却需要当前项显示内容和可搜索文字                  | 本轮不调整；沿用现有 Select 触发器显示、搜索及条目交互行为                                       |
-| 动态项与空选择       | 当前编辑器会删除或禁用选中项后自动选下一项，库层未有统一策略                                       | 本轮不调整 Select 删除选中项或空选择行为；Tabs 的动态项与挂载策略另议                            |
-| 状态组合             | disabled/readOnly/busy 在不同组件上的处理不同，busy 对关闭的限制也不同                             | 适用范围、同时开启的优先级、哪些操作仍可执行                                                     |
-| 默认值与回调         | 默认值分散在源码和元数据；部分事件只列名称或模糊的“动作数据”                                       | 逐组件列出精确类型、默认值与回调签名；统一省略、空值、false、0 的含义                            |
-| 操作数据与可见内容   | text/code/url/href 和展示内容存在不同职责，专用组件有业务含义                                      | 哪些保留数据属性，哪些归入内容组合；例如 ExpandableCode 的 code 是否属于操作数据还是主内容       |
+## 8. 本轮实施范围
 
-## 8. 本轮明确的边界
+本轮源码、配置台、生成代码与调用方按逐组件清单同步完成。旧内容 Props 删除；非内容弃用别名及 IconButton 弃用包装用于消费者过渡。没有发布、部署或进行浏览器验收。
 
-- 本轮只修改规范与逐组件清单，不迁移组件源码、配置台或生成代码。
-- 预设分层、完整 uplus 图标覆盖、Icon 数字尺寸、按组件声明内容槽位与数量约束的方向已经确认。多数槽位名单与数量已由逐组件清单明确；Button 合并及其具体约束、专用动作、状态关系仍待确认。
-- Select 富内容如何显示在触发器中、删除当前选中项后的处理，按用户要求不动；组合入口迁移不得顺带更改这些现有行为。
+## 9. 动作、尺寸与状态契约
 
-## 9. Button 与状态模型调研提案（待确认）
+### Button 内容与形态
 
-本节区分已确认的槽位规则方向与尚未确认的具体接口。状态模型仍为推荐方案，不构成实施授权。
+Button 接受 Icon、Label、Count，各最多一个；至少 Icon 或 Label，Count 依赖 Label。文字/数字简写等价一个 Label。Icon 为装饰内容，Count 作为可见数量参与按钮名称；纯图标按钮在实际 Button 上提供 aria-label/aria-labelledby。
 
-### 内容的约束依据
+shape 支持 inline/square；省略时根据已注册角色为纯图标派生 square，其余为 inline。原生 button 中不能嵌套链接、按钮或输入等交互后代。旧 IconButton 委托同一 Button，停止发展独立接口。
 
-组件固定能力、区域职责与内容边界；调用方提供具体内容。固定的判断依据是原生语义、无障碍关系、布局约束和交互责任，不是某份示例里恰好出现了哪些图标或文案。ReactNode 类型本身不能保证嵌套的 HTML 合法，也不能保证传入的业务组件没有交互后代。
+busy 是交互职责，不增加 Icon 槽位：有 Icon 时以处理中指示替换它，无 Icon 时显示功能指示；可见 Label 与动作名称保留。CopyButton 的 Feedback 按 pending/success/error 各最多一个，在按钮外独立播报；不会变成另一个动作名称。
 
-Button 继续代表一个动作，不能在内部嵌套链接、另一个按钮、输入框等交互内容。推荐把 IconButton 的能力合入 Button，以显式方形形态管理纯图标按钮，不读取 children 的数量或业务组件输出猜测形态。旧 IconButton 的兼容与移除时间另行确定。
+### 专用动作
 
-本轮已确认推广按组件声明内容槽位与数量约束的方向。此前 Leading/Text/Trailing 示例不作为目标接口；Button 更具体的 Icon/Label/Count 名称、各角色的上限与合并后的形态属性仍待确定。
+ConfirmDialog 的 CancelAction 请求关闭，ConfirmAction 调用 onConfirm。调用方 onClick 可 preventDefault 取消默认动作；每次激活只执行一次。busy 阻止确认、取消与层关闭。删除动作不补回、不自动确认；删除取消仍保留非 busy 时的关闭能力。
 
-- 可见 label、icon、count 通过内容槽位进入，不再同时提供与 children 重叠的内容属性。Count 槽位的 max 表示槽位数量，不是数字读数的最大值；显示 0 与不存在 Count 节点不同。
-- 纯图标按钮必须提供可访问名称；图标本身不生成动作名称，也不自动生成 tooltip。
-- busy 指示是 Button 的交互职责，不计为调用方新增的 Icon 槽位；是否替换图标及如何保留内容宽度仍待确认。
-- Alert 已在逐组件清单指定 Icon、Title、Body 及整体有效条件；本轮不新增 Alert 动作区域。
+SelectionBar 的语义动作复用 Button，由各动作自己的 onClick 连接业务；根不生成按钮。busy 禁用这些动作，total=0 禁用全选，count=0 禁用清空。普通业务子按钮自行声明可用状态。调用方负责保证业务流程完整。
 
-### 内置动作作为初始内容组合
+### 数据与可见内容
 
-现有 ConfirmDialog 自行生成取消、确认按钮；SelectionBar 按 onSelectAll、onClear、onDone 的提供情况生成全选、清空、完成按钮，也接受 actions 或额外 children。
+CopyButton.text、ShareButton.url 是复制数据，不从 ReactNode 提取。ExpandableCode.Body.children:string 是可见正文和复制源的唯一归属；CopyAction、ExpandAction、CollapseAction 为可删内容节点。没有溢出时不显示切换动作；切换时焦点跟随实际动作，缺少目标动作时回到正文。
 
-用户提出将这些动作作为 children 内容组合：例如确认流程初始提供一个取消动作、一个确认动作，二者均最多一个且可删除。该方向采用第 2 节的 min/max/initialCount 模型；初始组合属于预设或新建模板，动作生成后成为真实内容节点，内容、顺序和增删在 children 层级管理。不能继续用基础组件的 action 选择开关替代内容编辑，也不能删除节点后由根组件再次隐式生成同一按钮。
+ShowcaseCard 根固定 div；Media 与 ExternalLink 是兄弟链接。Title/Description 提供主链接的名称和说明，Media 不整体隐藏其内容。Pager 的 Previous/Next 独立声明；省略不补节点，显式无 href 才显示不可用动作。
 
-动作不只是按钮文案：取消需要明确关闭关系，确认需要明确业务回调与处理中策略。推荐语义动作子组件承接对应行为，内部复用 Button；具体名称、事件归属、无按钮时是否仍有 Escape/关闭入口、以及专用组件导出边界均待确认。删除取消按钮不等于禁止关闭，删除确认按钮不等于自动执行确认。
+FileDropzone.Error 无 children 时接收内部拒绝消息；显式 children 时只显示宿主消息，null 表示隐藏。省略 Error 后不再自动插入消息节点，但 onReject 继续通知宿主；存在的错误关联实际文件 input 与 Trigger。
 
-### 图标尺寸与资源
+### 尺寸与上游图标
 
-已安装上游提供 `@uplus-icon/core/metadata` 的完整元数据以及 `@uplus-icon/react/dynamic` 的动态入口。选择器从当前版本的可加载集合生成，而不是手写少量图标名字。上游新增图标随依赖升级进入选择范围，不承诺未安装版本的图标。
+Icon 的独立默认 size=18；Button 默认图标 md=15/sm=13，FileDropzone 图标默认 22。组先扣除实际上下 inset，子按钮与图标读取可用高度；Icon 的显式 size 仍受组合上限约束，绝不单改 CSS 而保留另一个上游 size。组合几何公式与视觉常量只在设计规范和源码维护。
 
-组合决定可用高度，并派生按钮高度、间距和图标尺寸；独立 Icon 可传数字 size。尺寸共享需保证实际 SVG 尺寸与上游 absoluteWeight 的计算一致，不能只改 CSS 宽高而继续向上游传另一个固定数字。派生公式、最小尺寸及显式 size 的约束策略应按设计规范确定，不在 API 文档中任意指定数值。
+图标选择读取当前安装版本元数据与动态入口，覆盖可加载全集，包括上游保留的旧名称；升级依赖后同步更新候选，不维护精选名单。
 
-### 状态按职责拆分，再约束有效交互
+### 状态按意图声明，按能力执行
 
-用户尚未确定状态 API；以下保持调研提案，不能在内容迁移时顺带实施。内容槽位数量与交互状态是不同约束，不应共用一个规则枚举。
+保留 disabled、busy、readOnly、checked/value、open 等各自职责，不增加统一 state 枚举。hover/pressed/focus 来自真实交互，不作为组件公共开关。
 
-推荐保留简洁的公开意图属性，不新增囊括所有情况的 `state="hover|pressed|disabled|busy"`。焦点、悬停、按压由真实输入产生，不作为配置业务组件的公共开关；调试模拟若需要，单独属于展示工具。互斥和共存按具体组件确定。
+| 场景                     | 有效能力                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| Button disabled          | 原生 disabled；阻止激活与悬停/按压反馈，不进入普通 Tab 序列。                              |
+| Button busy              | aria-busy/aria-disabled；阻止再次激活与悬停/按压反馈，保留焦点和名称。                     |
+| disabled + busy          | 可以共存；disabled 决定焦点能力，busy 继续表达处理状态。                                   |
+| hover + focus / pressed  | 可以由输入同时产生；按压反馈与焦点提示承担不同职责。                                       |
+| readOnly 字段            | 禁止编辑，保留焦点、选择与复制；不扩展到 Button。                                          |
+| checked/value + disabled | 保留值，仅禁止用户修改。                                                                   |
+| open + busy              | 不全局推导关闭；ConfirmDialog 的关闭被 busy 阻止，普通 Dialog/Drawer 按 dismissible 管理。 |
 
-| 场景                       | 推荐关系与结果                                                                   |
-| -------------------------- | -------------------------------------------------------------------------------- |
-| Button disabled            | 阻止激活、有效悬停和按压反馈；使用原生 disabled，不参与普通 Tab 焦点序列         |
-| Button busy                | 阻止再次激活、悬停与按压反馈；保留焦点能力，并提供处理中语义                     |
-| Button disabled + busy     | 可共存：业务仍在处理，按钮明确不可用；disabled 决定焦点能力，busy 仍表达处理状态 |
-| hover + focus              | 可以共存，焦点提示不因鼠标悬停而消失                                             |
-| hover + pressed            | 输入条件可共存；按压期间采用按压反馈，不叠加两套相冲突的动效                     |
-| readOnly 字段              | 禁止编辑，但允许焦点、选择与复制；不推广为 Button 属性                           |
-| checked / value + disabled | 值保留，仅禁止用户修改；不能因为禁用而清空选择                                   |
-| open 与不可操作状态        | 不全局推导关闭；展开层和各动作分别管理其能力                                     |
+CSS 与激活处理读取相同可用条件；aria-disabled 本身不能代替键盘激活拦截。复制内部状态 idle → pending → success/error → idle，处理中不重复调用剪贴板，成功与失败如实播报。
 
-禁用元素仍可能匹配 CSS :hover；规范限制的是有效反馈与动作。仅设置 aria-disabled 或 pointer-events 不足以阻止键盘激活。
-
-实现建议：每种组件集中派生 canActivate、canEdit 等能力，CSS、Motion 和事件处理共同读取同一结果；Button 的 canActivate 可由 `!disabled && !busy` 派生。禁用或 busy 在按压过程中开启时，取消当前按压反馈；恢复可用后不补触发旧动作。保留原生 onClick 契约，不能为重做状态机同时新增另一套触发事件。简单组件优先纯函数和小型内部状态，不引入状态机依赖。
-
-Button 的 busy 策略参考 React Aria；它不自动适用于所有组件。例如 ConfirmDialog 的 busy 是否阻止 Escape、遮罩关闭或取消，属于该流程的具体策略，必须单独写清，不能把 busy 理解为整个组件树无条件禁用。
-
-状态验证在实施阶段覆盖鼠标与键盘激活、处理中重复提交、按压中禁用、取消后恢复、焦点保留及值保留；本轮纯文档不运行测试。
+参考：[React Aria pending 按钮](https://react-aria.adobe.com/Button#pending)、[React children 边界](https://react.dev/reference/react/Children)。
 
 ## 10. 组件设计与开发必答清单
 
@@ -382,7 +363,7 @@ Button 的 busy 策略参考 React Aria；它不自动适用于所有组件。�
 
 决策记录至少包括：问题、最终规则、依据或取舍、受影响组件、日期与状态。实现发现新问题时回写记录；相同职责的新组件先查已有决定，不重新猜测。
 
-与本次实现有关的必答项必须明确后才能实施；尚未决定的状态机、具体槽位上限等不能由实施者擅自确定。无关未决项不阻止已经明确范围的工作。完成清单不代表授权发布、部署或启动浏览器验证。
+与本次实现有关的必答项必须明确后才能实施；新增能力仍需记录决定，不能从现有组件推导未声明的支持。完成清单不代表授权发布、部署或启动浏览器验证。
 
 ## 11. 参考
 

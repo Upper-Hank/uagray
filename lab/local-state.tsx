@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Icon, IconButton } from "../src/ui";
+import { Alert, Icon, Button } from "../src/ui";
 export function useLocalState<T>(
   key: string,
   seed: () => T,
@@ -26,9 +26,15 @@ export function useLocalState<T>(
 }
 export function StorageNotice({ failed }: { failed: boolean }) {
   return failed ? (
-    <Alert tone="danger"><Alert.Icon><Icon name="close" size={16}/></Alert.Icon><Alert.Title>更改暂未保存</Alert.Title><Alert.Body>
-      浏览器存储不可用。当前更改仍在页面中，刷新可能丢失。
-    </Alert.Body></Alert>
+    <Alert tone="danger">
+      <Alert.Icon>
+        <Icon name="close" size={16} />
+      </Alert.Icon>
+      <Alert.Title>更改暂未保存</Alert.Title>
+      <Alert.Body>
+        浏览器存储不可用。当前更改仍在页面中，刷新可能丢失。
+      </Alert.Body>
+    </Alert>
   ) : null;
 }
 export function AppearanceButton() {
@@ -51,11 +57,15 @@ export function AppearanceButton() {
     }
   }, [dark]);
   return (
-    <IconButton
+    <Button
       emphasis="quiet"
-      icon={dark ? "sun" : "moon"}
       aria-label={dark ? "切换浅色外观" : "切换深色外观"}
       onClick={() => setDark((value) => !value)}
-    />
+      shape="square"
+    >
+      <Button.Icon>
+        <Icon name={dark ? "sun" : "moon"} />
+      </Button.Icon>
+    </Button>
   );
 }
