@@ -1,44 +1,49 @@
 # Beta 发布与消费测试
 
-首轮版本：`uagray@0.1.0-beta.0`。发布标签：`beta`。源代码许可证：MIT。当前宿主范围：React 19。
+当前版本：`uagray@0.1.0-beta.2`。发布标签：`beta`。源代码许可证：MIT。当前宿主范围：React 19。
 
-## 线上结果
+## 当前线上结果
 
-2026-10-10 已发布至 [npm](https://www.npmjs.com/package/uagray/v/0.1.0-beta.0)。`beta` 标签指向 `0.1.0-beta.0`。
+2026-10-11 已发布 [0.1.0-beta.2](https://www.npmjs.com/package/uagray/v/0.1.0-beta.2)，Git 标签为 `v0.1.0-beta.2`，发布提交为 `40ce87e`。npm 的 `beta` 标签已指向 `0.1.0-beta.2`；`latest` 仍为 `0.1.0-beta.0`，安装请明确使用 `uagray@beta`。
 
-独立项目已改为从 registry 安装，锁文件来源为 `https://registry.npmjs.org/uagray/-/uagray-0.1.0-beta.0.tgz`；完整性与发布前测试的 tarball 一致。线上安装后的类型检查、生产构建和浏览器页面渲染通过。
+[发布工作流](https://github.com/Upper-Hank/uagray/actions/runs/38141829697)通过了测试、组件库构建、包内容检查、干净消费安装及 Trusted Publishing 上传。npm 返回异步处理提示，即时 registry 查询得到 404，导致工作流最终显示失败；随后已独立确认版本和完整性可读取，且 `beta` 标签更新完成。该状态不代表包上传失败，不应重复发布相同版本。
 
-npm 为首个版本同时生成了 `latest` 标签；移除请求在完成安全验证后仍返回 HTTP 400，因此目前 `latest` 也指向同一 beta 版本。测试安装请明确使用 `uagray@beta`。
+registry 完整性：
 
-## 已完成的发布前检查
+```text
+sha512-fVyQRdeLOgA6F/ig0egrYIv55b9X+/s9U9gK+a0DvGkREjBBUBJfs8dz13lkZAO4bri3YWHjvel/AvhXIRxEEg==
+```
 
-- `npm pack` 清单只包含 `dist/`、README、LICENSE 和 package.json，共 17 个文件，约 25.6 KB。
-- 公共源码的 45 项交互测试通过；Vitest 明确限定 `src/`，不运行 `local/` 中的未完成实验。
-- 独立消费项目从 tarball 安装，类型检查与 Vite 生产构建通过。
-- 独立项目只有一份 React/React DOM，组件 CSS 与 Token 生效。
-- Playwright 操作 Input、Select、Switch 和 Button，结果回传到宿主状态。
+## beta.2 发布验证
 
-## 当前源码相对线上版本
+- 151 项源码与内部原型测试、29 项检查器测试通过。
+- 类型检查与 37 项设计源码契约检查通过。
+- 组件包只包含 `dist/`、README、LICENSE 和 package.json，共 469 个文件；压缩约 11.8 MB，未压缩约 12.2 MB，低于 18 MB 限制。
+- 临时消费项目从 tarball 安装，使用新的 children 与语义子组件 API，类型检查和 Vite 生产构建通过。
+- 本轮没有进行发布后的浏览器验收。
 
-仓库待发布版本为 `0.1.0-beta.1`，发布标签为 `v0.1.0-beta.1`，npm dist-tag 为 `beta`。本节记录源码状态，不代表已上线；线上结果仍以 `0.1.0-beta.0` 为准。
+组件样式从 `uagray/styles.css` 引入；独立字体入口为 `uagray/fonts.css`，包含 IBM Plex Sans 与 Sans SC 的 400/500，以及 JetBrains Mono 400。字体随包安装，导致体积高于首轮试包。API 迁移和变更见 [CHANGELOG](../CHANGELOG.md) 与 [API 规范](api-contract.md)。
 
-`0.1.0-beta.1` 的源码包含 `uagray/fonts.css`：IBM Plex Sans 与 Sans SC 的 400/500，以及 JetBrains Mono 400。组件样式仍从 `uagray/styles.css` 引入。字体文件使安装体积远大于首轮约 26 KB 的试包；发布检查拒绝未压缩体积超过 18 MB 的包。迁移说明见 README 与 CHANGELOG。
+远端消费验证使用 `npm run verify:consumer`：打包当前组件库，在临时项目中安装，再运行类型检查和生产构建。本机 `local/beta-consumer/` 不进入 Git，不能代替这条检查。
 
-远端安装验证使用 `npm run verify:consumer`：打包当前 `dist/`，在临时项目中安装，再运行类型检查和生产构建。本机 `local/beta-consumer/` 不进入 Git，不能代替这条检查。
+## 历史发布
+
+- `0.1.0-beta.1` 已发布，包含字体入口、环境色、Button emphasis / tone 和交互契约改进，不再是待发布状态。
+- 2026-10-10 首次发布 `0.1.0-beta.0`：17 个包文件，约 25.6 KB；当时的独立消费安装、类型检查、生产构建及浏览器交互验证通过。npm 为首轮版本同时生成了 `latest` 标签，后续 beta 发布仅更新 `beta`。
 
 ## 自动发布
 
 后续发布统一由 [GitHub Actions](https://github.com/Upper-Hank/uagray/actions/workflows/publish.yml) 执行，不在本机执行 `npm publish`。
 
 1. 更新 package.json 与 package-lock.json 中的版本，补充 CHANGELOG，提交并推送至 main。
-2. 创建与版本一致的标签，例如下一轮 `v0.1.0-beta.1`，然后推送该标签。
+2. 创建与版本一致的标签，例如下一轮 `v0.1.0-beta.3`，然后推送该标签。
 3. 工作流校验标签版本及 main 来源，运行测试、构建组件库、检查包白名单，通过后发布并查询 registry。
 
 ```sh
-npm version 0.1.0-beta.1 --no-git-tag-version
+npm version 0.1.0-beta.3 --no-git-tag-version
 # 更新 CHANGELOG，提交并推送 main 后：
-git tag -a v0.1.0-beta.1 -m "Release 0.1.0-beta.1"
-git push origin v0.1.0-beta.1
+git tag -a v0.1.0-beta.3 -m "Release 0.1.0-beta.3"
+git push origin v0.1.0-beta.3
 ```
 
 `beta` 预发布版本发布至 `beta` 标签；正式版本发布至 `latest`。其他预发布类型暂不允许。推送 main 或手动运行工作流只做验证，不发布，当前版本不会因此重复发布。
