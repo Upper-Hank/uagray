@@ -1,5 +1,6 @@
 import {
   lines,
+  descriptionRows,
   choiceItems,
   normalizeArgs,
   type Value,
@@ -13,6 +14,9 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   const string = (key: string) => String(args[key] ?? "");
   let name = entry.name;
   let props: Record<string, Value | undefined> = { ...args };
+  for (const field of entry.fields) {
+    if (field.scope !== "prop") delete props[field.key];
+  }
   let children = Object.hasOwn(args, "children")
     ? string("children")
     : undefined;
@@ -31,10 +35,10 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
         : `set${key[0].toUpperCase() + key.slice(1)}`;
   };
   delete props.children;
-  if (entry.id === "switch" && props.label === "") {
-    delete props.label;
+  if (entry.id === "switch" && string("label").trim() === "")
     props["aria-label"] = "开关";
-  }
+  if (["checkbox", "radio"].includes(entry.id) && string("label").trim() === "")
+    props["aria-label"] = "名称";
   for (const key of [
     "title",
     "description",
@@ -48,13 +52,7 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   ]) {
     if (props[key] === "") delete props[key];
   }
-  if (["progress", "upload"].includes(entry.id) && props.label === "") {
-    delete props.label;
-  }
-  if (["badge", "alert", "toast", "empty-state"].includes(entry.id)) {
-    if (args.icon === "auto") delete props.icon;
-    else if (args.icon === "none") props.icon = false;
-  }
+  if (entry.id === "upload" && props.label === "") delete props.label;
   if (entry.id === "color-picker") {
     state("value", "onValueChange");
   }
@@ -66,6 +64,9 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
         text: args.text,
         size: args.size,
         emphasis: args.emphasis,
+        copiedLabel: args.copiedLabel,
+        copyingLabel: args.copyingLabel,
+        copyFailedLabel: args.copyFailedLabel,
       };
       children = string("children");
     } else if (args.action === "share") {
@@ -76,6 +77,9 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
       delete props.text;
       delete props.url;
       delete props.showCount;
+      delete props.copiedLabel;
+      delete props.copyingLabel;
+      delete props.copyFailedLabel;
       if (!args.showCount) delete props.count;
       if (args.icon === "none") delete props.icon;
     }
@@ -88,19 +92,18 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   if (entry.id === "textarea") props["aria-label"] = "多行输入示例";
   if (["input", "textarea"].includes(entry.id)) state("value", "onChange");
   if (entry.id === "search") state("value", "onValueChange");
+  if (entry.id === "spinner") {
+    if (string("label").trim() || props["aria-label"] === "")
+      delete props["aria-label"];
+  }
   if (["checkbox", "radio", "switch"].includes(entry.id))
     state("checked", "onChange");
   if (entry.id === "radio") props.name = "choice";
-  if (["select", "segments", "tabs"].includes(entry.id)) {
-    const key = entry.id === "tabs" ? "items" : "options";
+  if (["select", "segments", "tabs"].includes(entry.id))
     state("value", "onValueChange");
-    delete props[key];
-    helpers.push(
-      `const ${key} = ${JSON.stringify(choiceItems(args[key]), null, 2)};`,
-    );
-    expressions[key] = key;
-  }
   if (entry.id === "showcase") {
+    rawChildren = true;
+    children = `<span style={{ whiteSpace: "pre-wrap", fontSize: 24, lineHeight: 1.6, padding: 24 }}>${escapeText(string("children"))}</span>`;
     delete props.externalLabel;
     delete props.externalHref;
     if (args.externalLabel)
@@ -110,11 +113,7 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
       });
   }
   if (entry.id === "slider") {
-    if (props.label === "") {
-      delete props.label;
-      props["aria-label"] = "value";
-    }
-    delete props.unit;
+    if (string("label").trim() === "") props["aria-label"] = "value";
     state("value", "onValueChange");
     expressions.formatValue = `value => \`\${value}${string("unit").replaceAll("`", "\\`").replaceAll("$", "\\$")}\``;
   }
@@ -124,11 +123,11 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     )
   )
     state("open", "onOpenChange");
-  if (entry.id === "dialog" || entry.id === "drawer") {
+  if (
+    (entry.id === "dialog" || entry.id === "drawer") &&
+    args.footer === true
+  )
     imports.add("Button");
-    expressions.footer =
-      "<Button onClick={() => setOpen(false)}>关闭示例</Button>";
-  }
   if (entry.id === "confirm-dialog") {
     children = undefined;
     expressions.onConfirm = "() => setOpen(false)";
@@ -140,20 +139,11 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
   }
   if (entry.id === "progress") {
     delete props.indeterminate;
+    if (props["aria-label"] === "") delete props["aria-label"];
     if (args.indeterminate) delete props.value;
   }
-  if (entry.id === "fields") {
-    imports.add("Input");
-    children = "<Input />";
-    rawChildren = true;
-  }
-  if (entry.id === "empty-state") {
-    delete props.showActions;
-    if (args.showActions) {
-      imports.add("Button");
-      expressions.actions = '<Button icon="plus">添加文件</Button>';
-    }
-  }
+  if (entry.id === "fields") imports.add("Input");
+  if (entry.id === "empty-state" && args.showActions) imports.add("Button");
   if (entry.id === "button-group") {
     imports.add("Button");
     rawChildren = true;
@@ -167,34 +157,53 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     rawChildren = true;
     children = `<Button>${escapeText(string("children"))}</Button>`;
   }
-  if (entry.id === "shell") {
-    delete props.footer;
-    expressions.controls = `<span>${escapeText(string("controls"))}</span>`;
-    delete props.controls;
-    if (args.footer) expressions.footer = "<span>页脚</span>";
-    props.mainId = "workspace-main";
-  }
-  if (entry.id === "links") {
-    props = {};
-    expressions.links = JSON.stringify(
-      [{ label: args.label, href: args.href, icon: args.icon }],
-      null,
-      2,
-    );
-  }
+  if (entry.id === "shell") props.mainId = "workspace-main";
   if (entry.id === "navigation") {
-    props = {};
+    props = { variant: args.variant };
     if (args.previous)
       expressions.previous = '{ title: "按钮", href: "#buttons" }';
     if (args.next) expressions.next = '{ title: "输入", href: "#input" }';
+  }
+  if (entry.id === "action-row") {
+    props = {};
+    for (const component of ["Button", "ButtonGroup", "IconButton"])
+      imports.add(component);
+    rawChildren = true;
+    children = `<Button size=${JSON.stringify(args.size)} disabled={${Boolean(args.disabled)}}>{${JSON.stringify(string("children"))}}</Button>\n<ButtonGroup aria-label="切换项目">\n<IconButton size=${JSON.stringify(args.size)} icon="chevron-left" aria-label="上一项" />\n<IconButton size=${JSON.stringify(args.size)} icon="chevron-right" aria-label="下一项" disabled />\n</ButtonGroup>`;
+  }
+  if (entry.id === "text-list") {
+    rawChildren = true;
+    children = lines(string("children"))
+      .map((text) => `<li>{${JSON.stringify(text)}}</li>`)
+      .join("\n");
+  }
+  if (entry.id === "description-list") {
+    props = { variant: args.variant };
+    rawChildren = true;
+    children = descriptionRows(args)
+      .map(
+        (row) =>
+          `<div><dt>{${JSON.stringify(row.label)}}</dt><dd>{${JSON.stringify(row.description)}}</dd></div>`,
+      )
+      .join("\n");
   }
   if (entry.id === "selection") {
     helpers.push(`const [count, setCount] = useState(${args.count});`);
     delete props.count;
     expressions.count = "count";
+    if (string("summary").includes("{count}")) {
+      delete props.summary;
+      expressions.summary = `${JSON.stringify(string("summary"))}.replaceAll("{count}", String(count))`;
+    }
     expressions.onSelectAll = `() => setCount(${args.total})`;
     expressions.onClear = "() => setCount(0)";
     expressions.onDone = "() => setCount(0)";
+  }
+  const composed = compositionMarkup(entry.id, args, string);
+  if (composed) {
+    children = composed.markup;
+    rawChildren = true;
+    for (const item of composed.imports) imports.add(item);
   }
   imports.delete(entry.name);
   imports.add(name);
@@ -211,6 +220,14 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
       : `${opening}\n>\n  ${children === "" ? '{""}' : rawChildren ? children : escapeText(children)}\n</${name}>`;
   if (entry.id === "upload")
     body = `<>\n${body}\n{files.length > 0 && <p role="status">{files.map(file => file.name).join("、")}</p>}\n</>`;
+  if (entry.id === "toast-region") {
+    imports.add("Toast");
+    imports.add("Button");
+    helpers.push(
+      `const [open, setOpen] = useState(${JSON.stringify(args.open)});`,
+    );
+    body = `<>\n<Button onClick={() => setOpen(true)}>显示提示</Button>\n<ToastRegion aria-label=${literal(args["aria-label"])}>\n  <Toast open={open} onOpenChange={setOpen}>\n    <Toast.Body>${escapeText(string("children"))}</Toast.Body>\n  </Toast>\n</ToastRegion>\n</>`;
+  }
   if (["dialog", "drawer", "confirm-dialog", "toast"].includes(entry.id)) {
     imports.add("Button");
     body = `<>\n<Button onClick={() => setOpen(true)}${entry.id === "confirm-dialog" ? ` disabled={${args.busy}}` : ""}>打开</Button>\n${body}\n</>`;
@@ -227,6 +244,251 @@ export function exampleCode(entry: ComponentEntry, values: Args): string {
     .map((line) => "    " + line)
     .join("\n")}\n  );\n}`;
   return `${helpers.some((line) => line.includes("useState")) ? 'import { useState } from "react";\n' : ""}import { ${[...imports].join(", ")} } from "uagray";\nimport "uagray/styles.css";\n\n${example}`;
+}
+function compositionMarkup(
+  id: string,
+  args: Args,
+  text: (key: string) => string,
+): { markup: string; imports: string[] } | undefined {
+  const piece = (key: string) => escapeText(text(key).trim());
+  const present = (key: string) => text(key).trim().length > 0;
+  const icon = (name: string) =>
+    `<Icon name=${JSON.stringify(name)} size={16} />`;
+  const items = choiceItems(args.entries);
+  if (id === "fields") {
+    return {
+      imports: ["Input"],
+      markup: [
+        present("label") ? `<Field.Label>${piece("label")}</Field.Label>` : "",
+        `<Field.Control>\n  <Input />\n</Field.Control>`,
+        present("description")
+          ? `<Field.Description>${piece("description")}</Field.Description>`
+          : "",
+        present("error") ? `<Field.Error>${piece("error")}</Field.Error>` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (["checkbox", "radio", "switch"].includes(id)) {
+    return present("label")
+      ? { markup: piece("label"), imports: [] }
+      : undefined;
+  }
+  if (id === "select") {
+    return {
+      imports: [],
+      markup: items
+        .map(
+          (item) =>
+            `<Select.Item value=${JSON.stringify(item.value)}${item.disabled ? " disabled" : ""}>${escapeText(item.label)}</Select.Item>`,
+        )
+        .join("\n"),
+    };
+  }
+  if (id === "segments") {
+    return {
+      imports: [],
+      markup: items
+        .map((item) =>
+          [
+            `<SegmentedControl.Item value=${JSON.stringify(item.value)}${item.disabled ? " disabled" : ""}>`,
+            `  <SegmentedControl.Label>${escapeText(item.label)}</SegmentedControl.Label>`,
+            item.count
+              ? `  <SegmentedControl.Count>${escapeText(item.count)}</SegmentedControl.Count>`
+              : "",
+            `</SegmentedControl.Item>`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        )
+        .join("\n"),
+    };
+  }
+  if (id === "tabs") {
+    const triggers = items
+      .map(
+        (item) =>
+          `<Tabs.Trigger value=${JSON.stringify(item.value)}${item.disabled ? " disabled" : ""}>${escapeText(item.label)}</Tabs.Trigger>`,
+      )
+      .join("\n");
+    const panels = items
+      .filter((item) => item.content)
+      .map(
+        (item) =>
+          `<Tabs.Content value=${JSON.stringify(item.value)}>${escapeText(item.content ?? "")}</Tabs.Content>`,
+      )
+      .join("\n");
+    return {
+      imports: [],
+      markup: `<Tabs.List>\n${triggers}\n</Tabs.List>\n${panels}`,
+    };
+  }
+  if (id === "slider") {
+    const parts = [
+      present("label") ? `<Slider.Label>${piece("label")}</Slider.Label>` : "",
+      args.reading === true ? "<Slider.Value />" : "",
+    ].filter(Boolean);
+    return parts.length ? { markup: parts.join("\n"), imports: [] } : undefined;
+  }
+  if (id === "disclosure") {
+    return {
+      imports: [],
+      markup: [
+        `<Disclosure.Trigger>${piece("title")}</Disclosure.Trigger>`,
+        present("actions")
+          ? `<Disclosure.Actions>${piece("actions")}</Disclosure.Actions>`
+          : "",
+        `<Disclosure.Body>${piece("body")}</Disclosure.Body>`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "dialog" || id === "drawer") {
+    const owner = id === "dialog" ? "Dialog" : "Drawer";
+    const heading = [
+      present("title") ? `<${owner}.Title>${piece("title")}</${owner}.Title>` : "",
+      present("description")
+        ? `<${owner}.Description>${piece("description")}</${owner}.Description>`
+        : "",
+    ].filter(Boolean);
+    return {
+      imports: args.footer === true ? ["Button"] : [],
+      markup: [
+        heading.length
+          ? `<${owner}.Header>\n${heading.join("\n")}\n</${owner}.Header>`
+          : "",
+        present("body") ? `<${owner}.Body>${piece("body")}</${owner}.Body>` : "",
+        args.footer === true
+          ? `<${owner}.Footer>\n<Button onClick={() => setOpen(false)}>关闭示例</Button>\n</${owner}.Footer>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "badge") {
+    return {
+      imports: present("icon") ? ["Icon"] : [],
+      markup: [
+        present("icon") ? `<Badge.Icon>${icon(text("icon"))}</Badge.Icon>` : "",
+        `<Badge.Label>${piece("label")}</Badge.Label>`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "alert") {
+    return {
+      imports: ["Icon"],
+      markup: [
+        `<Alert.Icon>${icon(text("icon") || "info")}</Alert.Icon>`,
+        present("title") ? `<Alert.Title>${piece("title")}</Alert.Title>` : "",
+        present("body") ? `<Alert.Body>${piece("body")}</Alert.Body>` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "progress") {
+    const parts = [
+      present("label")
+        ? `<Progress.Label>${piece("label")}</Progress.Label>`
+        : "",
+      present("valueLabel")
+        ? `<Progress.Value>${piece("valueLabel")}</Progress.Value>`
+        : "",
+    ].filter(Boolean);
+    return parts.length ? { markup: parts.join("\n"), imports: [] } : undefined;
+  }
+  if (id === "empty-state") {
+    return {
+      imports: [
+        ...(present("icon") ? ["Icon"] : []),
+        ...(args.showActions === true ? ["Button"] : []),
+      ],
+      markup: [
+        present("icon")
+          ? `<EmptyState.Icon>${icon(text("icon"))}</EmptyState.Icon>`
+          : "",
+        `<EmptyState.Title>${piece("title")}</EmptyState.Title>`,
+        present("description")
+          ? `<EmptyState.Description>${piece("description")}</EmptyState.Description>`
+          : "",
+        args.showActions === true
+          ? `<EmptyState.Actions>\n<Button icon="plus">添加文件</Button>\n</EmptyState.Actions>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "toast") {
+    return {
+      imports: present("icon") ? ["Icon"] : [],
+      markup: [
+        present("icon") ? `<Toast.Icon>${icon(text("icon"))}</Toast.Icon>` : "",
+        `<Toast.Body>${piece("body")}</Toast.Body>`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "spinner") {
+    return present("label")
+      ? { markup: piece("label"), imports: [] }
+      : undefined;
+  }
+  if (id === "links") {
+    return {
+      imports: items.some((item) => item.icon) ? ["Icon"] : [],
+      markup: items
+        .map((item) =>
+          [
+            `<ExternalLinks.Item href=${JSON.stringify(item.href ?? "")}>`,
+            `  <ExternalLinks.Label>${escapeText(item.label)}</ExternalLinks.Label>`,
+            item.icon
+              ? `  <ExternalLinks.Icon>${icon(item.icon)}</ExternalLinks.Icon>`
+              : "",
+            `</ExternalLinks.Item>`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        )
+        .join("\n"),
+    };
+  }
+  if (id === "cards") {
+    return {
+      imports: [],
+      markup: [
+        present("description")
+          ? `<NavigationCard.Description>${piece("description")}</NavigationCard.Description>`
+          : "",
+        `<NavigationCard.Title>${piece("title")}</NavigationCard.Title>`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  if (id === "shell") {
+    return {
+      imports: [],
+      markup: [
+        present("header")
+          ? `<PageShell.Header><span>${piece("header")}</span></PageShell.Header>`
+          : "",
+        `<PageShell.Body>${piece("body")}</PageShell.Body>`,
+        present("footer")
+          ? `<PageShell.Footer><span>${piece("footer")}</span></PageShell.Footer>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+  return undefined;
 }
 function escapeText(value: string) {
   return value

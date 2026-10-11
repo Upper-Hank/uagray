@@ -1,170 +1,401 @@
-# Uagray API 规范草案与审计
+# Uagray 组件 API 规范
 
-状态：公共 API 迁移建议供用户讨论确认。2026-10-10 已实施本地调试元数据、固定配置区、结构化选项、Button emphasis/tone 与代码同步；现行调试契约见 [playground.md](playground.md)。以下旧审计问题不代表均仍存在。本次审计覆盖 37 个展示条目及 CopyButton/ShareButton 辅助导出。以下“建议”是目标契约，不表示当前组件已经符合，也不自动授权批量破坏性迁移。
+更新日期：2026-10-11。
 
-组件 API、展示页配置、生成代码必须分别审核。TypeScript 组件声明定义可用能力；展示页选择常用配置并提供示例数据；代码生成把配置转成真实调用。三者一致，不要求把每个原生属性都做成配置控件。
+状态：用户已确认统一采用 `children` 与子组件组合组织内容。实施项的源码、配置台、生成代码、调用方和兼容层状态见 [逐组件实施清单](component-api.md#本轮工程落点记录)。本文区分已确认规则、实施范围和待讨论事项；待讨论项不是实施授权。新增组件或调整公共 API 必须完成第 10 节的设计开发清单，并记录未决问题。
 
-## 1. 内容与语义
+本文是通用公共 API 规则的唯一依据。[逐组件实施清单](component-api.md) 在本文规则下维护具体组件的内容入口、数量、保留能力及实施状态；新增组件须同步登记。视觉、padding、圆角、环境与动效由 [设计规范](design-system.md) 维护；编辑器状态与代码生成由 [配置台契约](playground.md) 维护。配置台的编辑能力不决定公共 API 的内容类型。
 
-- 基础控件默认呈现自身，不内置业务标签、解释、示例数据、标题或“已选/处理中”等可见辅助内容。
-- `label?: ReactNode` 只表示可见标签，未提供时不渲染节点、不保留间距。Input/Select 等外部标签由 Field 组合。
-- `aria-label` / `aria-labelledby` 负责无障碍名称。没有可见标签仍须由使用方提供名称；placeholder 不承担名称职责。
-- 现有 Tabs/SegmentedControl/ButtonGroup/SearchField 的 label 只作无障碍名称，不能直接套用“删除 label”规则。建议迁移为标准 aria 属性，避免同名异义。
-- IconButton 的无障碍名称、选项自身的 label、Disclosure 的触发内容是必要语义。Dialog 必须有可访问标题；可见标题不需要时须另提供名称，不能简单移除标题与关联。
-- 提示、错误、辅助操作分别通过 `hint`、`error`、`action`/`children` 组合；不因有标签就自动生成说明、读数或图标。
-- CopyButton 等有明确操作含义的辅助组件可保留功能性文案默认值，并提供替换能力；语言不能在同一公共组件内混用。装饰图标默认关闭；状态语义图标若保留自动选择，必须明确记录并支持 false 关闭。
+此前规范与已执行迁移保存为 [历史快照](references/history/api-contract-before-composition-2026-10-11.md)，不用于恢复已撤销的内容入口。
 
-## 2. 状态与事件
+## 1. 已确认的原则
 
-遵循 [React 单一状态来源](https://react.dev/learn/sharing-state-between-components)：每个公开状态必须有明确所有者，受控值由宿主决定；回调是改变请求，不代表宿主一定接受。
+1. **内容统一通过组合进入。** 支持内容的组件以 `children: ReactNode` 承接文字、元素、组件及其组合。结构区域通过语义子组件表达；组件可声明允许的内容职责、数量范围与排列约束。不同时提供数据式和组合式两套公共内容接口。
+2. **父组件负责承载与交互。** 父组件管理表面、边界、padding、动效及整体交互状态。语义子组件管理对应区域的排布和关联。调用方决定区域内放什么内容。
+3. **普通属性声明外观、状态、行为和约束。** `tone`、`emphasis`、`size` 等声明意图，不直接开放 color、background、border、shadow、padding 或动效数值。公共尺寸和环境契约保持现行定义，尚未决议的命名问题见第 7 节。
+4. **同名属性保持相同语义。** 不以同一个自定义属性名表达不同概念；类型、支持范围与默认值须在组件契约中明确。原生属性沿用 HTML 语义。现存例外不能不加说明地推广。
+5. **可见内容与无障碍名称分开。** 可见标题、标签由内容或语义子组件承接；`aria-label` 是无障碍名称。子组件可以建立 `aria-labelledby`、`aria-describedby` 等关联，不能用一段默认业务文案代替名称。
+6. **内容不内置业务文案。** 未提供的可选内容不生成占位节点。组件自身承担的关闭、复制等功能动作可以有中文默认文案；调用方提供的 Button 文案由 Button 的 children 决定。
+7. **状态只由负责它的组件管理。** Root 接受当前值、初始值和变化请求；子项读取上下文，不复制一套选中状态。原生字段保留原生事件；合成值使用 `onValueChange(value)`，展开使用 `onOpenChange(open)`。
+8. **保留宿主与原生能力。** 有实际 DOM 节点的组件接受对应原生属性、className、style 与 ref。ref 指向实际节点；Select 根调用的 ref 继续指向 trigger，不因内容迁移改变。子组件使用上下文关联，不能依赖检查业务组件内部的 React 元素来发现内容。
+9. **预设与 API 自定义配置分层。** 预设是完整示例或组合的起点，不是组件属性。配置台在 API 编辑之外提供预设入口；Button 的 action、showCount 等示例辅助项不能作为 API 同级配置。预设文案属于示例值，不是组件默认业务内容。选择预设后的覆盖、保存与重置策略另行确定。
+10. **图标使用完整上游能力。** 接入 `@uplus-icon/react`，图标选择覆盖当前安装版本可加载的全部图标，不维护精选白名单或少量常用项作为唯一入口。固定组件图标优先具名或单图标导入；配置台根据上游元数据提供完整选择，并使用上游动态加载入口。配置台的全量图标资源不强制进入组件包的固定图标路径。
+11. **图标保留数字尺寸。** Icon 的 size 继续为数字，单位为 CSS 像素；不改成 md/sm。省略时读取所在组合的尺寸约束，组合高度变化时，派生的按钮与图标尺寸一同变化。具体派生值优先通过共享变量和上下文传递，不在各个子项中重复写固定值；显式尺寸与父级约束的优先级仍待确认。
+12. **界面保持简洁。** 编辑器只呈现操作名称、内容及必要状态和错误反馈，不展示元信息、类型、必填标记、默认值、签名或解释性文案，也不转移到提示浮层。
 
-| 组件种类                                                                           | 建议契约                                                      | 回调内容                        |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------- |
-| 原生 Input/Textarea/Checkbox/Radio/Switch                                          | 保留 value/defaultValue 或 checked/defaultChecked 与 onChange | 原生 React 事件                 |
-| 合成值控件 NumberInput/Select/Slider/ColorPicker/Tabs/SegmentedControl/SearchField | value/defaultValue/onValueChange                              | 实际值，分别为 number 或 string |
-| 展开状态 Disclosure/Dialog/Drawer                                                  | open/defaultOpen/onOpenChange                                 | boolean                         |
-| 明确业务动作                                                                       | onConfirm/onFiles/onReject 等                                 | 对应动作的数据                  |
+## 2. 内容组成模型
 
-保留原生事件便于表单接入；合成控件不能用 onChange 同时表示事件与字符串。Select 的模式与 [Radix Select](https://www.radix-ui.com/primitives/docs/components/select) 对齐。
+### 内容开放范围
 
-- `default*` 只初始化非受控状态；受控值优先，不能在运行中悄悄转为非受控。
-- 交互中的草稿、拖拽、焦点等可留在内部，但草稿不能永久覆盖宿主的受控值。
-- 可编辑控件应支持受控/非受控；复杂弹层先保持明确的受控入口，是否扩展 defaultOpen 单独决定，不为统一形式自动增加状态层。
-- `disabled` 禁止交互；`readOnly` 在有明确只读含义的字段中保留查看与选择能力。不把 readOnly 强加给菜单、按钮等。
-- 数字默认值、空输入、NaN、越界、step、无效选项必须分别记录。NumberInput 需讨论空值是 null，还是草稿仅到失焦后提交；展示页的 clamp 不能代替公共组件边界。
-- 颜色输出格式、文件集合、错误信息均须有确定契约，不将演示辅助值直接输出。
+统一内容规则的表达方式，不强制所有组件接受相同的 children。每个组件及其槽位必须声明自己的开放范围；该分类用于组件契约和编辑器内部，不新增供调用方选择的模式属性。
 
-## 3. 外观、尺寸与布局
+| 范围       | 适用职责                  | 规则                                                                                 |
+| ---------- | ------------------------- | ------------------------------------------------------------------------------------ |
+| 自由承载   | Surface 等内容容器        | 接受自由组合，不强制套标题或正文槽位；仍遵守实际 HTML、环境与布局契约                |
+| 受约束内容 | Button 等单一语义控件     | 按允许角色和组合规则承接内容；槽位内部同样受行内语义和交互边界约束                   |
+| 结构承载   | Dialog、Drawer 等分区容器 | 根声明区域职责；Body 等区域可自由组合，Title 等区域保留对应语义约束                  |
+| 关联集合   | Tabs、Select 等关联条目   | 声明允许的子项及身份关联；Item、Trigger、Content 各自声明内容范围                    |
+| 无内容区域 | Input 等原生输入节点      | 输入走 value，不为原生不支持的 children 伪造入口；外部标签和说明由负责关联的组合承担 |
 
-| API                         | 唯一职责                                                 |
-| --------------------------- | -------------------------------------------------------- |
-| variant                     | 呈现方式，例如软底、透明、实体；不表示业务动作           |
-| tone                        | 状态语义，例如 neutral/success/danger                    |
-| surface（建议用于 Surface） | 表面角色；替换 Surface 当前含义不同的 tone               |
-| size                        | 同一组件的几何尺度，映射尺寸 Token；不改变颜色或外部宽度 |
-| className/style             | 宿主布局与必要扩展；原生控件遵守对应 DOM 语义            |
+每个槽位单独声明允许的内容：纯文字、行内内容、自由组合或指定语义子组件。不能从根组件接受 children 推导所有后代都不受限制，也不能因为根限制槽位就把 Body 的业务内容锁成固定名单。自由区域承接用户自定义组件；受约束区域的扩展必须说明新增角色或允许的内容范围，不依靠未知节点绕过契约。
 
-Button 已使用 emphasis="strong|default|quiet" 与 tone="neutral|danger"，旧 variant 仅作弃用兼容。本地调试与代码生成消费新属性，不提供任意 color/background/borderColor 参数。
+### 自由内容
 
-边界与层级是组件视觉契约，不把白底自动等同描边。Surface 已公开有限的 treatment，详见本轮已实施补充；不能为了统一 API 而给全部控件增加 border/shadow 开关。详情页画布的边框属于展示层。
+Surface 等自由承载组件直接渲染 children。children 可以是单个节点或多个节点，不限定为字符串，也不要求所有组件都额外提供 Body 子组件。Button 同样使用 children，但仍须遵守原生 button 的内容边界；按钮内部的内容职责与 IconButton 合并方案见第 9 节，尚未确认。children 是内容入口，不意味着所有组件都接受同样的内容结构。
 
-建议 size 使用 sm/md/lg（仅实现真实支持的档位），现有 default/small 迁移时明确对应 Token。需要改变公共尺寸先改 Token，不在详情页另写高度。图标尺寸/描边有专属数值参数，不与控件 size 档位混淆。
+```tsx
+<Surface>
+  <Heading>项目名称</Heading>
+  <Text>项目介绍</Text>
+  <Button>查看项目</Button>
+</Surface>
+```
 
-默认宽度按职责：按钮/标签随内容，字段/Slider/Progress/Alert 填充宿主，浮层受视口约束。无需全库 width/fullWidth 参数。宿主精确宽度使用布局、className/style；对 NumberInput 这种外包 div 的控件要明确 className/style 与 ref 分别落在根容器还是实际 input，不能暗中分裂同类属性。
+输入框、数字框等原生字段没有可渲染的 children 区域，其输入仍使用 value。CopyButton 的 text、ShareButton 的 url、链接的 href 等操作数据不等同于可见内容；是否调整这些名称另行讨论，不能机械改成 children。
 
-## 4. 图标与插槽
+### 结构内容
 
-- `icon` 表示内容图标。undefined 使用已记录默认行为，false 明确隐藏；默认无图标的组件不必要求传 false。
-- 当前 string 为 Uagray 注册的 IconName，仅包含适配层实际接入图标，不等同上游所有图标。
-- 建议讨论增加 ReactElement 插槽，允许直接传入官方 Uplus 图标而不把整套资源注册进包。保留统一尺寸、描边与 currentColor 契约；不引入字符串动态全量图标映射。
-- 关闭、展开、选中标记等结构图标维持确定语义；内容图标可配，不要求所有箭头都开放同一 icon 参数。
-- 主内容使用 children；明确区域使用 title/description/footer/action 等命名插槽。可组合内容优先 ReactNode，字符串只用于确实要按文本处理的值。
-- Tabs/SegmentedControl 的 value 是稳定标识，与显示文字分开。Tabs 内容完全来自调用方，禁止自动复写标签作为面板文字。
+区域有固定职责或无障碍关联时，使用语义子组件。Root 仍以组件名调用，例如 `<Dialog>`、`<Tabs>`，不同时新增另一种 `<Dialog.Root>` 写法。
 
-## 5. 公共属性与 ref
+- Header、Body、Footer 表达区域职责；仅在组件确有对应职责时提供。
+- Title、Description 表达标题与说明，并建立需要的语义关联。
+- Item 表达可选择的条目，Trigger 与 Content 表达关联的触发项和内容面板。
+- 子组件的 children 是该区域的内容；不再增加同义的 content、label、title 等内容属性。
+- 同一内容只有一个归属入口，不提供 prop 与子组件互相覆盖的规则。
+- 子组件不得重复叠加 Root 已提供的 padding、表面、标题或关闭动作。迁移沿用现有设计契约，不因拆分组件自行改动布局与动效。
 
-叶子控件保留合理的原生属性、name、id、aria-_、data-_ 和 ref；选择属性冲突时 Omit 原生项再声明语义类型。合成组件只接收职责明确的属性，不盲目扩散所有 DOM 属性到多个节点。
+### 统一槽位命名与职责
 
-根容器应提供 className 与可控布局扩展；ref 指向实际交互节点（NumberInput 为 input、Select 为 trigger），并在文档中明示。复合组件的根/输入分别命名，仅在存在真实双层布局需求时增加接口，不一律引入复杂 slotProps。
+优先使用以下统一词汇。同一名称表示同一职责，组件按需采用，不要求每个组件都提供全部槽位。名称是目标命名词汇，不代表本次新增全部公共导出。
 
-## 6. 详情页配置规范
+| 名称        | 统一职责                            | 边界                                                              |
+| ----------- | ----------------------------------- | ----------------------------------------------------------------- |
+| Header      | 顶部区域的组织                      | 不自动等于 Title，也不单独生成业务标题                            |
+| Title       | 区块、层或内容对象的标题            | 不是控件动作名称；是否建立根名称关联由组件契约明确                |
+| Description | 对标题、控件或内容的次要说明        | 不承接主正文；是否关联 aria-describedby 按具体语义定义            |
+| Body        | 主内容区域                          | 不承接另一份标题或 Footer；内部开放范围由组件声明                 |
+| Footer      | 底部区域的组织                      | 可以承接 Actions 或其他底部内容，不自动生成按钮                   |
+| Label       | 控件、动作或选项的可见名称          | 不代表 aria-label；DOM 是否为原生 label 由关联对象决定            |
+| Icon        | 图标内容                            | 不自动提供根组件名称；装饰或信息语义须按用途明确                  |
+| Count       | 可见数量读数                        | 槽位数量与数字大小分开；不自动变成负责业务行为的 count 状态       |
+| Control     | 一个字段控件的承接区域              | 使用上下文关联实际输入节点，不克隆未知业务组件；不是值数据        |
+| Value       | 当前值的可见读数                    | 不承担受控 value 的存储，不从显示内容反推值                       |
+| Error       | 实际错误反馈                        | 关联对应控件；校验规则和错误数据归属须由具体组件声明              |
+| Actions     | 一组动作的承载区域                  | 不内置固定动作名单，不等于 Footer                                 |
+| List        | 一组关联条目的组织                  | 不自动决定 ul、tablist 等 DOM 或 role，须遵循组件语义             |
+| Item        | 单个集合条目                        | 关联集合按契约提供稳定身份，不以文字或下标推导身份                |
+| Trigger     | 触发打开、切换等交互的节点          | 负责对应交互语义、焦点与事件，不是普通文字槽位                    |
+| Content     | 与 Trigger 或选择身份关联的内容面板 | 用于 Tabs.Content 等关联内容；普通主正文优先 Body，不作为同义别名 |
 
-当前“API”区域主要是交互配置，并非完整 API 文档。建议：
+不得为同一职责同时提供 Label/Text、Body/Content 等别名。简单文字简写如果允许，必须明确等价于哪个槽位，并计入同一规则。
 
-1. 每个真实参数记录 name/type/required/default/说明。默认值是组件默认，示例值单独记录；空字符串、undefined、false 的语义不能互换。
-2. 保留原始参数名。基础控件编辑真实参数；事件与复杂 ReactNode/对象通过简短签名、结构和用法说明，不伪装成字符串参数。
-3. action（按钮场景）、lastDisabled、unit、indeterminate、previous/next 布尔等展示辅助项移到独立“示例配置”；不是组件原有同名类型的参数，不列入真实 API 配置。
-4. options/items 作为对象数组需保留真实形状。按行编辑可以是示例工具，但要明确 label/value/disabled/content 的结构。Tabs items 是必需对象，不是多行文本 API。
-5. 组件、当前配置、生成用法同一语义：none -> false，auto -> 省略；示例辅助项必须剔除；重置恢复示例值，不称为恢复组件默认。
-6. 不一律展开所有可选区域。Field、读数、动作、说明与图标是否显示分别表达；不存在的可选内容不产生占位。
-7. 几何设置使用 NumberInput；枚举 Select；布尔 Switch；文本 Input/Textarea。参数逐行排布，复用 Disclosure/Surface，统一间距和表面契约。
+确有无法由统一职责表达的功能时，可以新增组件特有槽位，例如确认流程中的 CancelAction、ConfirmAction。新增前必须记录：为何已有名称不足、内容边界、行为责任、数量及组合关系、名称和描述的关联。特殊槽位不得改变统一名称的既有含义；普遍复用的职责应先更新本节，再推广到其他组件。
 
-建议给 catalog 增加 prop/example 分类以及 type/required/defaultValue/exampleValue 等元数据；不引入运行时 TypeScript 反射或完整文档框架。公共 Props 类型仍是能力依据，元数据和代码生成使用定向校验维护一致性。
+### 内容槽位规则
 
-## 7. 当前问题及优先级
+采用 slot 的内容职责思路：内容统一进入 children，但每个组件按自己的语义与设计声明允许的槽位和组合规则。这里的 slot 指内容区域，不是增加 slot 对象 Props，也不是强制采用 DOM slot 或 Radix Slot 工具。
 
-| 优先级 | 已核对问题                                                                                    | 处理方向                                          |
-| ------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| P0     | ColorPicker 收到 value 时交互仍直接更新内部颜色，宿主不接受请求时可与受控值不一致             | 修复真实受控所有权，保留内部 HSB 编辑语义         |
-| P0     | NumberInput 的 draft/步进提交也可暂时覆盖受控 value；空输入契约未说明                         | 明确草稿、提交、空值和拒绝更新行为                |
-| P1     | label 同时表示可见内容和无障碍名称                                                            | 拆分职责；可见标签可选，名称保留                  |
-| P1     | SearchField/Tabs/SegmentedControl 的 onChange 接收值；原生字段的同名函数接收事件              | 合成控件统一 onValueChange，原生控件保留事件      |
-| P1     | Slider/Progress 默认绑定标签与输出，Progress 还输出“处理中…”                                  | 可见 label 可选，showValue 单独选择，状态语义保留 |
-| P1     | API 面板没有完整类型、必填、组件默认信息，示例初始值看起来像默认值                            | 补元数据与简短契约，保持配置区简洁                |
-| P1     | 演示 action/lastDisabled/unit/indeterminate 等与真实参数混列                                  | 单独示例配置，生成器转换为真实调用                |
-| P2     | Surface tone 与反馈 tone 含义不同；Button variant 混合状态和颜色                              | 定义唯一职责后统一迁移                            |
-| P2     | 部分组合组件缺少 className/style/ref 支持；NumberInput 的 className 在外层而 style 下传 input | 定义属性落点，不强造全库 width API                |
-| P2     | 部分组件只能受控，部分双模式；ExpandableCode 的展开状态完全内部                               | 按复用需求补齐并记录，弹层模式单独决定            |
-| P2     | 通用控件包含默认英文搜索、中文选择提示、业务删除确认、上传文案等                              | 业务文案交给宿主，功能性默认文案明确且可改        |
-| P2     | 图标选择只覆盖有限 registry；结构与内容图标未统一说明                                         | 注册清单共享，内容图标插槽待讨论                  |
+规则至少区分：
 
-## 8. 全部条目审计
+- 允许的内容角色：Icon、Label、Count、Title、Body、CancelAction 等，优先使用统一名称，具体采用情况见逐组件清单。
+- 数量下限与上限：min/max 限制该角色的实例数量，不限制其文字长度或业务数值。
+- 初始组合：initialCount 和初始内容属于预设或新建模板，不是每次渲染时补齐 children 的组件默认值；必须满足 min ≤ initialCount ≤ max。
+- 排列与布局：允许的位置、顺序及尺寸继承关系按组件设计确定；不是所有内容都允许任意拖动。
+- 跨槽位条件：数量合法之外，仍需满足组件名称、非空动作内容、动作关联及原生内容语义等要求。
 
-“当前问题”描述本次读取到的代码；“建议”是待确认方向。此表不是完整原生属性清单。
+“必须且只有一个”是 min=1/max=1；“可有可无、最多一个”是 min=0/max=1；“默认提供但能删除”是 min=0/max=1/initialCount=1。固定数量不等于内容不可编辑。已有 children 中显式省略的可选节点不能在渲染或切换配置时被自动补回。
 
-| 条目                                        | 当前 API/问题                                                              | 建议                                                                          |
-| ------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Badge                                       | children/tone/icon；图标默认无；背景已有状态 Token                         | 保留内容最小契约，补根容器属性；状态/外观分工清楚                             |
-| Alert                                       | title?/children/tone/icon，默认自动图标，缺根容器扩展                      | title/内容各自组合；可选图标默认策略明确                                      |
-| Button                                      | 原生属性+icon/count/size/variant，count 是附加内容                         | 保留原生 onClick；count=0 也合法；展示自动点赞不是 API                        |
-| IconButton                                  | label 是 aria 名称且同时变 title                                           | 名称必需；tooltip 与无障碍名称不要强制绑定                                    |
-| ButtonGroup                                 | children/label，label 是 group 名称                                        | 标准 aria 名称，补根容器布局入口                                              |
-| Checkbox                                    | 原生 input 属性，强制 label ReactNode                                      | 可见 label 可选；无文案使用 aria 名称；无空 span                              |
-| Radio                                       | 同 Checkbox                                                                | 同 Checkbox；保留 name/value 原生分组语义                                     |
-| Switch                                      | 原生事件+checked/defaultChecked，强制可见 label                            | 可见标签可选，保留 boolean 与原生事件                                         |
-| Input                                       | 原生属性，Field 提供标签/错误上下文                                        | 不新增自带 label；type=number 与 NumberInput 的职责需说明                     |
-| Textarea                                    | 原生属性+rows=3/resizable=true                                             | 保留当前纵向 resize 契约，不额外绑定说明                                      |
-| NumberInput                                 | onValueChange(number)，defaultValue=0，草稿与 min/max/step                 | 优先明确定向提交/空值/受控拒绝；布局属性落点                                  |
-| Select                                      | options 对象数组，Radix trigger ref，defaultValue=""，placeholder="请选择" | placeholder 不默认填文案；保留 onValueChange 与原生表单关联                   |
-| Slider                                      | label 必需，track/filled，value/defaultValue，原生 onChange+onValueChange  | 可见 label 与输出独立；修复未合并的 style；值回调为主要契约，原生事件含义明示 |
-| Progress                                    | label 必需，value undefined 表示不确定，默认显示读数/处理中                | label/showValue 可选；不确定状态保留原生 progress 语义                        |
-| SearchField                                 | label 为 aria 名称，onChange(string)，仅受控，默认 Search                  | 标准名称；onValueChange；默认无提示文字；快捷键显式开启                       |
-| SegmentedControl                            | options/value/onChange(string)，group label，仅受控                        | onValueChange，稳定 value，不用 label 作 ID，默认状态策略记录                 |
-| Tabs                                        | items 必须含 content，value/onChange(string)，label 为 tablist 名称        | onValueChange，内容由调用方提供，语义面板与标签关联保留                       |
-| Disclosure                                  | title 必需ReactNode，open/defaultOpen/onOpenChange                         | 触发内容语义保留；补根容器扩展，视觉遵循统一表面规则                          |
-| Dialog                                      | open/onOpenChange/title，description/footer/dismissible/closeLabel/variant | 必须有可访问标题；defaultOpen 是否支持单独决定；variant 与 Drawer API 边界    |
-| Drawer                                      | 包装 Dialog，移除 variant                                                  | 保持独立条目；布局、关闭、焦点契约与 Dialog 相同                              |
-| ConfirmDialog                               | 受控，title/description/onConfirm，busy/danger，默认“确认删除”             | 默认不能假定删除场景；取消/确认文案可配，busy 语义保留                        |
-| Toast                                       | open/onOpenChange/message/tone/duration/icon                               | 内容字符串是否改 children 待讨论；停留/聚焦暂停保持；操作内容组合             |
-| EmptyState                                  | title 必需，description/action，可配 icon 但默认 grid                      | 装饰 icon 默认无；业务标题由宿主提供，不内置示例动作                          |
-| FileDropzone                                | label 可选但有默认提示，按钮固定“选择文件”，内部 plus，无布局/图标入口     | 主控件与提示/按钮文案拆分，可关闭或替换内容图标，保留文件校验                 |
-| SelectionBar                                | count/total/busy 和三业务回调，内置全选/清空/完成及已选文案                | 作为可选组合组件；动作由 children 组合，数量提示可选                          |
-| ExpandableCode                              | code/label/collapsedHeight，内部复制与展开，无法控制 open                  | 名称与真实 code 内容对齐；open 可复用、复制/展开动作配置按需求决定            |
-| Pager                                       | previous/next 对象，固定前后语义，缺根属性                                 | 保留对象数据；缺项禁用可记录；布尔控制仅属示例                                |
-| NavigationCard                              | direction/title/href，自带 Previous/Next 文案                              | 文案由可覆盖语义配置提供，卡片宽度由宿主                                      |
-| ShowcaseCard                                | title/description/href/children，description 必需                          | 描述可选，无描述不占位；不把具体展示内容内置                                  |
-| ExternalLinks                               | links 对象数组；导航名固定英文                                             | aria 名称可设，数据项维持 label/href/icon 结构                                |
-| Surface                                     | tone=soft/raised + treatment + 原生 div 属性/ref                           | 角色与状态 tone 分开；边界和层级规范待确定                                    |
-| ColorPicker                                 | value/defaultValue/onValueChange/label/disabled/className                  | 先修受控语义；无可见标签与色板已实现；保留辅助名称                            |
-| Icon                                        | name/size/weight/absoluteWeight + SVG 属性；默认18/1.5/true                | 保留官方适配，说明 name registry 边界，避免全量打包                           |
-| Keycap                                      | children，缺根属性                                                         | 只呈现提供内容；根属性按实际扩展需求补齐                                      |
-| Layout                                      | children/className/label，label 指 group 名称                              | 仅组织布局；使用标准 aria 名称，不自动增加表面                                |
-| PageShell                                   | controls/children/footer/className/mainId/mainAs；默认大页头/最小高度      | 必要语义与布局分离；无 controls 不制造空头部，尺寸由统一页面 Token/宿主决定   |
-| CopyButton/ShareButton（Button 的示例场景） | Copy 有 text/label/icon/size；Share 仅 url，实际复制链接                   | 与 Button 场景分开说明；不把分享 API 误写成原生系统分享                       |
+下表记录规则表达方式；具体组件的结构、数量与实施状态以 [逐组件实施清单](component-api.md) 为准。Button 与专用动作中未决的问题不构成实施授权：
 
-## 9. 建议迁移顺序与验收
+| 场景               | 内容角色      | min | max | initialCount    | 编辑行为                                       |
+| ------------------ | ------------- | --- | --- | --------------- | ---------------------------------------------- |
+| Alert 要求一个图标 | Icon          | 1   | 1   | 1               | 保留一个节点，可更换图标；不能删除或添加第二个 |
+| Alert 可选标题     | Title         | 0   | 1   | 按预设为 0 或 1 | 可添加、编辑、移除；存在时不能重复添加         |
+| 确认流程的取消动作 | CancelAction  | 0   | 1   | 1               | 初始提供，可修改或移除；具体关闭路径另行约束   |
+| 确认流程的确认动作 | ConfirmAction | 0   | 1   | 1               | 初始提供，可修改或移除；行为绑定由对应动作承担 |
 
-1. 用户确认：原生事件/合成值回调分工、可见标签策略、variant/tone/surface 的职责、数字空值与默认值。
-2. 优先修受控一致性；采用“宿主拒绝更新”定向测试，而非只测试宿主接受回调的路径。
-3. 实施可选标签/读数与名称分工，迁移调用方及生成代码；不影响 Tab 键可访问性。
-4. 分离真实 API/示例配置，补类型、默认值与必要结构说明；代码生成针对关键转换校验。
-5. 表面规范确定后迁移外观 API，与 Token 一起修，避免先增参数再想视觉语义。
+Button 推荐以 Icon、Label、Count 等语义角色管理内容，而不只提供任意 Leading/Trailing 区域。角色的默认排布由组件设计决定。纯文字简写若保留，应等价于一个 Label 槽位并计入同一上限；不能成为绕过约束的第二套内容入口。纯图标模式允许没有 Label，但需要可访问名称；Label 与 Count 的存在规则不能仅由单项数量上限表达。
 
-仅文档审计不运行构建或测试，不使用浏览器。后续实现按改动执行类型检查和必要定向行为验证。
+组合规则必须逐组件定义，不从另一组件机械继承。每个组件至少明确：允许角色与所属区域、各角色 min/max、依赖与互斥、整体有效条件、允许嵌套、排列顺序、槽位内部开放范围、内容为空或缺失的语义，以及动态增删时的处理。纯图标 Button 的名称条件和 Alert 的必需图标是各自的规则，不成为全库默认要求。
 
-## 已实现组合接口补充 · 0.5
+预设的 initialCount 和初始内容单独记录；不能将它们混入组件自身必须满足的结构条件。涉及本轮保留的 Select 显示或选择行为，引用现有契约，不重新制定。
 
-- ButtonGroup：tone="soft"（默认）提供共同底座，tone="plain" 保留功能组但不铺底；plain 组中按钮 aria-pressed 表达局部选择。
-- SelectionBar：tone="plain"（默认）按内容宽度排列，不强加底座；tone="soft" 增加共同底座。actions 由宿主组合，total 与三个业务回调可选。
+库的内容契约、配置台的规则描述与生成代码必须一致。规则是组件定义和编辑器内部元数据，不作为使用者每次调用组件时传入的公共配置对象。
 
-这些为已实现接口，覆盖上文相应组件的旧现状说明；其他迁移建议仍是草案。
+配置台按内容树在操作发生前严格限制添加、删除与排列；已达到 max 时不再提供同类添加入口，处于 min 时不提供删除动作。界面继续只显示内容及操作，不展示 min/max、类型或规则解释。
 
-Disclosure 增加可选 actions:ReactNode 和 className:string。actions 是标题按钮旁的同级辅助操作区域，用于复制等操作，不参与展开切换且不嵌套按钮。标题使用透明 Button 语义；open/defaultOpen/onOpenChange 契约不变。组件详情用法不再叠加 ExpandableCode，展示页使用 Disclosure + 完整可滚动 pre，代码继续随配置同步。
+组件库不能用 Children.count 或逐层读取 element.type 保证任意业务 JSX 的槽位合法：React children 不包含业务组件的渲染输出。语义子组件通过上下文建立关系；数量校验、动态挂载与封装支持的具体实现需单独确定。不承诺 TypeScript 能静态验证任意 JSX 的数量，也不能静默裁掉多余内容或偷偷补业务节点。
 
-## v0.1 已实施 API 补充 · 2026-10-10
+### 动态内容
 
-用户允许调整 API，要求逐项说明。本轮新增 Surface.treatment?:"tonal"|"defined"|"physical"（默认 tonal）与导出的 SurfaceProps，Surface 支持原生 div 属性及 ref；现有 tone="soft"|"raised" 保留兼容，颜色不自动携带边缘/阴影。其余公共组件接口保留。
+数据由调用方保存，通过 map 生成子组件。业务数据可以是数组；组件库不再通过 options、items、links 对象数组来定义另一套公共内容入口。
 
-ui-tool-surface 从自动实体处理改为几何样式；需要边界的调用方传 defined，需要实体感的传 physical。所有仓库调用已同步，详见 [迁移表](visual-polish.md)。Outline 等候选按钮/字段未新增，不开放任意 surface/border/shadow 组合开关。
+```tsx
+<Select defaultValue="design">
+  {categories.map((item) => (
+    <Select.Item key={item.id} value={item.id} disabled={item.disabled}>
+      {item.name}
+    </Select.Item>
+  ))}
+</Select>
+```
 
-Tabs 详情新增 contents 是展示辅助项；生成用法将它变为 items[].content，不输出 contents 属性。参数编辑保留原生语义和自然 Tab 顺序，API 参数横向成完整编辑单元，长文本按需展开，替代上文历史的逐行配置方案。
+key 表达 React 节点身份，value 表达组件的选择身份。修改文案或排序不改变稳定 value；不能用 children 的文字或数组位置推导 value。
+
+### 无障碍责任与内容来源
+
+无障碍属性跟随承担实际语义的 DOM 节点；可见内容与关联关系可以由 children 槽位提供。不能简单规定“全部跟根走”或“全部跟 children 走”。
+
+| 场景                 | 语义与属性归属                                                        | 内容来源与关联                                                    |
+| -------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Button               | 实际 button 节点承接 aria-label、aria-labelledby、aria-describedby 等 | 可见动作名称来自 Label 或等价文字；纯图标按钮在 Button 上提供名称 |
+| Dialog / Drawer      | 实际 dialog 节点承接名称和描述关联                                    | Title、Description 提供节点与稳定 ID；组件建立对应关联            |
+| 字段组合             | 实际 input 等控件承接名称、描述与错误关联                             | Label 优先使用原生 label/for；说明和错误由对应节点提供            |
+| Tabs 等集合          | Trigger、Item 或 Content 按其真实 role 承接相关属性                   | Root 管理关联，不将全部 aria 属性无差别下传每个子项               |
+| 独立有信息含义的图标 | 图标实际语义节点承担自身名称                                          | 与动作内的装饰图标分开处理，不用图标名称代替整个动作名称          |
+
+Button 的 aria-label 放在 Button，不放到 Icon、Label 或 Count 上代替按钮命名。有合适的可见动作名称时，优先用可见内容命名；aria-label 不作为必填的重复字段。显式 aria-labelledby/aria-label 遵循浏览器名称计算规则，组件不能自创覆盖顺序；显式名称应保留可见动作名称的含义。
+
+动作中的装饰 Icon 不重复朗读图标名称；Count、快捷键等内容是否进入动作名称、作为描述或另作状态播报，必须由具体组件和用途确定，不能默认全部隐藏或全部拼接。名称、描述、状态播报分别声明，aria-busy 等状态不替代名称。
+
+语义子组件可建立关系，但不得从任意 ReactNode 强行提取字符串形成另一份名称；也不能把所有可见内容自动写进 aria-label。槽位删除、条件挂载与重新排列后，引用必须保持有效。没有 Title 的 dialog 或没有 Label 的按钮，需要明确可用的替代命名路径。
+
+## 3. 已确认的结构入口
+
+以下是已确认的结构入口。实施项已经是可运行接口；暂缓项仍是目标，不能提前实现。全部现有公共组件的具体内容入口及本轮实施边界见 [逐组件实施清单](component-api.md)。
+
+| 组件             | 目标内容入口                                                 | 承担的关系                                                        |
+| ---------------- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Button           | children                                                     | 可见内容由调用方组合；内容约束及旧 icon/count 迁移提案见第 9 节   |
+| Surface          | children                                                     | 自由承载；不强制标题、正文、图片或操作结构                        |
+| Dialog / Drawer  | children；Header、Title、Description、Body、Footer 子组件    | 标题关联、区域排布与模态生命周期                                  |
+| Select           | children；Select.Item 的 children、value、disabled           | 单选项及稳定选择值；根组件继续承接触发器与定位                    |
+| SegmentedControl | children；SegmentedControl.Item 的 children、value、disabled | radiogroup / radio 选择关系                                       |
+| Tabs             | children；Tabs.List、Tabs.Trigger、Tabs.Content              | tablist / tab / tabpanel 关系；Trigger 与 Content 通过 value 关联 |
+
+卡片是组件用途称呼。仓库现有 Surface、ShowcaseCard、NavigationCard 等承担不同任务，本次不因此新增统一 Card 导出，也不把已有专用卡片自动改成同一种结构。
+
+### Dialog / Drawer
+
+```tsx
+<Dialog open={open} onOpenChange={setOpen}>
+  <Dialog.Header>
+    <Dialog.Title>编辑项目</Dialog.Title>
+  </Dialog.Header>
+  <Dialog.Body>
+    <Input aria-label="项目名称" />
+  </Dialog.Body>
+  <Dialog.Footer>
+    <Button onClick={() => setOpen(false)}>取消</Button>
+    <Button emphasis="strong" onClick={saveProject}>
+      保存
+    </Button>
+  </Dialog.Footer>
+</Dialog>
+```
+
+- Drawer 使用对应的 Drawer.Header、Drawer.Title、Drawer.Description、Drawer.Body、Drawer.Footer，遵守相同内容契约。
+- Title 为实际标题节点，自动关联根 dialog 的可访问名称；Description 自动关联可访问说明。
+- Header、Description、Footer 可以省略；Title、Description 位于 Header，各最多一个。Body、Footer、Header 各最多一个，至少存在一个实际内容区域；没有 Title 时必须由根的 aria-label 或有效 aria-labelledby 提供名称。
+- 原 title、description、footer 业务内容属性迁移到对应子组件，不再作为第二套内容入口保留。
+- open、onOpenChange、dismissible 及关闭的原生事件取消契约保留现有行为。defaultOpen 的完整支持范围仍待讨论。
+- 关闭动作属于组件能力，不能随着省略 Header 而失去必要的关闭路径；其具体挂载位置沿用现有职责并与新的结构核对。Footer 内的业务按钮由调用方组成。
+
+### Tabs
+
+```tsx
+<Tabs defaultValue="overview" aria-label="项目信息">
+  <Tabs.List>
+    <Tabs.Trigger value="overview">概览</Tabs.Trigger>
+    <Tabs.Trigger value="files">文件</Tabs.Trigger>
+  </Tabs.List>
+  <Tabs.Content value="overview">
+    <Overview />
+  </Tabs.Content>
+  <Tabs.Content value="files">
+    <FileList />
+  </Tabs.Content>
+</Tabs>
+```
+
+- Root 管理选中值；Trigger 的 value 唯一，Content 按 value 关联，不再由数组下标关联。
+- 原 items[].content 与根 children 互相覆盖的内容模式取消。Root children 是结构树，面板正文只进入 Tabs.Content。
+- 保留既有 tablist / tab / tabpanel、方向键、焦点和减少动态效果契约。
+- 动态删除当前项、禁用当前项、面板是否保留挂载等策略尚未统一，按第 7 节确认后实施，不能把编辑器现有自动归一化当作库默认行为。
+
+## 4. 通用属性：非内容部分
+
+本节维护语义和支持范围，不指定编辑器控件。各组件保留的类型、默认值和回调见逐组件清单；新的状态组合与统一空值策略仍待决定。
+
+| 类别         | 属性                                                     | 含义与现行选项                                                      |
+| ------------ | -------------------------------------------------------- | ------------------------------------------------------------------- |
+| 强调         | emphasis                                                 | strong / default / quiet；组件声明支持子集                          |
+| 语义         | tone                                                     | neutral / success / danger；组件声明支持子集                        |
+| 尺度         | size                                                     | 普通控件 md / sm，默认 md；Icon 为数字 CSS 像素，省略时继承组合约束 |
+| 结构形态     | variant                                                  | 组件支持的有限结构选项；Surface 的 soft / raised 归属待讨论         |
+| 边缘         | treatment                                                | tonal / defined / physical；只用于 Surface，合法环境由主规范约束    |
+| 排列与方向   | layout、direction                                        | 组件的有限排列选项；direction 当前为 previous / next                |
+| 当前与初始值 | value / defaultValue                                     | 字段值或选择身份；合成组件 onValueChange，原生字段 onChange         |
+| 勾选         | checked / defaultChecked                                 | 原生勾选状态，原生 onChange(event)                                  |
+| 展开         | open / defaultOpen                                       | 当前或初始打开状态；onOpenChange(open)，具体支持范围仍须确认        |
+| 交互状态     | disabled、readOnly、busy                                 | 禁止交互、只读、处理中；适用范围及组合优先级待讨论                  |
+| 数量         | count、total                                             | 当前数量与上限；作为业务状态的保留范围与显示方式待讨论              |
+| 能力         | required、multiple、dismissible、shortcut、resizable     | 表单必填、多值、允许关闭、快捷键、可纵向调整                        |
+| 数值约束     | min、max、step、maxSize、duration、collapsedHeight、rows | 数值边界；maxSize 为字节，duration 为毫秒，collapsedHeight 为像素   |
+| 操作输入     | href、url、text、code、accept、name、type                | 地址、操作数据或原生配置；同名语义与特殊处理须在组件中声明          |
+| 文本语义     | level、as、ordered                                       | 标题层级 1–6、受支持标签、有序列表能力，独立于视觉体例              |
+| 宿主与语义   | className、style、ref、id、aria-_、data-_                | 原生接入与无障碍关联；不将全部原生能力做成配置项                    |
+
+事件使用 on + 动作名称。onChange 只用于原生事件，不传简化值；合成值使用 onValueChange，展开使用 onOpenChange。onConfirm、onFiles、onReject、onSelectAll、onClear、onDone 与 formatValue 的现有签名已在逐组件清单记录；其他原生回调沿用对应 DOM 类型，不能只列属性名而不记录数据类型。
+
+## 5. 内容属性迁移范围
+
+| 现有入口                                                         | 目标方向                                                       | 实施状态                                               |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
+| Dialog / Drawer 的 title、description、footer                    | 对应语义子组件                                                 | 已确认                                                 |
+| Select、SegmentedControl 的 options                              | Item 子组件                                                    | 内容入口已确认；触发器显示与选择行为沿用现有实现       |
+| Tabs 的 items 与根 children 面板覆盖                             | List / Trigger / Content                                       | 已确认；动态项和挂载策略待确认                         |
+| Surface 的 children                                              | 保留自由组合                                                   | 已确认，无须新建 Body                                  |
+| Button 的 children                                               | 保留 children 内容入口                                         | 已确认；内容边界及 icon/count 迁移见第 9 节            |
+| 其他 label、title、description、hint、error、summary、valueLabel | 可见内容归入 children 或语义子组件                             | 按逐组件清单实施；暂缓项不迁移                         |
+| actions、footer、controls                                        | 对应区域的子组件组合                                           | 按逐组件清单实施；专用动作暂缓                         |
+| ExternalLinks.links、Pager.previous/next、专用卡片内容属性       | 子项或区域组合                                                 | ExternalLinks 已明确；Pager/ShowcaseCard 等按清单暂缓  |
+| 内置功能文案的 *Label                                            | 组件自有功能动作仍可有默认文案；调用方动作使用 Button children | 命名、保留范围待确认                                   |
+| CopyButton.text、ShareButton.url、ExpandableCode.code 等操作数据 | 不因内容统一而机械改名                                         | CopyButton.text、ShareButton.url 已明确保留；code 暂缓 |
+
+新内容 API 只维护组合式入口。旧内容数据由调用方 map 转换；不同时保留旧数组属性和新子组件作为两套公共使用方案。其他既有非内容弃用别名的删除时间不受这条规则自动影响，发布与消费迁移安排另行处理。
+
+## 6. 后续实施要求
+
+1. 只实施已确认的组件入口和行为。涉及第 7 节及第 9 节的未定问题，先补充决定，不以示例代码猜测完整契约。
+2. 根组件与子组件从 uagray 公共入口使用；保持既有无样式基础、原生语义和共享 Motion。Select 继续使用 Radix，无须为内容组合引入新依赖。
+3. 不执行字符串 JSX，不通过遍历普通业务组件的内部输出来推断结构。子组件通过上下文建立关系；支持调用方 map 和组件封装，不能限制所有内容必须是静态直接子节点。
+4. 更新公共类型、预览、生成代码、内部原型与真实调用方。编辑器可以维护内部条目数组或内容树，但它们不是公开 Props，代码只输出新的组合形式。
+5. 配置台现有字符串 args 无法代表任意组件树；组件能力与编辑器能力分别说明，不能把 ReactNode 缩窄成 string，也不能把文本框包装成完整内容编辑器。
+6. 不借内容 API 迁移调整颜色、padding、圆角、宽度、字重和动效。确有结构导致的布局差异时，依据主规范解决，不自行新增设计变体。
+7. 迁移验证检查内容归属、稳定身份、键盘、名称关联、ref 与回调，以及生成代码和实例一致性。按用户要求运行类型、设计检查和必要的定向测试；浏览器和大规模验证需另行获得同意。
+8. 本文是目标规范，不代表源码已符合。实施完成后再更新状态与验证记录；本次纯文档修改不运行构建或测试。
+
+## 7. 尚未明确的 API
+
+下表是待讨论清单，不是默认决定。实施者不得自行确定新属性、默认值或子组件名单。
+
+| 问题                 | 现存不明确现象                                                                                     | 需要确认的决定                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 内容子组件的覆盖范围 | Field/Slider/Checkbox/Alert/EmptyState/卡片等仍通过 label、title、description、icon 等属性提供内容 | 多数入口已由逐组件清单指定；特殊卡片及专用流程仍按清单暂缓                                       |
+| 内置动作与功能文案   | ConfirmDialog、SelectionBar、CopyButton 等既提供内置动作，又接受额外内容或文案                     | 哪些动作必须由组件承担，哪些改由调用方组成；*Label 保留范围                                      |
+| 图标与计数           | Button 的 icon/count 与 children 都能提供可见内容，IconButton 又有固定图标任务                     | Button 是否全部由 children 组成；IconButton 是否继续专门接受图标身份；状态数量与可见读数如何区分 |
+| size 的语义          | 普通控件为 md/sm；Icon 为数字                                                                      | 数字 size 已确认保留；需要确定父级约束与显式 size 的优先级和派生关系                             |
+| variant 的语义       | 宣称表示结构，但 Surface soft/raised 实际选择承载环境                                              | Surface 的表面意图是否单独命名；variant 可表达的范围                                             |
+| 受控与非受控         | 通用规则写 defaultOpen，但 Dialog/Drawer/Toast 等源码要求受控 open                                 | 哪些必须由宿主管理，哪些允许初始值；onOpenChange 在非受控时是否可省略                            |
+| 富内容选择项         | Item children 可以包含图标与组件，Select trigger 却需要当前项显示内容和可搜索文字                  | 本轮不调整；沿用现有 Select 触发器显示、搜索及条目交互行为                                       |
+| 动态项与空选择       | 当前编辑器会删除或禁用选中项后自动选下一项，库层未有统一策略                                       | 本轮不调整 Select 删除选中项或空选择行为；Tabs 的动态项与挂载策略另议                            |
+| 状态组合             | disabled/readOnly/busy 在不同组件上的处理不同，busy 对关闭的限制也不同                             | 适用范围、同时开启的优先级、哪些操作仍可执行                                                     |
+| 默认值与回调         | 默认值分散在源码和元数据；部分事件只列名称或模糊的“动作数据”                                       | 逐组件列出精确类型、默认值与回调签名；统一省略、空值、false、0 的含义                            |
+| 操作数据与可见内容   | text/code/url/href 和展示内容存在不同职责，专用组件有业务含义                                      | 哪些保留数据属性，哪些归入内容组合；例如 ExpandableCode 的 code 是否属于操作数据还是主内容       |
+
+## 8. 本轮明确的边界
+
+- 本轮只修改规范与逐组件清单，不迁移组件源码、配置台或生成代码。
+- 预设分层、完整 uplus 图标覆盖、Icon 数字尺寸、按组件声明内容槽位与数量约束的方向已经确认。多数槽位名单与数量已由逐组件清单明确；Button 合并及其具体约束、专用动作、状态关系仍待确认。
+- Select 富内容如何显示在触发器中、删除当前选中项后的处理，按用户要求不动；组合入口迁移不得顺带更改这些现有行为。
+
+## 9. Button 与状态模型调研提案（待确认）
+
+本节区分已确认的槽位规则方向与尚未确认的具体接口。状态模型仍为推荐方案，不构成实施授权。
+
+### 内容的约束依据
+
+组件固定能力、区域职责与内容边界；调用方提供具体内容。固定的判断依据是原生语义、无障碍关系、布局约束和交互责任，不是某份示例里恰好出现了哪些图标或文案。ReactNode 类型本身不能保证嵌套的 HTML 合法，也不能保证传入的业务组件没有交互后代。
+
+Button 继续代表一个动作，不能在内部嵌套链接、另一个按钮、输入框等交互内容。推荐把 IconButton 的能力合入 Button，以显式方形形态管理纯图标按钮，不读取 children 的数量或业务组件输出猜测形态。旧 IconButton 的兼容与移除时间另行确定。
+
+本轮已确认推广按组件声明内容槽位与数量约束的方向。此前 Leading/Text/Trailing 示例不作为目标接口；Button 更具体的 Icon/Label/Count 名称、各角色的上限与合并后的形态属性仍待确定。
+
+- 可见 label、icon、count 通过内容槽位进入，不再同时提供与 children 重叠的内容属性。Count 槽位的 max 表示槽位数量，不是数字读数的最大值；显示 0 与不存在 Count 节点不同。
+- 纯图标按钮必须提供可访问名称；图标本身不生成动作名称，也不自动生成 tooltip。
+- busy 指示是 Button 的交互职责，不计为调用方新增的 Icon 槽位；是否替换图标及如何保留内容宽度仍待确认。
+- Alert 已在逐组件清单指定 Icon、Title、Body 及整体有效条件；本轮不新增 Alert 动作区域。
+
+### 内置动作作为初始内容组合
+
+现有 ConfirmDialog 自行生成取消、确认按钮；SelectionBar 按 onSelectAll、onClear、onDone 的提供情况生成全选、清空、完成按钮，也接受 actions 或额外 children。
+
+用户提出将这些动作作为 children 内容组合：例如确认流程初始提供一个取消动作、一个确认动作，二者均最多一个且可删除。该方向采用第 2 节的 min/max/initialCount 模型；初始组合属于预设或新建模板，动作生成后成为真实内容节点，内容、顺序和增删在 children 层级管理。不能继续用基础组件的 action 选择开关替代内容编辑，也不能删除节点后由根组件再次隐式生成同一按钮。
+
+动作不只是按钮文案：取消需要明确关闭关系，确认需要明确业务回调与处理中策略。推荐语义动作子组件承接对应行为，内部复用 Button；具体名称、事件归属、无按钮时是否仍有 Escape/关闭入口、以及专用组件导出边界均待确认。删除取消按钮不等于禁止关闭，删除确认按钮不等于自动执行确认。
+
+### 图标尺寸与资源
+
+已安装上游提供 `@uplus-icon/core/metadata` 的完整元数据以及 `@uplus-icon/react/dynamic` 的动态入口。选择器从当前版本的可加载集合生成，而不是手写少量图标名字。上游新增图标随依赖升级进入选择范围，不承诺未安装版本的图标。
+
+组合决定可用高度，并派生按钮高度、间距和图标尺寸；独立 Icon 可传数字 size。尺寸共享需保证实际 SVG 尺寸与上游 absoluteWeight 的计算一致，不能只改 CSS 宽高而继续向上游传另一个固定数字。派生公式、最小尺寸及显式 size 的约束策略应按设计规范确定，不在 API 文档中任意指定数值。
+
+### 状态按职责拆分，再约束有效交互
+
+用户尚未确定状态 API；以下保持调研提案，不能在内容迁移时顺带实施。内容槽位数量与交互状态是不同约束，不应共用一个规则枚举。
+
+推荐保留简洁的公开意图属性，不新增囊括所有情况的 `state="hover|pressed|disabled|busy"`。焦点、悬停、按压由真实输入产生，不作为配置业务组件的公共开关；调试模拟若需要，单独属于展示工具。互斥和共存按具体组件确定。
+
+| 场景                       | 推荐关系与结果                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| Button disabled            | 阻止激活、有效悬停和按压反馈；使用原生 disabled，不参与普通 Tab 焦点序列         |
+| Button busy                | 阻止再次激活、悬停与按压反馈；保留焦点能力，并提供处理中语义                     |
+| Button disabled + busy     | 可共存：业务仍在处理，按钮明确不可用；disabled 决定焦点能力，busy 仍表达处理状态 |
+| hover + focus              | 可以共存，焦点提示不因鼠标悬停而消失                                             |
+| hover + pressed            | 输入条件可共存；按压期间采用按压反馈，不叠加两套相冲突的动效                     |
+| readOnly 字段              | 禁止编辑，但允许焦点、选择与复制；不推广为 Button 属性                           |
+| checked / value + disabled | 值保留，仅禁止用户修改；不能因为禁用而清空选择                                   |
+| open 与不可操作状态        | 不全局推导关闭；展开层和各动作分别管理其能力                                     |
+
+禁用元素仍可能匹配 CSS :hover；规范限制的是有效反馈与动作。仅设置 aria-disabled 或 pointer-events 不足以阻止键盘激活。
+
+实现建议：每种组件集中派生 canActivate、canEdit 等能力，CSS、Motion 和事件处理共同读取同一结果；Button 的 canActivate 可由 `!disabled && !busy` 派生。禁用或 busy 在按压过程中开启时，取消当前按压反馈；恢复可用后不补触发旧动作。保留原生 onClick 契约，不能为重做状态机同时新增另一套触发事件。简单组件优先纯函数和小型内部状态，不引入状态机依赖。
+
+Button 的 busy 策略参考 React Aria；它不自动适用于所有组件。例如 ConfirmDialog 的 busy 是否阻止 Escape、遮罩关闭或取消，属于该流程的具体策略，必须单独写清，不能把 busy 理解为整个组件树无条件禁用。
+
+状态验证在实施阶段覆盖鼠标与键盘激活、处理中重复提交、按压中禁用、取消后恢复、焦点保留及值保留；本轮纯文档不运行测试。
+
+## 10. 组件设计与开发必答清单
+
+新增组件、修改公共属性或调整内容组合前，须完成以下清单；现有组件的本轮决定和待决项见 [逐组件实施清单](component-api.md)。记录保存在本规范的对应组件契约，或在本文链接的组件契约文件中；链接文件只维护该组件的具体定义，不另设一套通用规则。这些记录用于设计与工程，不显示在产品界面。
+
+| 项目           | 必须回答的问题                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 用途与边界     | 解决什么复用需求？负责哪些能力？基础组件、专用组合和展示预设分别是什么？                                                     |
+| 实际语义       | 根与交互子项使用什么 DOM/role？键盘、焦点、ref 归属是什么？                                                                  |
+| 内容开放范围   | 根属于哪种承载范围？每个槽位内部允许什么？是否接受业务组件封装、条件渲染与 map？                                             |
+| 槽位命名       | 使用哪些统一职责？特殊槽位为何必要？是否存在重复内容入口或同义别名？                                                         |
+| 数量与有效条件 | 各槽位 min/max 是多少？什么构成有效整体？空节点、空白文字、显式 0 各代表什么？                                               |
+| 组合关系       | 哪些依赖、互斥、可共存、可嵌套？顺序固定还是可调整？身份与关联怎样保持稳定？                                                 |
+| 布局与继承     | 表面、padding 和间距由谁承担？尺寸、环境与状态继承哪些内容？显式子项配置怎样受到父级约束？引用设计规范，不在此复制视觉数值。 |
+| 值与事件       | 支持哪些当前值/初始值？省略、undefined、null 的含义？受控与非受控行为、回调签名及触发时机？                                  |
+| 状态与操作     | 支持哪些状态？哪些互斥或交叉？各状态下允许什么操作？交互途中状态改变、父级状态变化如何处理？                                 |
+| 无障碍         | 名称、描述、状态分别属于哪个节点？来自哪个槽位？装饰内容怎样处理？槽位缺失和动态变化如何维持关联？                           |
+| 动作与操作数据 | 内容与输入值、地址、复制源等数据怎样区分？动作由谁触发？取消、确认与关闭是什么关系？                                         |
+| 预设与初始化   | 哪些节点只在新建或选择预设时提供？能否删除？切换预设和重置如何处理用户修改？                                                 |
+| 规则执行       | 编辑器和组件库各自保证什么？重复、缺失、未知节点怎样处理？哪些可静态检查，哪些需要运行时或调用方遵守？                       |
+| 编辑与代码     | 编辑器支持哪些内容？实例与生成代码是否来自同一配置？不能编辑的业务组合怎样保留，而不缩窄公共 API？                           |
+| 验证与迁移     | 用哪些必要的定向检查证明契约？既有调用如何迁移？哪些行为按本轮决定保留？                                                     |
+
+每个答案标记“已决定”“待决定”或“不适用”；不适用必须写理由。待决定项记录具体场景、问题、建议及影响范围，不能用“遵循规范”代替答案。
+
+决策记录至少包括：问题、最终规则、依据或取舍、受影响组件、日期与状态。实现发现新问题时回写记录；相同职责的新组件先查已有决定，不重新猜测。
+
+与本次实现有关的必答项必须明确后才能实施；尚未决定的状态机、具体槽位上限等不能由实施者擅自确定。无关未决项不阻止已经明确范围的工作。完成清单不代表授权发布、部署或启动浏览器验证。
+
+## 11. 参考
+
+- [React：通过 children 传递 JSX](https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children)：内容组合的基础。
+- [React：Children](https://react.dev/reference/react/Children)：children 是不透明结构，不读取业务组件内部输出来推断内容。
+- [Radix Tabs](https://www.radix-ui.com/primitives/docs/components/tabs)：Trigger / Content 关联与复合组件结构的参考。
+- [Radix Select](https://www.radix-ui.com/primitives/docs/components/select)：选择项、选中内容与焦点定位参考；不要求照搬全部底层部件为 Uagray 公共 API。
+
+- [HTML button 内容边界](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button)：按钮内部不能包含其他交互内容。
+- [React Aria Button](https://react-aria.adobe.com/Button)：处理中阻止按压与悬停，同时保留焦点能力的参考。
+- [aria-disabled](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-disabled)：语义标记与实际事件阻止、焦点能力的区别。
+- [Stately 并行状态](https://stately.ai/docs/parallel-states)：可共存的状态域与互斥子状态的区别；不意味着采用 XState 依赖。
+- [uplus icon 上游仓库](https://github.com/Upper-Hank/uplus-icon)：资源接入信息以本仓库安装版本的 README、exports、类型与动态入口为核查依据。
+
+- [WAI-ARIA Button Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/)：按钮名称、状态及焦点责任。
+- [WAI-ARIA 名称与描述](https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/)：优先可见文字与原生关联，按实际语义节点提供名称。

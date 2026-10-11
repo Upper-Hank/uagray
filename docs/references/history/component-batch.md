@@ -1,6 +1,7 @@
 # 需求驱动组件批次 · 2026-10-09
 
-本批按用户授权，从本地 `uplus-icon` 和 `my-font` 的实际界面需求提炼通用组件。只修改 Uagray；未替换两个宿主项目的组件，也不搬入它们的 API、路由、事件总线和业务数据。
+> 历史参考材料：仅保留当时的观察、讨论或实现快照，不作为现行规范。现行设计依据见 [设计参考规范](../../design-system.md)。
+> 本批按用户授权，从本地 `uplus-icon` 和 `my-font` 的实际界面需求提炼通用组件。只修改 Uagray；未替换两个宿主项目的组件，也不搬入它们的 API、路由、事件总线和业务数据。
 
 ## 需求清单与实现
 
@@ -67,7 +68,7 @@
 ## 展示页重组与控件修正 · 2026-10-09
 
 - 展示页改为左目录、右实践，用 SegmentedControl、SearchField、Badge、Surface、Disclosure、ExpandableCode、CopyButton 和 EmptyState 组成；取消作品画廊、分享操作和作品前后翻页。
-- Token 扩展为五类，完整目录见 [Token 契约](tokens.md)。展示值直接读取 CSS，不在示例数据中重复定义。
+- Token 扩展为五类，完整目录见 [Token 契约](../../tokens.md)。展示值直接读取 CSS，不在示例数据中重复定义。
 - Select 由原生菜单改为 `@radix-ui/react-select` 无样式交互基础。灰阶菜单由本库 CSS 绘制；打开、浏览高亮与 Escape 取消不会触发值变更；实际确认后调用 onValueChange。空值显示 placeholder，不自动选择第一项。name、required 与隐藏原生表单输入由基础组件管理。
 - **Select API 调整**：onChange(event) 改为 onValueChange(value)，ref 由 HTMLSelectElement 改为 HTMLButtonElement。选项 value 要唯一且非空；清空选择传空字符串。当前示例与测试已迁移。
 - Slider 新增 `variant="filled"`，保留默认 `variant="track"`。填充款包含浅灰外壳、进度填充、刻度、竖向手柄和内部 label/output；两个样式共享原生 range、ref、onChange、onValueChange、禁用及键盘语义。
@@ -79,4 +80,4 @@
 
 ## 单件展示与配置
 
-详情已改为 35 个单件组件条目，提供基础属性的实时配置和代码生成；旧组合示例已移除。复制/分享仍归入 Button 场景。实践画布、字段焦点及 PageShell 契约见 [playground.md](playground.md)。
+详情已改为 35 个单件组件条目，提供基础属性的实时配置和代码生成；旧组合示例已移除。复制/分享仍归入 Button 场景。实践画布、字段焦点及 PageShell 契约见 [playground.md](../../playground.md)。

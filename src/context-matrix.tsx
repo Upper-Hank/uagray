@@ -1,22 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
-import {
-  Alert,
-  Badge,
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Disclosure,
-  FileDropzone,
-  Input,
-  NavigationCard,
-  Radio,
-  SearchField,
-  SegmentedControl,
-  Select,
-  Slider,
-  Surface,
-  Switch,
-} from "./ui";
+import { Alert, Badge, Button, ButtonGroup, Checkbox, Disclosure, FileDropzone, Input, NavigationCard, Radio, SearchField, SegmentedControl, Select, Slider, Surface, Switch, Icon } from "./ui";
 
 const contexts = [
   { id: "background", label: "页面" },
@@ -89,16 +72,11 @@ function Search() {
 function Segments() {
   const [value, setValue] = useState("week");
   return (
-    <SegmentedControl
-      aria-label="周期"
-      value={value}
-      onValueChange={setValue}
-      options={[
-        { value: "day", label: "日" },
-        { value: "week", label: "周" },
-        { value: "month", label: "月" },
-      ]}
-    />
+    <SegmentedControl aria-label="周期" value={value} onValueChange={setValue}>{[
+    { value: "day", label: "日" },
+    { value: "week", label: "周" },
+    { value: "month", label: "月" },
+].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
   );
 }
 
@@ -118,7 +96,7 @@ const sections: Section[] = [
         render: () => (
           <>
             <Button>保存</Button>
-            <Button icon="plus">添加</Button>
+            <Button >{((icon) => icon === undefined ? null : <Button.Icon><Icon name={icon as Parameters<typeof Icon>[0]["name"]} /></Button.Icon>)("plus")}<Button.Label>添加</Button.Label></Button>
           </>
         ),
       },
@@ -171,25 +149,19 @@ const sections: Section[] = [
       {
         label: "选择器",
         render: () => (
-          <Select
-            aria-label="排序"
-            defaultValue="recent"
-            options={[
-              { value: "recent", label: "最近更新" },
-              { value: "name", label: "名称" },
-            ]}
-          />
+          <Select aria-label="排序" defaultValue="recent">{[
+    { value: "recent", label: "最近更新" },
+    { value: "name", label: "名称" },
+].map(item => <Select.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}>{item.label}</Select.Item>)}</Select>
         ),
       },
       {
         label: "滑块",
         render: () => (
-          <Slider
-            label="透明度"
-            variant="filled"
-            layout="bare"
-            defaultValue={40}
-          />
+          <Slider variant="filled" layout="bare" defaultValue={40}>
+            <Slider.Label>透明度</Slider.Label>
+            <Slider.Value />
+          </Slider>
         ),
       },
     ],
@@ -201,13 +173,13 @@ const sections: Section[] = [
         label: "勾选",
         render: () => (
           <>
-            <Checkbox label="未选" />
-            <Checkbox label="已选" defaultChecked />
-            <Radio label="单选" />
+            <Checkbox>未选</Checkbox>
+            <Checkbox defaultChecked>已选</Checkbox>
+            <Radio>单选</Radio>
           </>
         ),
       },
-      { label: "开关", render: () => <Switch label="同步" defaultChecked /> },
+      { label: "开关", render: () => <Switch defaultChecked>同步</Switch> },
       { label: "分段", render: () => <Segments /> },
     ],
   },
@@ -227,7 +199,7 @@ const sections: Section[] = [
       {
         label: "提示",
         height: 88,
-        render: () => <Alert tone="success">更改已保存。</Alert>,
+        render: () => <Alert tone="success"><Alert.Icon><Icon name="check" size={16}/></Alert.Icon><Alert.Body>更改已保存。</Alert.Body></Alert>,
       },
     ],
   },
@@ -238,28 +210,24 @@ const sections: Section[] = [
         label: "折叠",
         height: 168,
         render: () => (
-          <Disclosure title="发布设置" defaultOpen>
+          <Disclosure defaultOpen><Disclosure.Trigger>发布设置</Disclosure.Trigger><Disclosure.Body>
             <div className="matrix-region-content">
               <Badge tone="success">已同步</Badge>
               <Button>编辑</Button>
             </div>
-          </Disclosure>
+          </Disclosure.Body></Disclosure>
         ),
       },
       {
         label: "上传",
         height: 216,
-        render: () => <FileDropzone label="拖入文件" onFiles={() => {}} />,
+        render: () => <FileDropzone onFiles={() => {}}><FileDropzone.Description>{"拖入文件"}</FileDropzone.Description><FileDropzone.Trigger>选择文件</FileDropzone.Trigger><FileDropzone.Error /></FileDropzone>,
       },
       {
         label: "导航",
         height: 112,
         render: () => (
-          <NavigationCard
-            direction="next"
-            title="下一节"
-            href="#context-matrix"
-          />
+          <NavigationCard direction="next" href="#context-matrix"><NavigationCard.Title>下一节</NavigationCard.Title></NavigationCard>
         ),
       },
     ],

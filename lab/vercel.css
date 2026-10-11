@@ -1,0 +1,180 @@
+.launch-shell {
+  min-height: 100dvh;
+}
+.launch-shell h1,
+.launch-shell h2,
+.launch-shell h3 {
+  font-weight: var(--ui-font-weight-medium);
+  color: var(--ui-text);
+  margin: 0;
+}
+.launch-shell h1 {
+  font-size: var(--ui-font-size-reading-title);
+}
+.launch-shell h2 {
+  font-size: var(--ui-font-size-status-title);
+}
+.launch-shell h3 {
+  font-size: var(--ui-font-size-control);
+}
+.launch-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ui-space-5) var(--ui-space-8);
+  gap: var(--ui-space-6);
+  border-bottom: 1px solid var(--ui-border-soft);
+}
+.launch-topbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-5);
+  font-size: var(--ui-font-size-control);
+}
+.launch-main {
+  max-width: 1200px;
+  padding: var(--ui-space-9) var(--ui-space-8);
+  margin-inline: auto;
+}
+.launch-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-6);
+  margin-bottom: var(--ui-space-9);
+}
+.launch-heading h1 {
+  margin-top: var(--ui-space-4);
+}
+.launch-muted {
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-control);
+}
+.launch-layout {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: var(--ui-space-10);
+}
+.launch-layout > nav {
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-4);
+}
+.launch-layout > nav .ui-button {
+  justify-content: flex-start;
+}
+.launch-layout > nav .ui-button[aria-current="page"] {
+  color: var(--ui-text);
+  background: var(--ui-control);
+}
+.launch-settings {
+  min-width: 0;
+}
+.launch-section {
+  padding-block: var(--ui-space-8);
+  border-bottom: 1px solid var(--ui-border-soft);
+}
+.launch-section:first-child {
+  padding-top: 0;
+}
+.launch-section > p,
+.launch-environment-heading p {
+  line-height: var(--ui-line-height-reading);
+  max-width: 640px;
+}
+.launch-form {
+  display: grid;
+  gap: var(--ui-space-6);
+}
+.launch-section .launch-form > .ui-field {
+  max-width: 560px;
+}
+.launch-section-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-control);
+  margin-top: var(--ui-space-6);
+}
+.launch-section-footer > span {
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-sm);
+}
+.launch-environment-heading {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ui-space-6);
+}
+.launch-variable-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-control);
+  margin-block: var(--ui-space-8);
+}
+.launch-variable-tools .ui-search {
+  flex: 1;
+  min-width: min(100%, 240px);
+}
+.launch-variable-tools .ui-select-trigger {
+  width: auto;
+}
+.launch-variables {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.launch-variables li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ui-space-6);
+  padding-block: var(--ui-space-6);
+  border-bottom: 1px solid var(--ui-border-soft);
+}
+.launch-variables li > div:first-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.launch-variables h3,
+.launch-variable-value {
+  font-family: var(--ui-mono);
+  overflow-wrap: anywhere;
+}
+.launch-variable-value {
+  font-size: var(--ui-font-size-control);
+}
+.launch-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-control);
+}
+.launch-environments {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ui-space-5);
+}
+.launch-environments legend {
+  color: var(--ui-text);
+  margin-bottom: var(--ui-space-5);
+}
+@media (max-width: 700px) {
+  .launch-topbar,
+  .launch-main {
+    padding-inline: var(--ui-space-5);
+  }
+  .launch-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ui-space-8);
+  }
+  .launch-layout > nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}

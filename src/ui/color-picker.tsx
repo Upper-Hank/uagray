@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithRef,
+} from "react";
 import { ColorArea, ColorThumb } from "react-aria-components/ColorArea";
 import { ColorSlider } from "react-aria-components/ColorSlider";
 import { SliderTrack } from "react-aria-components/Slider";
@@ -23,15 +29,26 @@ type EyeDropperConstructor = new () => {
   open: (options: { signal: AbortSignal }) => Promise<{ sRGBHex: string }>;
 };
 export type ColorPickerProps = {
-  "aria-label"?: string;
-  /** @deprecated Use `aria-label`. */
-  label?: string;
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
-  className?: string;
-};
+} & Omit<
+  ComponentPropsWithRef<"div">,
+  "defaultValue" | "children" | "onChange" | "aria-label"
+> &
+  (
+    | {
+        "aria-label": string;
+        /** @deprecated Use `aria-label`. */
+        label?: string;
+      }
+    | {
+        "aria-label"?: undefined;
+        /** @deprecated Use `aria-label`. */
+        label: string;
+      }
+  );
 function serialize(color: Color) {
   return color
     .toString(color.getChannelValue("alpha") === 1 ? "hex" : "hexa")
@@ -46,9 +63,11 @@ export function ColorPicker({
   defaultValue = "#525252",
   onValueChange,
   disabled = false,
-  className = "",
+  className,
+  style,
+  ...props
 }: ColorPickerProps) {
-  const name = ariaLabel ?? label ?? "颜色";
+  const name = ariaLabel ?? label;
   const [color, setColor] = useState(() =>
     parseColor(normalizeHex(value ?? defaultValue) ?? "#525252").toFormat(
       "hsb",
@@ -130,7 +149,12 @@ export function ColorPicker({
   const channelColor = format === "hex" ? color : color.toFormat(format);
   const channels = format === "hex" ? [] : channelColor.getColorChannels();
   return (
-    <Surface variant="raised" className={`ui-color-picker ${className}`}>
+    <Surface
+      {...props}
+      variant="raised"
+      className={`ui-color-picker ${className ?? ""}`}
+      style={style}
+    >
       <AriaColorPicker value={color} onChange={commit}>
         <fieldset disabled={disabled} className="ui-color-picker-fields">
           <legend className="ui-sr-only">{name}</legend>
@@ -182,39 +206,42 @@ export function ColorPicker({
               value={format}
               onValueChange={(next) => setFormat(next as Format)}
               disabled={disabled}
-              options={["hex", "rgb", "hsb", "hsl"].map((value) => ({
-                value,
-                label: value.toUpperCase(),
-              }))}
-            />
+            >
+              {["hex", "rgb", "hsb", "hsl"].map((value) => (
+                <Select.Item key={value} value={value}>
+                  {value.toUpperCase()}
+                </Select.Item>
+              ))}
+            </Select>
             {format === "hex" ? (
-              <Field
-                label={`${name} HEX`}
-                error={
-                  invalid ? "请输入 3、4、6 或 8 位 HEX 颜色。" : undefined
-                }
-              >
-                <Input
-                  value={draft}
-                  maxLength={9}
-                  spellCheck={false}
-                  autoComplete="off"
-                  onChange={(event) => {
-                    setDraft(event.target.value);
-                    setInvalid(false);
-                  }}
-                  onBlur={commitDraft}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitDraft();
-                    }
-                    if (event.key === "Escape") {
-                      setDraft(current);
+              <Field>
+                <Field.Label>{`${name} HEX`}</Field.Label>
+                <Field.Control>
+                  <Input
+                    value={draft}
+                    maxLength={9}
+                    spellCheck={false}
+                    autoComplete="off"
+                    onChange={(event) => {
+                      setDraft(event.target.value);
                       setInvalid(false);
-                    }
-                  }}
-                />
+                    }}
+                    onBlur={commitDraft}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        commitDraft();
+                      }
+                      if (event.key === "Escape") {
+                        setDraft(current);
+                        setInvalid(false);
+                      }
+                    }}
+                  />
+                </Field.Control>
+                {invalid && (
+                  <Field.Error>请输入 3、4、6 或 8 位 HEX 颜色。</Field.Error>
+                )}
               </Field>
             ) : (
               <div className="ui-color-picker-channels">
@@ -236,9 +263,11 @@ export function ColorPicker({
                           }[channel]
                         }
                       </span>
-                      <Field
-                        label={channelColor.getChannelName(channel, "zh-CN")}
-                      >
+                      <Field>
+                        <Field.Label>
+                          {channelColor.getChannelName(channel, "zh-CN")}
+                        </Field.Label>
+                        <Field.Control>
                         <NumberInput
                           value={Math.round(
                             channelColor.getChannelValue(channel),
@@ -250,6 +279,7 @@ export function ColorPicker({
                             commit(channelColor.withChannelValue(channel, next))
                           }
                         />
+                        </Field.Control>
                       </Field>
                     </div>
                   );
@@ -258,15 +288,18 @@ export function ColorPicker({
             )}
             <div className="ui-color-channel ui-color-alpha">
               <span aria-hidden="true">%</span>
-              <Field label="透明度 %">
-                <NumberInput
-                  value={Math.round(color.getChannelValue("alpha") * 100)}
-                  min={0}
-                  max={100}
-                  onValueChange={(next) =>
-                    commit(color.withChannelValue("alpha", next / 100))
-                  }
-                />
+              <Field>
+                <Field.Label>透明度 %</Field.Label>
+                <Field.Control>
+                  <NumberInput
+                    value={Math.round(color.getChannelValue("alpha") * 100)}
+                    min={0}
+                    max={100}
+                    onValueChange={(next) =>
+                      commit(color.withChannelValue("alpha", next / 100))
+                    }
+                  />
+                </Field.Control>
               </Field>
             </div>
           </div>

@@ -1,6 +1,7 @@
 # Uagray 组件与页面审查
 
-审查日期：2026-10-09。依据 [设计原则 0.2 工作稿](design-system.md) 的 R1–R10。
+> 历史参考材料：仅保留当时的观察、讨论或实现快照，不作为现行规范。现行设计依据见 [设计参考规范](../../design-system.md)。
+> 审查日期：2026-10-09。依据 [设计原则 0.2 工作稿](../../design-system.md) 的 R1–R10。
 
 ## 范围与结论边界
 
@@ -14,22 +15,22 @@
 
 ## 共同问题与证据
 
-| 编号 | 优先级 / 规则    | 源码事实                                                                                                                                                                               | 后续处理                                                                                                |
-| ---- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| A01  | P1 / R2、R3、R10 | [playground.tsx:574](../src/playground.tsx#L574) 的 API 为灰 Disclosure → raised Surface → 默认灰输入。全部 37 个详情共用此模板                                                        | 改成共同灰底与独立白编辑区；先选定库中的显式表面契约，避免展示页选择器补丁                              |
-| A02  | P1 / R5、R8      | [components.css:107](../src/ui/components.css#L107) 的 Segmented 只有选中标签深色，无 hover 标签变深规则；常态使用 body，计数也使用 body                                               | 为标签和计数明确角色；hover 与选中主标签同色、计数保持浅色；保留共同移动指示块                          |
-| A03  | P1 / R5、R6      | [components.css:20](../src/ui/components.css#L20) 普通 Button 只过渡背景与 scale，hover 不改变前景。此前文档还禁止 hover 改文字色                                                      | 废止旧禁令；建立普通按钮前景反馈。快速移入移出是否闪烁仍需实际验收，不凭源码宣称解决                    |
-| A04  | P1 / R2、R9      | [controls.css:633](../src/ui/controls.css#L633) 为 SelectionBar 所有 small 按钮强制白底、阴影；[selection.tsx:190](../src/ui/selection.tsx#L190) 内置全选、清空、完成                  | 共同底座中的普通动作恢复融为一体；复合组件提供内容与动作安排能力，保留业务组合的明确职责                |
-| A05  | P1 / R5、R10     | [components.css:407](../src/ui/components.css#L407)、[controls.css:335](../src/ui/controls.css#L335) 等使用 2px text 焦点；输入使用 1px focus-outline；Disclosure 外层 overflow:hidden | 统一键盘提示角色；核查折叠标题外圈是否被裁切。颜色、粗细和裁切需定向验证                                |
-| A06  | P1 / R9、R10     | [playground-catalog.ts](../src/playground-catalog.ts) 混合真实参数与 action、lastDisabled、unit 等演示辅助项，模板仅展示参数名与编辑控件                                               | 标注真实 API 与演示项，补充类型、默认值及必要解释；保持按行阅读，不增加常驻说明堆积                     |
-| A07  | P0 / R9          | [color-picker.tsx:85](../src/ui/color-picker.tsx#L85) commit 总是修改本地 color；外部同步 effect 只依赖 value。父级不接受回调且 value 未变时，画面仍保留内部新颜色                     | 区分已提交值与编辑状态，验证父级拒绝、延迟接受和归一化返回。保留 HSB 色相记忆，不能简单删除必要内部状态 |
-| A08  | P0 / R9          | [fields.tsx:144](../src/ui/fields.tsx#L144) NumberInput 草稿只在 value 变化时同步，commit 无论是否受控都保留新草稿                                                                     | 明确输入中草稿与提交值；父级拒绝提交后应回到其 value。同时确定空值、blur、越界与回调时机                |
-| A09  | P1 / R7          | [controls.css:256](../src/ui/controls.css#L256) 普通 Slider 的 range 元素高度为 4px，thumb 为 16px；filled 使用整个控制面                                                              | 扩大普通 Slider 操作命中区而保持细轨道，实际点击与触摸范围待验证                                        |
-| A10  | P1 / R7、R10     | [components.css:351](../src/ui/components.css#L351) PageShell 内置页头与页边距；[app.css:2](../src/app.css#L2) 使用未限定宿主的 ui-header-inner/ui-main 选择器；案例另做覆盖           | 库保留明确布局职责，展示样式限定宿主；空 controls 不应靠案例 CSS 隐藏空页头                             |
-| A11  | P2 / R7、R8      | [motion.tsx](../src/ui/motion.tsx) 的时间曲线与 CSS Token 重复；Button、Segmented、SelectionBar 等 inline 数字圆角与 CSS 圆角并存                                                      | 统一来源或记录限制。Motion 缩放校正是合理需求，但不能让 CSS Token 覆盖表面上成功、实际失效              |
-| A12  | P1 / R10         | [playground.tsx:327](../src/playground.tsx#L327) 及 [playground-code.ts:96](../src/playground-code.ts#L96) Tabs 内容均为 null；EmptyState 等部分演示动作无处理                         | 用简短真实内容与有效动作验证切换、组合、状态；不要恢复解释性填充文案                                    |
-| A13  | P2 / R10         | [cases.css:131](../src/cases.css#L131) 项目表可滚动但未应用 ui-scroll-area；菜单滚动和输入滚动采用不同实现                                                                             | 明确各类滚动的展示策略，不能将侧栏隐藏规则全局覆盖到可编辑长内容                                        |
-| A14  | P1 / R6、R10     | [color-picker.tsx](../src/ui/color-picker.tsx)、[color-picker.css](../src/ui/color-picker.css) 隐藏字段标签后，通道与透明度主要靠位置识别                                              | 保留用户要求的无冗余标题；为 RGB/HSB/HSL 通道及透明度提供紧凑单位或内部提示，不恢复整行标签             |
+| 编号 | 优先级 / 规则    | 源码事实                                                                                                                                                                                           | 后续处理                                                                                                |
+| ---- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| A01  | P1 / R2、R3、R10 | [playground.tsx:574](../../../src/playground.tsx#L574) 的 API 为灰 Disclosure → raised Surface → 默认灰输入。全部 37 个详情共用此模板                                                              | 改成共同灰底与独立白编辑区；先选定库中的显式表面契约，避免展示页选择器补丁                              |
+| A02  | P1 / R5、R8      | [components.css:107](../../../src/ui/components.css#L107) 的 Segmented 只有选中标签深色，无 hover 标签变深规则；常态使用 body，计数也使用 body                                                     | 为标签和计数明确角色；hover 与选中主标签同色、计数保持浅色；保留共同移动指示块                          |
+| A03  | P1 / R5、R6      | [components.css:20](../../../src/ui/components.css#L20) 普通 Button 只过渡背景与 scale，hover 不改变前景。此前文档还禁止 hover 改文字色                                                            | 废止旧禁令；建立普通按钮前景反馈。快速移入移出是否闪烁仍需实际验收，不凭源码宣称解决                    |
+| A04  | P1 / R2、R9      | [controls.css:633](../../../src/ui/controls.css#L633) 为 SelectionBar 所有 small 按钮强制白底、阴影；[selection.tsx:190](../../../src/ui/selection.tsx#L190) 内置全选、清空、完成                  | 共同底座中的普通动作恢复融为一体；复合组件提供内容与动作安排能力，保留业务组合的明确职责                |
+| A05  | P1 / R5、R10     | [components.css:407](../../../src/ui/components.css#L407)、[controls.css:335](../../../src/ui/controls.css#L335) 等使用 2px text 焦点；输入使用 1px focus-outline；Disclosure 外层 overflow:hidden | 统一键盘提示角色；核查折叠标题外圈是否被裁切。颜色、粗细和裁切需定向验证                                |
+| A06  | P1 / R9、R10     | [playground-catalog.ts](../../../src/playground-catalog.ts) 混合真实参数与 action、lastDisabled、unit 等演示辅助项，模板仅展示参数名与编辑控件                                                     | 标注真实 API 与演示项，补充类型、默认值及必要解释；保持按行阅读，不增加常驻说明堆积                     |
+| A07  | P0 / R9          | [color-picker.tsx:85](../../../src/ui/color-picker.tsx#L85) commit 总是修改本地 color；外部同步 effect 只依赖 value。父级不接受回调且 value 未变时，画面仍保留内部新颜色                           | 区分已提交值与编辑状态，验证父级拒绝、延迟接受和归一化返回。保留 HSB 色相记忆，不能简单删除必要内部状态 |
+| A08  | P0 / R9          | [fields.tsx:144](../../../src/ui/fields.tsx#L144) NumberInput 草稿只在 value 变化时同步，commit 无论是否受控都保留新草稿                                                                           | 明确输入中草稿与提交值；父级拒绝提交后应回到其 value。同时确定空值、blur、越界与回调时机                |
+| A09  | P1 / R7          | [controls.css:256](../../../src/ui/controls.css#L256) 普通 Slider 的 range 元素高度为 4px，thumb 为 16px；filled 使用整个控制面                                                                    | 扩大普通 Slider 操作命中区而保持细轨道，实际点击与触摸范围待验证                                        |
+| A10  | P1 / R7、R10     | [components.css:351](../../../src/ui/components.css#L351) PageShell 内置页头与页边距；[app.css:2](../../../src/app.css#L2) 使用未限定宿主的 ui-header-inner/ui-main 选择器；案例另做覆盖           | 库保留明确布局职责，展示样式限定宿主；空 controls 不应靠案例 CSS 隐藏空页头                             |
+| A11  | P2 / R7、R8      | [motion.tsx](../../../src/ui/motion.tsx) 的时间曲线与 CSS Token 重复；Button、Segmented、SelectionBar 等 inline 数字圆角与 CSS 圆角并存                                                            | 统一来源或记录限制。Motion 缩放校正是合理需求，但不能让 CSS Token 覆盖表面上成功、实际失效              |
+| A12  | P1 / R10         | [playground.tsx:327](../../../src/playground.tsx#L327) 及 [playground-code.ts:96](../../../src/playground-code.ts#L96) Tabs 内容均为 null；EmptyState 等部分演示动作无处理                         | 用简短真实内容与有效动作验证切换、组合、状态；不要恢复解释性填充文案                                    |
+| A13  | P2 / R10         | cases.css:131（历史源码 `src/cases.css:131`，已删除） 项目表可滚动但未应用 ui-scroll-area；菜单滚动和输入滚动采用不同实现                                                                          | 明确各类滚动的展示策略，不能将侧栏隐藏规则全局覆盖到可编辑长内容                                        |
+| A14  | P1 / R6、R10     | [color-picker.tsx](../../../src/ui/color-picker.tsx)、[color-picker.css](../../../src/ui/color-picker.css) 隐藏字段标签后，通道与透明度主要靠位置识别                                              | 保留用户要求的无冗余标题；为 RGB/HSB/HSL 通道及透明度提供紧凑单位或内部提示，不恢复整行标签             |
 
 R4 的白色边缘与阴影仍待确认。ColorPicker 有浅边缘、API 白面板没有边缘，不能仅凭这个事实判违规；应比较用途、底座和色差。当前确定的问题是 A01 的编辑表面关系，不是“所有白底必须有边框”。
 
@@ -92,7 +93,7 @@ CopyButton、ShareButton 不新增独立目录，继续归入 Button 的用法�
 | -------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 展示页框架 App                   | 规范 / Token / 组件；目录排序、过滤；两区独立滚动、无页脚；单一 SearchField | A10 的宿主样式作用域；内容区域 tabIndex=0 的大外圈与轻量焦点原则需核对；小屏两区滚动和隐藏滚动条的可发现性待验收                      |
 | 37 个组件详情                    | 共用一个实例、API Disclosure、用法 Disclosure；白画布与轻边缘               | 全部继承 A01、A06；共享模板应一次调整。每件特有的示例不足已列于组件表                                                                 |
-| 设计原则页                       | 组合示例呈现共同按钮底座、白工具区域                                        | [spec-practice.tsx](../src/spec-practice.tsx) 仍是旧规则摘要，应在本稿场景选择落定后同步；不把暂定 R4 写成已确认结论                  |
+| 设计原则页                       | 组合示例呈现共同按钮底座、白工具区域                                        | [spec-practice.tsx](../../../src/spec-practice.tsx) 仍是旧规则摘要，应在本稿场景选择落定后同步；不把暂定 R4 写成已确认结论            |
 | 交互规范页                       | 原生动作语义、禁用与危险示例                                                | 当前仅三个按钮不足以说明焦点、选择、错误与临时反馈的区别；增加少量明确状态场景，避免大段说明                                          |
 | 布局过渡页                       | Button 文案变化带动 Layout；取消有效                                        | 增加窄容器、同行兄弟、快速反向切换与减少动效场景；非本轮测试通过声明                                                                  |
 | 颜色 Token 页                    | 从 CSS 实际值读取；区分基础与语义                                           | 语义角色需配实际组合示例；原始色阶在暗色不反转是设计意图，不算遗漏                                                                    |

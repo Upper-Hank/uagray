@@ -1,0 +1,4 @@
+interface:
+  display_name: "Uagray 设计生成"
+  short_description: "依据统一设计规范生成可复用组件与真实任务页面，复用现有 API 与语义资源"
+  default_prompt: "使用 $uagray-generate 按项目规范实现当前组件或页面需求。"

@@ -331,7 +331,6 @@
   max-width: 100%;
 }
 .single-example--input,
-.single-example--color-picker,
 .single-example--number-input,
 .single-example--textarea,
 .single-example--fields,
@@ -342,9 +341,21 @@
 .single-example--tabs,
 .single-example--disclosure,
 .single-example--alert,
+.single-example--body-text,
+.single-example--text-list,
+.single-example--description-list,
 .single-example--shell {
   width: 100%;
   max-width: 480px;
+}
+.single-example--color-picker {
+  width: 100%;
+  max-width: 320px;
+}
+.single-example--tabs .ui-tab-list {
+  display: flex;
+  width: fit-content;
+  margin-inline: auto;
 }
 .single-example--text {
   width: 100%;
@@ -474,13 +485,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   align-items: start;
-  gap: var(--ui-space-2) var(--ui-space-6);
+  gap: var(--ui-space-6) var(--ui-space-8);
 }
 .api-param {
   display: grid;
-  grid-template-columns: min(112px, 40%) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ui-space-5);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ui-space-4);
   padding-block: var(--ui-space-2);
   min-width: 0;
   width: 100%;
@@ -553,7 +564,11 @@
   padding: var(--ui-padding-panel);
 }
 .single-example--showcase {
-  width: 280px;
+  width: 100%;
+  max-width: 280px;
+}
+.single-example--showcase > .ui-showcase {
+  width: 100%;
 }
 .single-example--cards {
   width: 100%;
@@ -996,4 +1011,115 @@
 .matrix-labels .matrix-cell {
   font: var(--ui-font-weight-regular) var(--ui-font-size-sm) var(--ui-mono);
   color: var(--ui-muted);
+}
+
+/* Visual API editing belongs to the showcase host, not public component props. */
+.api-content-block {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-control);
+  min-width: 0;
+}
+.ui-button.api-content-trigger {
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: var(--ui-size-control);
+  padding: 0 var(--ui-padding-control);
+  text-align: left;
+}
+.api-content-trigger > .ui-button-content {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+}
+.api-content-trigger svg {
+  flex-shrink: 0;
+}
+.api-content-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.api-collection-count {
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-xs);
+  flex-shrink: 0;
+}
+.api-visual-choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--ui-space-5);
+}
+.api-visual-option {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--ui-space-3);
+  cursor: pointer;
+}
+.api-visual-option > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.api-visual-option:has(input:focus-visible) {
+  outline: 1px solid var(--ui-focus-outline);
+  outline-offset: var(--ui-space-2);
+  border-radius: var(--ui-radius-control);
+}
+.api-visual-option:has(input:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+.api-visual-sample {
+  display: grid;
+  place-items: center;
+  height: var(--ui-size-control);
+  min-width: var(--ui-size-control);
+}
+.api-tone-swatch {
+  display: grid;
+  place-items: center;
+  width: var(--ui-size-control);
+  height: var(--ui-size-control);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-tone-bg);
+  color: var(--ui-tone-text);
+}
+.api-emphasis-sample,
+.api-size-sample {
+  pointer-events: none;
+}
+.api-choice-caption {
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-xs);
+}
+.api-visual-option:has(input:checked) .api-choice-caption {
+  color: var(--ui-text);
+  text-decoration: underline;
+  text-underline-offset: var(--ui-space-2);
+}
+.api-icon-picker {
+  display: grid;
+  gap: var(--ui-space-6);
+}
+.api-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--ui-gap-control);
+}
+.api-icon-grid .ui-button[aria-pressed="true"] {
+  background: var(--ui-action);
+  color: var(--ui-on-action);
+}
+.api-option-actions {
+  flex-wrap: wrap;
+  gap: var(--ui-gap-control);
 }

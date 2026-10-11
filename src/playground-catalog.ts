@@ -5,32 +5,41 @@ export type ChoiceItem = {
   label: string;
   disabled?: boolean;
   content?: string;
+  count?: string;
+  href?: string;
+  icon?: string;
 };
 export type Value = string | number | boolean | ChoiceItem[];
 export const choiceItems = (value: Value | undefined): ChoiceItem[] =>
   Array.isArray(value) ? value : [];
 export type Args = Record<string, Value>;
 export type ParameterGroup =
-  "content" | "appearance" | "behavior" | "constraints";
+  "content" | "appearance" | "state" | "behavior" | "constraints";
 
 export const parameterGroups: { id: ParameterGroup; title: string }[] = [
   { id: "content", title: "内容" },
   { id: "appearance", title: "视觉" },
+  { id: "state", title: "状态" },
   { id: "behavior", title: "行为" },
   { id: "constraints", title: "数值约束" },
 ];
 
 export type Control = {
   key: string;
-  scope: "prop" | "example";
+  scope: "prop" | "example" | "slot";
   type: string;
   control: "text" | "textarea" | "boolean" | "number" | "enum" | "items";
   group?: ParameterGroup;
   exampleValue: Value;
   componentDefault?: Value;
   required?: boolean;
+  /** Visible content name. Slot editors use this instead of a public prop key. */
+  label?: string;
   description?: string;
   when?: (args: Args) => boolean;
+  removable?: (args: Args) => boolean;
+  requiredWhen?: (args: Args) => boolean;
+  editor?: "options" | "segments" | "tabs" | "links";
   options?: readonly string[];
   min?: number;
   max?: number;
@@ -86,6 +95,32 @@ const choice = (
   control: "enum",
   scope: "prop",
 });
+const slot = (
+  key: string,
+  exampleValue: string,
+  label: string,
+  options: Partial<Control> = {},
+): Control => ({
+  ...text(key, exampleValue),
+  ...options,
+  key,
+  exampleValue,
+  scope: "slot",
+  label,
+  group: "content",
+});
+const regionRemains = (args: Args, except: string) => {
+  const title = except === "title" ? "" : args.title;
+  const description = except === "description" ? "" : args.description;
+  const body = except === "body" ? "" : args.body;
+  const footer = except === "footer" ? false : args.footer;
+  return Boolean(
+    String(title ?? "").trim() ||
+      String(description ?? "").trim() ||
+      String(body ?? "").trim() ||
+      footer === true,
+  );
+};
 const items = (key: string, exampleValue: ChoiceItem[]): Control => ({
   key,
   exampleValue,
@@ -98,111 +133,191 @@ const items = (key: string, exampleValue: ChoiceItem[]): Control => ({
   description: "value 是稳定标识；修改标签不会改变当前选择。",
 });
 const disabled = bool("disabled");
-const label = text("label", "名称");
 const content = text("children", "内容");
 const size = choice("size", "md", ["md", "sm"]);
 const tone = choice("tone", "neutral", ["neutral", "success", "danger"]);
 const icon = choice("icon", "plus", iconNames);
-const feedbackIcon = (exampleValue = "auto"): Control => ({
-  ...choice("icon", exampleValue, ["auto", "none", ...iconNames]),
-  type: "IconName | false",
-  description: "auto 省略属性，none 传入 false，其他值指定图标。",
-});
 const value = text("value", "");
 const placeholder = text("placeholder", "");
-const options = items("options", [
-  { value: "0", label: "规范" },
-  { value: "1", label: "Token" },
-  { value: "2", label: "组件" },
-]);
-const componentDefaults: Record<string, Record<string, Value>> = {
-  buttons: { emphasis: "default", tone: "neutral", size: "md" },
-  "icon-button": { emphasis: "default", tone: "neutral", size: "md" },
-  "button-group": { variant: "contained" },
-  search: { shortcut: false },
-  "color-picker": { "aria-label": "颜色", disabled: false },
-  "number-input": { step: 1 },
-  textarea: { rows: 3, resizable: true },
-  fields: { required: false },
-  slider: { min: 0, max: 100, step: 1, variant: "track", layout: "field" },
-  dialog: { dismissible: true },
-  drawer: { dismissible: true },
-  "confirm-dialog": {
-    tone: "neutral",
-    busy: false,
-    confirmLabel: "确认",
-    cancelLabel: "取消",
+type EntryMeta = {
+  defaults?: Record<string, Value>;
+  required?: readonly string[];
+  callbacks?: readonly string[];
+  example?: readonly string[];
+};
+const meta: Record<string, EntryMeta> = {
+  buttons: {
+    defaults: {
+      emphasis: "default",
+      tone: "neutral",
+      size: "md",
+      copiedLabel: "已复制",
+      copyingLabel: "正在复制…",
+      copyFailedLabel: "复制失败",
+      busy: false,
+    },
+    callbacks: ["onClick(event: MouseEvent<HTMLButtonElement>)"],
+    example: ["action"],
   },
-  badge: { tone: "neutral", emphasis: "default" },
-  alert: { tone: "neutral" },
-  toast: { tone: "neutral", duration: 4200 },
-  progress: { max: 100 },
-  upload: { multiple: false, disabled: false, buttonLabel: "选择文件" },
-  selection: { busy: false, variant: "plain" },
-  text: { expandLabel: "展开全文", collapsedHeight: 210 },
-  surface: { variant: "soft", treatment: "tonal" },
-  icons: { size: 18, weight: DEFAULT_ICON_WEIGHT, absoluteWeight: true },
-};
-const requiredProps: Record<string, string[]> = {
-  segments: ["aria-label", "options"],
-  "button-group": ["aria-label", "children"],
-  "icon-button": ["aria-label", "icon"],
-  search: ["aria-label"],
-  fields: ["label"],
-  select: ["options"],
-  tabs: ["aria-label", "items"],
-  disclosure: ["title", "children"],
-  dialog: ["open", "title"],
-  drawer: ["open", "title"],
-  "confirm-dialog": ["open", "title"],
-  badge: ["children"],
-  alert: ["children"],
-  toast: ["open", "children"],
-  "empty-state": ["title"],
-  selection: ["count"],
-  text: ["code"],
-  cards: ["direction", "title", "href"],
-  showcase: ["title", "href", "children"],
-  icons: ["name"],
-  keycap: ["children"],
-  layout: ["children"],
-};
-const callbackContracts: Record<string, string[]> = {
-  "color-picker": ["onValueChange(value: string)"],
-  "number-input": ["onValueChange(value: number)"],
-  segments: ["onValueChange(value: string)"],
-  search: ["onValueChange(value: string)"],
-  input: ["onChange(event: ChangeEvent<HTMLInputElement>)"],
-  textarea: ["onChange(event: ChangeEvent<HTMLTextAreaElement>)"],
-  select: ["onValueChange(value: string)"],
-  checkbox: ["onChange(event: ChangeEvent<HTMLInputElement>)"],
-  radio: ["onChange(event: ChangeEvent<HTMLInputElement>)"],
-  switch: ["onChange(event: ChangeEvent<HTMLInputElement>)"],
-  slider: [
-    "onValueChange(value: number)",
-    "formatValue(value: number): string",
-  ],
-  tabs: ["onValueChange(value: string)"],
-  disclosure: ["onOpenChange(open: boolean)"],
-  dialog: ["onOpenChange(open: boolean)"],
-  drawer: ["onOpenChange(open: boolean)"],
-  "confirm-dialog": ["onOpenChange(open: boolean)", "onConfirm()"],
-  toast: ["onOpenChange(open: boolean)"],
-  upload: ["onFiles(files: File[])", "onReject(message: string)"],
-  selection: ["onSelectAll()", "onClear()", "onDone()"],
-  buttons: ["onClick(event: MouseEvent<HTMLButtonElement>)"],
-};
-const exampleKeys: Record<string, string[]> = {
-  buttons: ["action", "text", "url", "showCount"],
-  slider: ["unit"],
-  progress: ["indeterminate"],
-  "empty-state": ["showActions"],
-  navigation: ["previous", "next"],
-  showcase: ["externalLabel", "externalHref"],
-  links: ["label", "href", "icon"],
-  "button-group": ["children"],
-  layout: ["children"],
-  shell: ["controls", "footer"],
+  "icon-button": {
+    defaults: { emphasis: "default", tone: "neutral", size: "md" },
+    required: ["aria-label", "icon"],
+  },
+  "button-group": {
+    defaults: { variant: "contained" },
+    required: ["aria-label", "children"],
+    example: ["children"],
+  },
+  search: {
+    defaults: { shortcut: false },
+    required: ["aria-label"],
+    callbacks: ["onValueChange(value: string)"],
+  },
+  "color-picker": {
+    defaults: { "aria-label": "颜色", disabled: false },
+    callbacks: ["onValueChange(value: string)"],
+  },
+  "number-input": {
+    defaults: { step: 1 },
+    callbacks: ["onValueChange(value: number)"],
+  },
+  textarea: {
+    defaults: { rows: 3, resizable: true },
+    callbacks: ["onChange(event: ChangeEvent<HTMLTextAreaElement>)"],
+  },
+  fields: { defaults: { required: false } },
+  slider: {
+    defaults: { min: 0, max: 100, step: 1, variant: "track", layout: "field" },
+    callbacks: [
+      "onValueChange(value: number)",
+      "formatValue(value: number): string",
+    ],
+    example: ["unit"],
+  },
+  dialog: {
+    defaults: { dismissible: true },
+    required: ["open"],
+    callbacks: ["onOpenChange(open: boolean)"],
+  },
+  drawer: {
+    defaults: { dismissible: true },
+    required: ["open"],
+    callbacks: ["onOpenChange(open: boolean)"],
+  },
+  "confirm-dialog": {
+    defaults: {
+      tone: "neutral",
+      busy: false,
+      confirmLabel: "确认",
+      cancelLabel: "取消",
+      busyLabel: "处理中…",
+      statusLabel: "操作处理中",
+    },
+    required: ["open", "title"],
+    callbacks: ["onOpenChange(open: boolean)", "onConfirm()"],
+  },
+  badge: {
+    defaults: { tone: "neutral", emphasis: "default" },
+  },
+  alert: { defaults: { tone: "neutral" } },
+  toast: {
+    defaults: { tone: "neutral", duration: 4200, closeLabel: "关闭提示" },
+    required: ["open"],
+    callbacks: ["onOpenChange(open: boolean)"],
+  },
+  progress: {
+    defaults: { max: 100 },
+    example: ["indeterminate"],
+  },
+  upload: {
+    defaults: { multiple: false, disabled: false, buttonLabel: "选择文件" },
+    callbacks: ["onFiles(files: File[])", "onReject(message: string)"],
+  },
+  selection: {
+    defaults: {
+      busy: false,
+      variant: "plain",
+      "aria-label": "批量操作",
+      selectAllLabel: "全选",
+      clearLabel: "清空",
+      doneLabel: "完成",
+    },
+    required: ["count"],
+    callbacks: ["onSelectAll()", "onClear()", "onDone()"],
+  },
+  text: {
+    defaults: {
+      expandLabel: "展开全文",
+      collapseLabel: "收起全文",
+      collapsedHeight: 210,
+      "aria-label": "可展开文本",
+    },
+    required: ["code"],
+  },
+  spinner: {
+    defaults: { size: "md", "aria-label": "加载中" },
+    required: ["aria-label"],
+  },
+  "toast-region": {
+    defaults: { "aria-label": "通知" },
+    required: ["children"],
+    example: ["open"],
+  },
+  surface: { defaults: { variant: "soft", treatment: "tonal" } },
+  icons: {
+    defaults: { size: 18, weight: DEFAULT_ICON_WEIGHT, absoluteWeight: true },
+    required: ["name"],
+  },
+  segments: {
+    required: ["aria-label"],
+    callbacks: ["onValueChange(value: string)"],
+  },
+  input: { callbacks: ["onChange(event: ChangeEvent<HTMLInputElement>)"] },
+  select: {
+    callbacks: ["onValueChange(value: string)"],
+  },
+  checkbox: { callbacks: ["onChange(event: ChangeEvent<HTMLInputElement>)"] },
+  radio: { callbacks: ["onChange(event: ChangeEvent<HTMLInputElement>)"] },
+  switch: { callbacks: ["onChange(event: ChangeEvent<HTMLInputElement>)"] },
+  tabs: {
+    required: ["aria-label"],
+    callbacks: ["onValueChange(value: string)"],
+  },
+  disclosure: {
+    callbacks: ["onOpenChange(open: boolean)"],
+  },
+  "empty-state": { example: ["showActions"] },
+  cards: { required: ["direction", "href"] },
+  showcase: {
+    required: ["title", "href", "children"],
+    example: ["externalLabel", "externalHref"],
+  },
+  keycap: { required: ["children"] },
+  layout: { required: ["children"], example: ["children"] },
+  navigation: {
+    defaults: { variant: "contained" },
+    example: ["previous", "next"],
+  },
+  "action-row": { example: ["children", "size", "disabled"] },
+  heading: {
+    defaults: { level: 2, variant: "section" },
+    required: ["children"],
+  },
+  "body-text": {
+    defaults: { as: "p", variant: "body" },
+    required: ["children"],
+  },
+  "text-list": {
+    defaults: { ordered: false, variant: "contained" },
+    required: ["children"],
+  },
+  "description-list": {
+    defaults: { variant: "contained" },
+    required: ["children"],
+    example: ["label", "description"],
+  },
+  links: {},
+  shell: {},
 };
 const entry = (
   id: string,
@@ -214,39 +329,45 @@ const entry = (
   name,
   title,
   category: "component",
-  callbacks: callbackContracts[id] ?? [],
+  callbacks: [...(meta[id]?.callbacks ?? [])],
   fields: fields.map((field) => ({
     ...field,
-    scope: exampleKeys[id]?.includes(field.key) ? "example" : "prop",
+    scope:
+      field.scope === "slot" || field.scope === "example"
+        ? field.scope
+        : meta[id]?.example?.includes(field.key)
+          ? "example"
+          : "prop",
     type:
       id === "buttons" && field.key === "icon"
         ? "IconName | undefined"
-        : ["children", "hint", "error", "valueLabel", "summary"].includes(
-              field.key,
-            ) && !exampleKeys[id]?.includes(field.key)
-          ? "ReactNode（文本）"
-          : field.type,
-    componentDefault: componentDefaults[id]?.[field.key],
-    required: requiredProps[id]?.includes(field.key) ?? false,
+        : [
+              "title",
+              "label",
+              "description",
+              "children",
+              "hint",
+              "error",
+              "valueLabel",
+              "summary",
+            ].includes(field.key) && !meta[id]?.example?.includes(field.key)
+          ? "ReactNode"
+          : field.key === "icon" || (id === "icons" && field.key === "name")
+            ? field.type.startsWith("IconName")
+              ? field.type
+              : "IconName"
+            : field.type,
+    componentDefault: meta[id]?.defaults?.[field.key],
+    required:
+      field.required || (meta[id]?.required?.includes(field.key) ?? false),
     description:
-      id === "buttons" && field.key === "icon"
-        ? "none 省略图标属性"
-        : field.description,
-    when:
+      field.description,
+    when: field.when ?? (
       id === "showcase" && field.key === "externalHref"
         ? (args) => !!args.externalLabel
-        : id === "buttons"
-          ? (args) =>
-              field.key === "action" ||
-              (args.action === "copy"
-                ? ["text", "children", "size"].includes(field.key)
-                : args.action === "share"
-                  ? field.key === "url"
-                  : !["text", "url"].includes(field.key) &&
-                    (field.key !== "count" || args.showCount === true))
-          : id === "progress" && field.key === "value"
+        : id === "progress" && field.key === "value"
             ? (args) => !args.indeterminate
-            : undefined,
+            : undefined),
     group:
       field.group ??
       ([
@@ -266,18 +387,30 @@ const entry = (
               "emphasis",
               "treatment",
               "size",
-              "icon",
-              "name",
               "weight",
               "absoluteWeight",
               "layout",
               "direction",
             ].includes(field.key)
           ? "appearance"
-          : field.control === "boolean" ||
-              ["type", "action", "accept"].includes(field.key)
-            ? "behavior"
-            : "content"),
+          : [
+                "value",
+                "defaultValue",
+                "checked",
+                "defaultChecked",
+                "open",
+                "defaultOpen",
+                "count",
+                "disabled",
+                "readOnly",
+                "busy",
+              ].includes(field.key)
+            ? "state"
+            : field.control === "boolean" ||
+                ["type", "action", "accept"].includes(field.key) ||
+                (field.key === "name" && id !== "icons")
+              ? "behavior"
+              : "content"),
   })),
 });
 export const exampleArgs = (entry: ComponentEntry): Args =>
@@ -288,6 +421,8 @@ export const visibleFields = (entry: ComponentEntry, args: Args) =>
   entry.fields.filter((field) => !field.when || field.when(args));
 export function normalizeArgs(entry: ComponentEntry, args: Args): Args {
   const next = { ...args };
+  if (entry.id === "heading")
+    next.level = Math.max(1, Math.min(6, Math.round(Number(next.level) || 2)));
   if (["slider", "number-input"].includes(entry.id)) {
     next.max = Math.max(
       Number(next.min) + (entry.id === "slider" ? 1 : 0),
@@ -299,13 +434,12 @@ export function normalizeArgs(entry: ComponentEntry, args: Args): Args {
     );
   }
   if (entry.id === "selection")
-    next.count = Math.min(Number(next.count), Number(next.total));
+    next.count = Math.max(0, Math.min(Number(next.count), Number(next.total)));
+  if (entry.id === "buttons" && !String(next.children ?? "").trim()) next.count = "";
   if (entry.id === "progress")
     next.value = Math.min(Number(next.value), Number(next.max));
   if (["segments", "tabs", "select"].includes(entry.id)) {
-    const enabled = choiceItems(
-      next[entry.id === "tabs" ? "items" : "options"],
-    ).filter((item) => !item.disabled);
+    const enabled = choiceItems(next.entries).filter((item) => !item.disabled);
     if (!enabled.some((item) => item.value === next.value))
       next.value = enabled[0]?.value ?? "";
   }
@@ -327,7 +461,17 @@ export const componentEntries: ComponentEntry[] = [
   ]),
   entry("segments", "SegmentedControl", "Segmented control", [
     text("aria-label", "分类"),
-    options,
+    {
+      ...items("entries", [
+        { value: "0", label: "规范" },
+        { value: "1", label: "Token", count: "12" },
+        { value: "2", label: "组件", disabled: true },
+      ]),
+      scope: "slot",
+      label: "Item",
+      group: "content",
+      editor: "segments",
+    },
     choice("value", "0", ["0", "1", "2"]),
     text("defaultValue", ""),
   ]),
@@ -337,27 +481,32 @@ export const componentEntries: ComponentEntry[] = [
     text("defaultValue", ""),
     text("placeholder", ""),
     bool("shortcut", true),
+    disabled,
   ]),
   entry("buttons", "Button", "Button", [
-    choice("action", "button", ["button", "copy", "share"]),
-    text("children", "Like"),
-    bool("showCount"),
+    { ...choice("action", "button", ["button", "copy", "share"]), scope: "example" },
+    slot("children", "Like", "Label", { requiredWhen: args => !args.icon || args.icon === "none", removable: args => Boolean(args.icon && args.icon !== "none" && !args.count) }),
+    { ...choice("icon", "none", ["none", ...iconNames]), scope: "slot", label: "Icon", group: "content" },
+    slot("count", "", "Count", { when: args => Boolean(args.children) }),
+    text("aria-label", ""),
+    choice("shape", "inline", ["inline", "square"]),
     choice("emphasis", "default", ["strong", "default", "quiet"]),
-    choice("tone", "neutral", ["neutral", "danger"]),
-    size,
-    choice("icon", "none", ["none", ...iconNames]),
-    number("count", 0, 0, 999),
-    disabled,
-    text("text", "值得保存的内容"),
-    text("url", "https://example.com"),
+    choice("tone", "neutral", ["neutral", "danger"]), size, disabled, bool("busy"),
+    { ...text("text", "值得保存的内容"), when: args => args.action === "copy" },
+    { ...text("url", "https://example.com"), when: args => args.action === "share" },
+    slot("copiedLabel", "已复制", "Feedback · success", { when: args => args.action !== "button" }),
+    slot("copyingLabel", "正在复制…", "Feedback · pending", { when: args => args.action !== "button" }),
+    slot("copyFailedLabel", "复制失败", "Feedback · error", { when: args => args.action !== "button" }),
   ]),
-  entry("icon-button", "IconButton", "Icon button", [
+  entry("icon-button", "Button", "Icon button", [
     text("aria-label", "添加"),
-    icon,
+    { ...icon, scope: "slot", label: "Icon", group: "content", required: true },
+    choice("shape", "square", ["inline", "square"]),
     size,
     choice("emphasis", "default", ["strong", "default", "quiet"]),
     choice("tone", "neutral", ["neutral", "danger"]),
     disabled,
+    bool("busy"),
   ]),
   entry("button-group", "ButtonGroup", "Button group", [
     choice("variant", "contained", ["contained", "plain"]),
@@ -382,35 +531,45 @@ export const componentEntries: ComponentEntry[] = [
     bool("required"),
   ]),
   entry("fields", "Field", "Field", [
-    text("label", "项目名称"),
-    text("hint", ""),
-    text("error", ""),
+    slot("label", "项目名称", "Label", { removable: () => true }),
+    slot("description", "", "Description"),
+    slot("error", "", "Error"),
     bool("required"),
   ]),
   entry("select", "Select", "Select", [
     choice("value", "svg", ["svg", "png", "pdf"]),
-    items("options", [
-      { value: "svg", label: "SVG" },
-      { value: "png", label: "PNG" },
-      { value: "pdf", label: "PDF", disabled: true },
-    ]),
+    {
+      ...items("entries", [
+        { value: "svg", label: "SVG" },
+        { value: "png", label: "PNG" },
+        { value: "pdf", label: "PDF", disabled: true },
+      ]),
+      scope: "slot",
+      label: "Item",
+      group: "content",
+    },
     text("placeholder", ""),
     disabled,
     bool("required"),
   ]),
   entry("checkbox", "Checkbox", "Checkbox", [
-    label,
+    slot("label", "名称", "Label", { removable: () => true }),
     bool("checked", true),
     disabled,
   ]),
-  entry("radio", "Radio", "Radio", [label, bool("checked", true), disabled]),
+  entry("radio", "Radio", "Radio", [
+    slot("label", "名称", "Label", { removable: () => true }),
+    bool("checked", true),
+    disabled,
+  ]),
   entry("switch", "Switch", "Switch", [
-    text("label", ""),
+    slot("label", "", "Label"),
     bool("checked", true),
     disabled,
   ]),
   entry("slider", "Slider", "Slider", [
-    text("label", "Size"),
+    slot("label", "Size", "Label", { removable: () => true }),
+    { ...bool("reading", true), scope: "slot", label: "Value", group: "content" },
     choice("variant", "filled", ["filled", "track"]),
     choice("layout", "field", ["field", "inline", "bare"]),
     number("value", 140, 16, 256),
@@ -423,119 +582,230 @@ export const componentEntries: ComponentEntry[] = [
   entry("tabs", "Tabs", "Tabs", [
     text("aria-label", "内容切换"),
     text("defaultValue", ""),
-    items("items", [
-      { value: "0", label: "项目", content: "" },
-      { value: "1", label: "文件", content: "" },
-      { value: "2", label: "记录", content: "", disabled: true },
-    ]),
+    {
+      ...items("entries", [
+        { value: "0", label: "项目", content: "项目内容" },
+        { value: "1", label: "文件", content: "文件内容" },
+        { value: "2", label: "记录", content: "", disabled: true },
+      ]),
+      scope: "slot",
+      label: "Item",
+      group: "content",
+      editor: "tabs",
+    },
     choice("value", "0", ["0", "1", "2"]),
   ]),
   entry("disclosure", "Disclosure", "Disclosure", [
-    text("title", "高级设置"),
+    slot("title", "高级设置", "Trigger", { required: true }),
+    slot("actions", "", "Actions"),
+    slot("body", "内容", "Body", { required: true }),
     bool("open"),
-    content,
   ]),
   entry("dialog", "Dialog", "Dialog", [
-    text("title", "项目设置"),
-    text("description", ""),
+    slot("title", "项目设置", "Title", {
+      removable: (args) => regionRemains(args, "title"),
+    }),
+    slot("description", "", "Description", {
+      removable: (args) => regionRemains(args, "description"),
+    }),
+    slot("body", "内容", "Body", {
+      removable: (args) => regionRemains(args, "body"),
+    }),
+    {
+      ...bool("footer", true),
+      scope: "slot",
+      label: "Footer",
+      group: "content",
+      removable: (args) => regionRemains(args, "footer"),
+    },
     bool("dismissible", true),
     bool("open"),
-    content,
   ]),
   entry("drawer", "Drawer", "Drawer", [
-    text("title", "详情"),
-    text("description", ""),
+    slot("title", "详情", "Title", {
+      removable: (args) => regionRemains(args, "title"),
+    }),
+    slot("description", "", "Description", {
+      removable: (args) => regionRemains(args, "description"),
+    }),
+    slot("body", "内容", "Body", {
+      removable: (args) => regionRemains(args, "body"),
+    }),
+    {
+      ...bool("footer", true),
+      scope: "slot",
+      label: "Footer",
+      group: "content",
+      removable: (args) => regionRemains(args, "footer"),
+    },
     bool("dismissible", true),
     bool("open"),
-    content,
   ]),
   entry("confirm-dialog", "ConfirmDialog", "Confirm dialog", [
-    text("title", "删除文件？"),
-    text("description", "此操作无法撤销。"),
-    text("confirmLabel", "确认删除"),
-    text("cancelLabel", "取消"),
-    choice("tone", "danger", ["neutral", "danger"]),
-    bool("busy"),
-    bool("open"),
+    slot("title", "删除文件？", "Title"),
+    slot("description", "此操作无法撤销。", "Description"),
+    slot("confirmLabel", "确认删除", "ConfirmAction"),
+    slot("cancelLabel", "取消", "CancelAction"),
+    text("aria-label", "确认操作"),
+    choice("tone", "danger", ["neutral", "danger"]), bool("busy"), bool("open"),
   ]),
   entry("badge", "Badge", "Badge", [
-    content,
+    slot("label", "内容", "Label", { required: true }),
+    {
+      ...choice("icon", "", ["", ...iconNames]),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+      removable: () => true,
+    },
     tone,
     choice("emphasis", "default", ["default", "quiet"]),
-    feedbackIcon("none"),
   ]),
   entry("alert", "Alert", "Alert", [
-    text("title", ""),
-    text("children", "连接已断开，请重试。"),
+    slot("title", "", "Title", {
+      removable: (args) => String(args.body ?? "").trim().length > 0,
+    }),
+    slot("body", "连接已断开，请重试。", "Body", {
+      removable: (args) => String(args.title ?? "").trim().length > 0,
+      requiredWhen: (args) => !String(args.title ?? "").trim(),
+    }),
+    {
+      ...choice("icon", "info", iconNames),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+      required: true,
+    },
     tone,
-    feedbackIcon(),
   ]),
   entry("toast", "Toast", "Toast", [
-    text("children", "设置已保存"),
-    feedbackIcon(),
+    slot("body", "设置已保存", "Body", { required: true }),
+    {
+      ...choice("icon", "", ["", ...iconNames]),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+      removable: () => true,
+    },
     tone,
     number("duration", 4200, 0, 10000, 100),
+    text("closeLabel", "关闭提示"),
     bool("open"),
   ]),
+  entry("toast-region", "ToastRegion", "Toast region", [
+    text("aria-label", "通知"),
+    text("children", "第一条"),
+    bool("open", true),
+  ]),
+  entry("spinner", "Spinner", "Spinner", [
+    slot("label", "", "Label"),
+    text("aria-label", "加载中"),
+    size,
+  ]),
   entry("progress", "Progress", "Progress", [
-    text("label", ""),
-    text("valueLabel", ""),
+    slot("label", "", "Label"),
+    text("aria-label", ""),
+    slot("valueLabel", "", "Value"),
     number("value", 48),
     number("max", 100, 1, 200),
     bool("indeterminate"),
   ]),
   entry("empty-state", "EmptyState", "Empty state", [
-    text("title", "还没有文件"),
-    feedbackIcon("auto"),
-    text("description", ""),
+    slot("title", "还没有文件", "Title", { required: true }),
+    slot("description", "", "Description"),
+    {
+      ...choice("icon", "", ["", ...iconNames]),
+      scope: "slot",
+      label: "Icon",
+      group: "content",
+      removable: () => true,
+    },
     bool("showActions"),
   ]),
   entry("upload", "FileDropzone", "File dropzone", [
-    text("label", ""),
-    text("buttonLabel", "选择文件"),
-    text("accept", ".svg,.png"),
-    bool("multiple"),
-    number("maxSize", 5 * 1024 * 1024, 1, 20 * 1024 * 1024, 1024),
-    disabled,
+    { ...choice("icon", "plus", iconNames), scope: "slot", label: "Icon", group: "content", required: true },
+    slot("label", "", "Description"),
+    slot("buttonLabel", "选择文件", "Trigger", { required: true }),
+    { ...bool("showError", true), scope: "slot", label: "Error", group: "content" },
+    text("accept", ".svg,.png"), bool("multiple"),
+    number("maxSize", 5 * 1024 * 1024, 1, 20 * 1024 * 1024, 1024), disabled,
   ]),
   entry("selection", "SelectionBar", "Selection bar", [
     choice("variant", "plain", ["contained", "plain"]),
-    text("summary", ""),
-    number("count", 0, 0, 10),
-    number("total", 10, 0, 100),
-    bool("busy"),
+    slot("summary", "已选择 {count} 项", "Description"),
+    slot("selectAllLabel", "全选", "SelectAllAction"),
+    slot("clearLabel", "清空", "ClearAction"), slot("doneLabel", "完成", "DoneAction"),
+    number("count", 4, 0, 10), number("total", 10, 0, 100), bool("busy"),
   ]),
   entry("text", "ExpandableCode", "Expandable text", [
-    text(
-      "code",
-      "A small interface, quiet by design.\n\n" +
-        "Use space to establish hierarchy.\n".repeat(10),
-    ),
-    text("expandLabel", "Show full prompt"),
-    number("collapsedHeight", 180, 80, 320),
+    slot("code", "A small interface, quiet by design.\n\n" + "Use space to establish hierarchy.\n".repeat(10), "Body", { required: true, type: "string" }),
+    slot("copyLabel", "复制", "CopyAction"),
+    slot("expandLabel", "展开全文", "ExpandAction"), slot("collapseLabel", "收起全文", "CollapseAction"),
+    text("aria-label", "可展开文本"), number("collapsedHeight", 180, 80, 320),
   ]),
   entry("navigation", "Pager", "Page navigation", [
-    bool("previous", true),
-    bool("next", true),
+    choice("variant", "contained", ["contained", "plain"]),
+    slot("previousLabel", "按钮", "Previous"), text("previousHref", "#buttons"),
+    slot("nextLabel", "输入", "Next"), text("nextHref", "#input"),
+  ]),
+  entry("action-row", "ActionRow", "Action row", [
+    text("children", "分享"),
+    size,
+    disabled,
+  ]),
+  entry("heading", "Heading", "Heading", [
+    text("children", "清楚的阅读层级"),
+    number("level", 2, 1, 6),
+    choice("variant", "section", ["page", "section"]),
+  ]),
+  entry("body-text", "Text", "Text", [
+    text(
+      "children",
+      "用内容、留白与清楚的层级组织信息，让读者自然找到需要的内容。",
+    ),
+    choice("as", "p", ["p", "span"]),
+    choice("variant", "body", ["body", "supporting"]),
+  ]),
+  entry("text-list", "TextList", "Text list", [
+    text(
+      "children",
+      "明确任务与内容关系\n复用现有组件与语义资源\n保留真实状态与操作反馈",
+    ),
+    bool("ordered"),
+    choice("variant", "contained", ["contained", "plain"]),
+  ]),
+  entry("description-list", "DescriptionList", "Description list", [
+    text("label", "设计关注\n构建方式"),
+    text("description", "清晰的内容层级与操作关系\nUagray 组件与原生 CSS"),
+    choice("variant", "contained", ["contained", "plain"]),
   ]),
   entry("cards", "NavigationCard", "Navigation card", [
     choice("direction", "previous", ["previous", "next"]),
-    text("directionLabel", ""),
-    text("title", "颜色 Token"),
+    slot("description", "", "Description"),
+    slot("title", "颜色 Token", "Title", { required: true }),
     text("href", "#surfaces"),
   ]),
   entry("showcase", "ShowcaseCard", "Showcase card", [
-    text("title", "内容卡片"),
-    text("externalLabel", ""),
-    text("externalHref", "https://icon.upper.website"),
-    text("description", ""),
-    text("href", "#buttons"),
-    content,
+    slot("title", "字与留白", "Title", { required: true }),
+    slot("externalLabel", "", "ExternalLink"), text("externalHref", "https://icon.upper.website"),
+    slot("description", "以字号、行距与留白建立阅读层次。", "Description"), text("href", "#text"),
+    slot("children", "Aa  字\n\n字与留白\nType & Space\n0123456789", "Media", { required: true }),
   ]),
   entry("links", "ExternalLinks", "External links", [
-    text("label", "Uplus Icon"),
-    text("href", "https://icon.upper.website"),
-    choice("icon", "globe", iconNames),
+    {
+      ...items("entries", [
+        {
+          value: "uplus",
+          label: "Uplus Icon",
+          href: "https://icon.upper.website",
+          icon: "earth",
+        },
+      ]),
+      scope: "slot",
+      label: "Item",
+      group: "content",
+      editor: "links",
+    },
   ]),
   entry("surface", "Surface", "Surface", [
     content,
@@ -554,9 +824,9 @@ export const componentEntries: ComponentEntry[] = [
     text("children", "生成预览"),
   ]),
   entry("shell", "PageShell", "Page shell", [
-    text("controls", "页头"),
-    content,
-    bool("footer"),
+    slot("header", "页头", "Header", { removable: () => true }),
+    slot("body", "内容", "Body", { required: true }),
+    slot("footer", "", "Footer"),
   ]),
 ];
 
@@ -566,3 +836,23 @@ export const lines = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 8);
+
+/** Text-only row configuration belongs to the example, not the public dl API. */
+export function descriptionRows(args: Args) {
+  if (!args.label && !args.description) return [];
+  const labels = String(args.label ?? "").split(/\r?\n/);
+  const descriptions = String(args.description ?? "").split(/\r?\n/);
+  return Array.from(
+    { length: Math.max(labels.length, descriptions.length) },
+    (_, index) => ({
+      label: labels[index] ?? "",
+      description: descriptions[index] ?? "",
+    }),
+  );
+}
+
+export function presetArgs(entry: ComponentEntry, action: string): Args {
+  const args = exampleArgs(entry);
+  if (entry.id !== "buttons") return args;
+  return { ...args, action, children: action === "copy" ? "复制" : action === "share" ? "分享" : "Like", icon: action === "button" ? "none" : action === "copy" ? "copy" : "share" };
+}

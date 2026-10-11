@@ -18,15 +18,13 @@ npm 为首个版本同时生成了 `latest` 标签；移除请求在完成安全
 - 独立项目只有一份 React/React DOM，组件 CSS 与 Token 生效。
 - Playwright 操作 Input、Select、Switch 和 Button，结果回传到宿主状态。
 
-## 下次发布
+## 当前源码相对线上版本
 
-下次版本带上 `uagray/fonts.css`：IBM Plex Sans 与 Sans SC 的 400/500，以及 JetBrains Mono 400。组件样式仍从 `uagray/styles.css` 引入，字体是第二个入口。展示站已改用同一份文件。
+仓库待发布版本为 `0.1.0-beta.1`，发布标签为 `v0.1.0-beta.1`，npm dist-tag 为 `beta`。本节记录源码状态，不代表已上线；线上结果仍以 `0.1.0-beta.0` 为准。
 
-## 下一轮发布准备
+`0.1.0-beta.1` 的源码包含 `uagray/fonts.css`：IBM Plex Sans 与 Sans SC 的 400/500，以及 JetBrains Mono 400。组件样式仍从 `uagray/styles.css` 引入。字体文件使安装体积远大于首轮约 26 KB 的试包；发布检查拒绝未压缩体积超过 18 MB 的包。迁移说明见 README 与 CHANGELOG。
 
-仓库待发布版本为 `0.1.0-beta.1`，发布标签为 `v0.1.0-beta.1`，npm dist-tag 为 `beta`。本节记录准备状态，不代表已上线；线上结果仍以上述首轮版本为准。此次迁移说明见 README 与 CHANGELOG，包含 Button 新属性、旧 variant 兼容行为、环境变量与字重变更。
-
-本次本地准备检查（2026-10-10）：类型检查与组件库构建通过，4 个源码测试文件共 45 项测试通过；试包共 17 个文件，26,359 bytes，包含必需的 ESM、声明与 CSS 入口，且全部符合包白名单。package.json 与 package-lock.json 版本一致。未进行浏览器或独立消费项目验证，未推送发布标签。
+远端安装验证使用 `npm run verify:consumer`：打包当前 `dist/`，在临时项目中安装，再运行类型检查和生产构建。本机 `local/beta-consumer/` 不进入 Git，不能代替这条检查。
 
 ## 自动发布
 

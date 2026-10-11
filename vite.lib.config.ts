@@ -6,6 +6,7 @@ const dependencies = [
   "framer-motion",
   "@radix-ui/react-select",
   "@uplus-icon/react",
+  "@uplus-icon/core",
   "react-aria-components",
 ];
 

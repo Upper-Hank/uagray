@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import {
+  Icon,
   Badge,
   Button,
   ButtonGroup,
@@ -99,28 +100,21 @@ export function SpecPractice({ id }: { id: string }) {
     return (
       <div className="spec-document">
         <p className="spec-lead">
-          先定义操作含义，再表达反馈。悬停、按压、选择与焦点各有职责，交互过程中保持文字和图标的视觉重量。
+          先定义操作含义，再表达反馈。悬停、按压、选择与焦点各有职责，交互过程中保持文字和图标的视觉重量。完整规则以设计参考规范为准，这里只演示对应行为。
         </p>
         <Rule
           title="反馈作用于当前动作"
           demo={
             <div className="spec-demo-stack">
               <ButtonGroup aria-label="操作反馈">
-                <Button
-                  icon="plus"
-                  onClick={() => setItemCount((current) => current + 1)}
-                >
+                <Button onClick={() => setItemCount((current) => current + 1)}>{((icon: Parameters<typeof Icon>[0]["name"] | undefined) => icon === undefined ? null : <Button.Icon><Icon name={icon} /></Button.Icon>)("plus")}<Button.Label>
                   添加
-                </Button>
-                <Button
-                  icon="close"
-                  disabled={itemCount === 0}
-                  onClick={() =>
+                </Button.Label></Button>
+                <Button disabled={itemCount === 0} onClick={() =>
                     setItemCount((current) => Math.max(0, current - 1))
-                  }
-                >
+                  }>{((icon: Parameters<typeof Icon>[0]["name"] | undefined) => icon === undefined ? null : <Button.Icon><Icon name={icon} /></Button.Icon>)("close")}<Button.Label>
                   移除
-                </Button>
+                </Button.Label></Button>
               </ButtonGroup>
               <div
                 className="spec-feedback-items"
@@ -144,15 +138,10 @@ export function SpecPractice({ id }: { id: string }) {
         <Rule
           title="选择是持续状态"
           demo={
-            <SegmentedControl
-              aria-label="示例分类"
-              value={format}
-              onValueChange={setFormat}
-              options={[
-                { value: "portrait", label: "全部", count: 8 },
-                { value: "landscape", label: "收藏", count: 3 },
-              ]}
-            />
+            <SegmentedControl aria-label="示例分类" value={format} onValueChange={setFormat}>{[
+    { value: "portrait", label: "全部", count: 8 },
+    { value: "landscape", label: "收藏", count: 3 },
+].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
           }
         >
           <p>
@@ -168,14 +157,10 @@ export function SpecPractice({ id }: { id: string }) {
           title="可访问语义与焦点"
           demo={
             <div className="spec-demo-stack">
-              <Checkbox
-                label="接收通知"
-                checked={checks.focus ?? false}
-                onChange={(event) => {
-                  setChecked("focus", event.target.checked);
-                  save("focus", false);
-                }}
-              />
+              <Checkbox checked={checks.focus ?? false} onChange={(event) => {
+        setChecked("focus", event.target.checked);
+        save("focus", false);
+    }}>接收通知</Checkbox>
               <Button onClick={() => save("focus", true)}>
                 {saved.focus ? "已保存" : "保存设置"}
               </Button>
@@ -197,7 +182,7 @@ export function SpecPractice({ id }: { id: string }) {
     return (
       <div className="spec-document">
         <p className="spec-lead">
-          布局由任务决定。先安排分组、对齐和宽度，再考虑尺寸变化与过渡；换行不能补救没有组织的控件堆叠。
+          布局由任务决定。先安排分组、对齐和宽度，再考虑尺寸变化与过渡；换行不能补救没有组织的控件堆叠。完整规则以设计参考规范为准，这里只演示对应行为。
         </p>
         <Rule
           title="沿操作轴组织工具"
@@ -207,14 +192,10 @@ export function SpecPractice({ id }: { id: string }) {
               treatment="physical"
               className="ui-tool-surface ui-toolbar-row spec-tools spec-tools--slider"
             >
-              <Slider
-                className="ui-toolbar-field"
-                layout="inline"
-                label="缩放"
-                value={value}
-                onValueChange={setValue}
-                formatValue={(n) => `${n}%`}
-              />
+              <Slider className="ui-toolbar-field" layout="inline" value={value} onValueChange={setValue} formatValue={(n) => `${n}%`}>
+                <Slider.Label>缩放</Slider.Label>
+                <Slider.Value />
+              </Slider>
               <span className="spec-divider" aria-hidden="true" />
               <Button emphasis="quiet" onClick={() => setValue(50)}>
                 重置
@@ -291,20 +272,17 @@ export function SpecPractice({ id }: { id: string }) {
     );
 
   const editableName = (key: string) => (
-    <Field label="空间名称">
-      <Input
-        value={names[key] ?? "工作空间"}
-        onChange={(event) => {
-          setName(key, event.target.value);
-          save(key, false);
-        }}
-      />
-    </Field>
+    <Field><Field.Label>空间名称</Field.Label><Field.Control>
+      <Input value={names[key] ?? "工作空间"} onChange={(event) => {
+        setName(key, event.target.value);
+        save(key, false);
+    }}/>
+    </Field.Control></Field>
   );
   return (
     <div className="spec-document">
       <p className="spec-lead">
-        最小充分对比。用有限的视觉资源表达清楚的信息、对象和操作关系；每处底色、边缘和阴影都应有具体职责。
+        最小充分对比。用有限的视觉资源表达清楚的信息、对象和操作关系；每处底色、边缘和阴影都应有具体职责。完整规则以设计参考规范为准，这里只演示对应行为。
       </p>
       <Rule
         code="P01"
@@ -396,8 +374,7 @@ export function SpecPractice({ id }: { id: string }) {
         }
       >
         <p>
-          Base、Muted、White 与 Dark
-          是有限的颜色资源。相同动作在不同承载环境中可以使用不同表面，但职责与操作应保持可预测。
+          页面、灰色区域和白色层是有限的环境。相同动作使用所处环境提供的表面，职责与操作保持可预测。
         </p>
         <p>
           同一状态标签在白底使用轻量语义底色，在灰底使用深一级的语义底色；文字、含义与对象职责保持一致。
@@ -478,14 +455,10 @@ export function SpecPractice({ id }: { id: string }) {
         demo={
           <div className="spec-inline-form">
             {editableName("settings")}
-            <Switch
-              label="接收通知"
-              checked={checks.settings ?? false}
-              onChange={(event) => {
-                setChecked("settings", event.target.checked);
-                save("settings", false);
-              }}
-            />
+            <Switch checked={checks.settings ?? false} onChange={(event) => {
+        setChecked("settings", event.target.checked);
+        save("settings", false);
+    }}>接收通知</Switch>
             <Button onClick={() => save("settings", true)}>
               {saved.settings ? "已保存" : "保存设置"}
             </Button>
@@ -513,15 +486,10 @@ export function SpecPractice({ id }: { id: string }) {
         code="P08"
         title="交互反馈跟随行为语义"
         demo={
-          <SegmentedControl
-            aria-label="项目范围"
-            value={format}
-            onValueChange={setFormat}
-            options={[
-              { value: "portrait", label: "全部", count: 8 },
-              { value: "landscape", label: "收藏", count: 3 },
-            ]}
-          />
+          <SegmentedControl aria-label="项目范围" value={format} onValueChange={setFormat}>{[
+    { value: "portrait", label: "全部", count: 8 },
+    { value: "landscape", label: "收藏", count: 3 },
+].map(item => <SegmentedControl.Item key={item.value} value={item.value} disabled={(item as { disabled?: boolean }).disabled}><SegmentedControl.Label>{item.label}</SegmentedControl.Label>{(item as { count?: number | string }).count != null ? <SegmentedControl.Count>{(item as { count?: number | string }).count}</SegmentedControl.Count> : null}</SegmentedControl.Item>)}</SegmentedControl>
         }
       >
         <p>

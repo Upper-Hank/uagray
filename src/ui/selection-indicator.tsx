@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import { useUiMotion } from "./motion";
 
@@ -66,4 +66,46 @@ export function SelectionIndicator({
       transition={transition}
     />
   );
+}
+
+export function useDomSelectionIndicator(
+  ref: RefObject<HTMLElement | null>,
+  selectedSelector: string,
+  identity: unknown,
+) {
+  const [bounds, setBounds] = useState<SelectionBounds | null>(null);
+  useLayoutEffect(() => {
+    const root = ref.current;
+    const measure = () => {
+      const button = root?.querySelector<HTMLElement>(selectedSelector);
+      if (button === null || button === undefined) {
+        setBounds(null);
+        return;
+      }
+      const next = {
+        x: button.offsetLeft,
+        y: button.offsetTop,
+        width: button.offsetWidth,
+        height: button.offsetHeight,
+      };
+      setBounds((current) =>
+        current?.x === next.x &&
+        current.y === next.y &&
+        current.width === next.width &&
+        current.height === next.height
+          ? current
+          : next,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (root) {
+      observer.observe(root);
+      root
+        .querySelectorAll<HTMLElement>("button")
+        .forEach((button) => observer.observe(button));
+    }
+    return () => observer.disconnect();
+  }, [identity, ref, selectedSelector]);
+  return bounds;
 }

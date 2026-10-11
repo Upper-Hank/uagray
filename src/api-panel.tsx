@@ -1,24 +1,27 @@
 import { useState } from "react";
 import {
   Button,
-  Disclosure,
+  ColorPicker,
   Input,
   NumberInput,
   SegmentedControl,
   Select,
   Surface,
   Switch,
-  Textarea,
 } from "./ui";
 import {
-  choiceItems,
   parameterGroups,
   type Args,
   type ComponentEntry,
   type Control,
   type Value,
 } from "./playground-catalog";
-import { OptionsEditor } from "./options-editor";
+import {
+  CollectionBlock,
+  ContentBlock,
+  IconChoice,
+  VisualChoice,
+} from "./api-editors";
 type Option = { value: string; label: string; disabled?: boolean };
 
 export function ApiPanel({
@@ -45,9 +48,68 @@ export function ApiPanel({
   const [resetKey, setResetKey] = useState(0);
   const editor = (field: Control) => {
     const value = args[field.key];
-    const label = `API ${field.key}`;
+    const name = field.label ?? field.key;
+    const label = field.scope === "slot" ? name : `API ${field.key}`;
     const disabled = fieldDisabled?.(field.key) ?? false;
+    const required =
+      field.required || field.requiredWhen?.(args) || false;
+    const canRemove = field.removable ? field.removable(args) : !required;
     const options = selectOptions(field);
+    if (hidden) return null;
+    if (entry.id === "color-picker" && field.key === "value") {
+      return (
+        <ColorPicker
+          aria-label={label}
+          value={String(value)}
+          onValueChange={(next) => patch(field.key, next)}
+          disabled={disabled}
+        />
+      );
+    }
+    if (
+      ["text", "textarea"].includes(field.control) &&
+      (field.group === "content" || field.control === "textarea")
+    ) {
+      return (
+        <ContentBlock
+          field={field}
+          name={name}
+          value={String(value ?? "")}
+          disabled={disabled}
+          required={required}
+          canRemove={canRemove}
+          onChange={(next) => patch(field.key, next)}
+        />
+      );
+    }
+    if (
+      field.control === "enum" &&
+      (field.key === "icon" || (entry.id === "icons" && field.key === "name"))
+    ) {
+      return (
+        <IconChoice
+          field={field}
+          value={String(value)}
+          options={options ?? []}
+          disabled={disabled}
+          onChange={(next) => patch(field.key, next)}
+        />
+      );
+    }
+    if (
+      field.control === "enum" &&
+      ["tone", "emphasis", "size"].includes(field.key)
+    ) {
+      return (
+        <VisualChoice
+          field={field}
+          value={String(value)}
+          options={options ?? []}
+          disabled={disabled}
+          onChange={(next) => patch(field.key, next)}
+        />
+      );
+    }
     const bounds =
       field.key === "value" && ["slider", "number-input"].includes(entry.id)
         ? {
@@ -77,20 +139,35 @@ export function ApiPanel({
           <SegmentedControl
             aria-label={label}
             value={String(value ?? "")}
-            options={options.map((option) => ({
-              ...option,
-              disabled: disabled || option.disabled,
-            }))}
             onValueChange={(next) => patch(field.key, next)}
-          />
+          >
+            {options.map((option) => (
+              <SegmentedControl.Item
+                key={option.value}
+                value={option.value}
+                disabled={disabled || option.disabled}
+              >
+                <SegmentedControl.Label>{option.label}</SegmentedControl.Label>
+              </SegmentedControl.Item>
+            ))}
+          </SegmentedControl>
         ) : (
           <Select
             aria-label={label}
             value={String(value ?? "")}
-            options={options ?? []}
             disabled={disabled}
             onValueChange={(next) => patch(field.key, next)}
-          />
+          >
+            {(options ?? []).map((option) => (
+              <Select.Item
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </Select.Item>
+            ))}
+          </Select>
         );
       case "number":
         return (
@@ -115,27 +192,24 @@ export function ApiPanel({
         );
       case "textarea":
         return (
-          <Disclosure className="api-editor" title={`编辑 ${field.key}`}>
-            <Textarea
-              aria-label={label}
-              value={String(value ?? "")}
-              rows={4}
-              resizable={false}
-              disabled={disabled}
-              onChange={(event) => patch(field.key, event.target.value)}
-            />
-          </Disclosure>
+          <ContentBlock
+            field={field}
+            name={name}
+            value={String(value ?? "")}
+            disabled={disabled}
+            required={required}
+            canRemove={canRemove}
+            onChange={(next) => patch(field.key, next)}
+          />
         );
       case "items":
         return (
-          <Disclosure className="api-editor" title={`编辑 ${field.key}`}>
-            <OptionsEditor
-              name={field.key}
-              value={choiceItems(value)}
-              withContent={field.key === "items"}
-              onChange={(next) => patch(field.key, next)}
-            />
-          </Disclosure>
+          <CollectionBlock
+            field={field}
+            name={name}
+            value={value}
+            onChange={(next) => patch(field.key, next)}
+          />
         );
     }
   };
@@ -146,11 +220,15 @@ export function ApiPanel({
         <div className="api-param-grid">
           {controls.map((field) => (
             <div
-              className={`api-param${["textarea", "items"].includes(field.control) ? " api-param--wide" : ""}`}
+              className={`api-param${["textarea", "items"].includes(field.control) || field.key === "children" ? " api-param--wide" : ""}`}
               key={field.key}
             >
               <div className="api-param-heading">
-                <code>{field.key}</code>
+                {field.scope === "slot" ? (
+                  (field.label ?? field.key)
+                ) : (
+                  <code>{field.key}</code>
+                )}
               </div>
               <div className="api-param-value">{editor(field)}</div>
             </div>
@@ -185,20 +263,15 @@ export function ApiPanel({
           section(
             group.title,
             fields.filter(
-              (field) => field.scope === "prop" && field.group === group.id,
+              (field) =>
+                (field.scope === "prop" || field.scope === "slot") &&
+                field.group === group.id,
             ),
           ),
         )}
         {section(
           "示例配置",
           fields.filter((field) => field.scope === "example"),
-        )}
-        {entry.callbacks.length > 0 && (
-          <Disclosure className="api-callbacks" title="事件与回调">
-            {entry.callbacks.map((callback) => (
-              <code key={callback}>{callback}</code>
-            ))}
-          </Disclosure>
         )}
       </div>
     </Surface>

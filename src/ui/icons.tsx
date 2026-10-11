@@ -1,63 +1,36 @@
+import { createContext, useContext, type ComponentPropsWithoutRef } from "react";
+export const IconSizeContext = createContext<{size: number; max?: number} | null>(null);
 import {
-  SearchIcon,
-  ShareIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-  CheckIcon,
-  PlusIcon,
-  CloseIcon,
-  EarthIcon,
-  ExternalLinkIcon,
-  MenuIcon,
-  CopyIcon,
-  HeartIcon,
-  GridIcon,
-  SunIcon,
-  MoonIcon,
-  EyedropperIcon,
-  type IconBaseProps,
-} from "@uplus-icon/react";
+  Icon as UplusIcon,
+  type IconName as UplusIconName,
+} from "@uplus-icon/react/dynamic";
+import { iconMeta } from "@uplus-icon/core/metadata";
 
-// The same icon package consumed by uplus-ui. Keep upstream SVG assets intact.
-const icons = {
-  search: SearchIcon,
-  share: ShareIcon,
-  left: ChevronLeftIcon,
-  right: ChevronRightIcon,
-  down: ChevronDownIcon,
-  check: CheckIcon,
-  plus: PlusIcon,
-  close: CloseIcon,
-  globe: EarthIcon,
-  arrow: ExternalLinkIcon,
-  menu: MenuIcon,
-  copy: CopyIcon,
-  heart: HeartIcon,
-  grid: GridIcon,
-  sun: SunIcon,
-  moon: MoonIcon,
-  eyedropper: EyedropperIcon,
-  // Compatibility aliases; these no longer render the reference site's branding.
-  lab: GridIcon,
-  x: CloseIcon,
-} as const;
-export type IconName = keyof typeof icons;
-export const iconNames = Object.keys(icons).filter(
-  (name) => name !== "lab" && name !== "x",
-) as IconName[];
-export const DEFAULT_ICON_WEIGHT = 1.25;
+export type IconName = UplusIconName;
+export const DEFAULT_ICON_WEIGHT = 1;
+
+/** Current install is the source of truth. */
+export const iconNames = iconMeta
+  .filter((meta) => !meta.deprecated)
+  .map((meta) => meta.name as IconName);
+
 export function Icon({
   name,
-  size = 18,
+  size,
   weight = DEFAULT_ICON_WEIGHT,
   absoluteWeight = true,
   ...props
-}: Omit<IconBaseProps, "children"> & { name: IconName }) {
-  const Component = icons[name];
+}: Omit<ComponentPropsWithoutRef<typeof UplusIcon>, "name" | "size"> & {
+  name: IconName;
+  /** Numeric CSS pixels. Combination-derived sizing is intentionally unresolved. */
+  size?: number;
+}) {
+  const inherited = useContext(IconSizeContext);
+  const resolvedSize = Math.min(size ?? inherited?.size ?? 18, inherited?.max ?? Infinity);
   return (
-    <Component
-      size={size}
+    <UplusIcon
+      name={name}
+      size={resolvedSize}
       weight={weight}
       absoluteWeight={absoluteWeight}
       aria-hidden="true"

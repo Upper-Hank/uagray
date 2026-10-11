@@ -4,19 +4,25 @@
   "type": "module",
   "scripts": {
     "build": "npm run check && vite build",
-    "check": "tsc -b",
-    "test": "vitest run src",
+    "check": "tsc -b && npm run check:design",
+    "test": "vitest run src lab && npm run test:design",
+    "verify:consumer": "npm pack && node scripts/verify-consumer.mjs",
     "format": "prettier --write src docs README.md index.html package.json tsconfig*.json vite*.config.ts",
     "prepack": "npm run build:lib",
     "dev": "vite",
     "fonts": "node scripts/build-fonts.mjs",
-    "build:lib": "npm run check && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rm -rf dist/fonts && cp -R fonts dist/fonts"
+    "build:lib": "npm run check && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rm -rf dist/fonts && cp -R fonts dist/fonts",
+    "check:design": "node scripts/check-design.mjs",
+    "test:design": "node --test scripts/check-design.test.mjs",
+    "dev:lab": "vite --config vite.lab.config.ts",
+    "test:lab": "vitest run lab"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.3.8",
     "@uplus-icon/react": "0.1.0-beta.0",
     "framer-motion": "^14.0.0",
-    "react-aria-components": "^1.22.0"
+    "react-aria-components": "^1.22.0",
+    "@uplus-icon/core": "^0.1.0-beta.1"
   },
   "devDependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",

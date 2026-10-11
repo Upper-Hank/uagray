@@ -52,10 +52,9 @@ it("typechecks generated examples against the public components", () => {
   const errors = ts
     .getPreEmitDiagnostics(program)
     .filter((error) => error.category === ts.DiagnosticCategory.Error);
-  expect(
-    errors.map(
-      (error) =>
-        `${error.file?.fileName ?? ""}: ${ts.flattenDiagnosticMessageText(error.messageText, "\n")}`,
-    ),
-  ).toEqual([]);
+  const messages = errors.map(
+    (error) =>
+      `${error.file?.fileName ?? ""}: ${ts.flattenDiagnosticMessageText(error.messageText, "\n")}`,
+  );
+  expect(messages).toEqual([]);
 });

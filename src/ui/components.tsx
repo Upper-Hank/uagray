@@ -1,31 +1,59 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithRef,
   type CSSProperties,
-  type HTMLAttributes,
   type ReactNode,
-  type Ref,
 } from "react";
 import { useKeyboardFocus } from "./focus";
-import { Icon, type IconName } from "./icons";
+import { Icon, IconSizeContext, type IconName } from "./icons";
 import { LayoutGroup, motion, type MotionProps } from "framer-motion";
-import { MotionButton, useUiMotion } from "./motion";
+import { ChangingText, MotionButton, useUiMotion } from "./motion";
+import { assignRef, compose, cx, hasContent } from "./host";
 import {
-  SelectionIndicator,
-  useSelectionIndicator,
-} from "./selection-indicator";
-
-const cx = (...classes: (string | undefined | false)[]) =>
-  classes.filter(Boolean).join(" ");
+  CompositionRoot,
+  useComposition,
+  useSlot,
+  type SlotRule,
+} from "./composition";
 type MotionSafeDiv = Omit<ComponentPropsWithRef<"div">, keyof MotionProps> & {
   style?: CSSProperties;
 };
-function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
-  if (typeof ref === "function") ref(node);
-  else if (ref) ref.current = node;
+const searchShortcuts = new Set<HTMLInputElement>();
+let searchShortcutListening = false;
+function onSearchShortcut(event: KeyboardEvent) {
+  if (
+    event.key !== "/" ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.repeat ||
+    event.defaultPrevented
+  )
+    return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (
+    target?.closest(
+      'input, textarea, select, [role="combobox"], [contenteditable="true"]',
+    )
+  )
+    return;
+  const field = [...searchShortcuts].find(
+    (node) => node.isConnected && !node.disabled,
+  );
+  if (!field) return;
+  event.preventDefault();
+  field.focus();
+}
+function ensureSearchShortcut() {
+  if (searchShortcutListening) return;
+  searchShortcutListening = true;
+  window.addEventListener("keydown", onSearchShortcut);
 }
 export type ButtonEmphasis = "strong" | "default" | "quiet";
 type ButtonSize = "md" | "sm";
@@ -47,67 +75,89 @@ const legacyButtonVariants: Record<
   dark: ["strong", "neutral"],
   danger: ["strong", "danger"],
 };
+const buttonRules: readonly SlotRule[] = [
+  { name: "icon", min: 0, max: 1 },
+  { name: "label", min: 0, max: 1 },
+  { name: "count", min: 0, max: 1 },
+];
+const ButtonContentContext = createContext({ busy: false });
+function ButtonIcon({ children }: { children: ReactNode }) {
+  useSlot("Button", "icon", { present: hasContent(children) });
+  const { busy } = useContext(ButtonContentContext);
+  return <span className="ui-button-icon" aria-hidden="true">{busy ? <span className="ui-spinner-mark" /> : children}</span>;
+}
+function ButtonLabel({ children, className, ...props }: ComponentPropsWithRef<"span">) {
+  useSlot("Button", "label", { present: hasContent(children) });
+  return <span {...props} className={cx("ui-button-label", className)}><ChangingText>{children}</ChangingText></span>;
+}
+function ButtonCount({ children, className, ...props }: ComponentPropsWithRef<"span">) {
+  useSlot("Button", "count", { present: hasContent(children) });
+  return <span {...props} className={cx("ui-button-count", className)}>{children}</span>;
+}
 export type ButtonProps = ComponentPropsWithRef<"button"> & {
-  icon?: IconName;
-  count?: number;
-  /** `"md"` or `"sm"`. `"default"` and `"small"` are deprecated aliases. */
   size?: ButtonSize | LegacyButtonSize;
-  /** Importance of the action. Its fill comes from the surrounding surface. */
+  shape?: "inline" | "square";
   emphasis?: ButtonEmphasis;
   tone?: "neutral" | "danger";
-  /** @deprecated Use `emphasis` and `tone`. */
+  busy?: boolean;
+  /** @deprecated Use emphasis and tone. */
   variant?: LegacyButtonVariant;
 };
 export function Button({
-  icon,
-  count,
-  size = "md",
-  emphasis,
-  tone,
-  variant,
-  className,
-  children,
-  type = "button",
-  ref,
-  ...props
+  size = "md", shape = "inline", emphasis, tone, variant, busy = false,
+  className, children, type = "button", disabled, onClick, ref, ...props
 }: ButtonProps) {
   const { reduced, transition } = useUiMotion();
   const legacy = variant ? legacyButtonVariants[variant] : undefined;
   const resolvedEmphasis = emphasis ?? legacy?.[0] ?? "default";
   const resolvedTone = tone ?? legacy?.[1] ?? "neutral";
   const resolvedSize = resolveButtonSize(size);
+  const shorthand = typeof children === "string" || typeof children === "number";
+  const composition = useComposition("Button", buttonRules, (slots) => {
+    const label = slots.some(s => s.slot === "label" && s.present);
+    const icon = slots.some(s => s.slot === "icon" && s.present);
+    const messages: string[] = [];
+    if (!label && !icon) messages.push("[uagray] Button 需要 Label 或 Icon");
+    if (!label && !props["aria-label"] && !props["aria-labelledby"]) messages.push("[uagray] 纯图标 Button 需要名称");
+    if (!label && slots.some(s => s.slot === "count")) messages.push("[uagray] Button.Count 需要 Label");
+    return messages;
+  });
+  const inheritedSize = useContext(IconSizeContext);
+  const iconSize = Math.min(resolvedSize === "sm" ? 13 : 15, inheritedSize?.max ?? Infinity);
+  const hasIcon = composition.registrations.some(s => s.slot === "icon");
+  const content = shorthand ? <ButtonLabel>{children}</ButtonLabel> : children;
   return (
-    <MotionButton
-      ref={ref}
-      layout={reduced ? false : true}
-      transition={transition}
-      style={{ borderRadius: "var(--ui-button-radius)" }}
-      nativeProps={{
-        ...props,
-        type,
-        className: cx(
-          "ui-button",
-          `ui-button--${resolvedSize}`,
-          resolvedEmphasis !== "default" && `ui-button--${resolvedEmphasis}`,
-          resolvedTone === "danger" && "ui-button--danger",
-          className,
-        ),
-      }}
-    >
-      <motion.span
-        className="ui-button-content"
-        layout={reduced ? false : "position"}
-        transition={transition}
-      >
-        {icon && <Icon name={icon} size={15} />} {children}
-        {count !== undefined && (
-          <span className="ui-button-count">{count}</span>
-        )}
-      </motion.span>
-    </MotionButton>
+    <CompositionRoot value={composition.value}>
+      <IconSizeContext.Provider value={{ size: iconSize, max: inheritedSize?.max }}>
+      <ButtonContentContext.Provider value={{ busy }}>
+      <MotionButton ref={ref} layout={reduced ? false : true} transition={transition}
+        style={{ borderRadius: "var(--ui-button-radius)" }}
+        nativeProps={{ ...props, type, disabled,
+          "aria-busy": busy || undefined,
+          "aria-disabled": disabled || busy || props["aria-disabled"],
+          onClick: event => {
+            if (disabled || busy || props["aria-disabled"] === true || props["aria-disabled"] === "true") { event.preventDefault(); return; }
+            onClick?.(event);
+          },
+          className: cx("ui-button", "ui-pressable", `ui-button--${resolvedSize}`,
+            shape === "square" && "ui-icon-button",
+            resolvedEmphasis !== "default" && `ui-button--${resolvedEmphasis}`,
+            resolvedTone === "danger" && "ui-button--danger", className),
+        }}>
+        <motion.span className="ui-button-content" layout={reduced ? false : "position"} transition={transition}>
+          {busy && !hasIcon && <span className="ui-spinner-mark" aria-hidden="true" />}
+          {content}
+        </motion.span>
+      </MotionButton>
+      </ButtonContentContext.Provider>
+      </IconSizeContext.Provider>
+    </CompositionRoot>
   );
 }
-type IconButtonProps = Omit<ButtonProps, "children" | "icon" | "aria-label"> & {
+Button.Icon = ButtonIcon;
+Button.Label = ButtonLabel;
+Button.Count = ButtonCount;
+type IconButtonProps = Omit<ButtonProps, "children" | "aria-label"> & {
   icon: IconName;
 } & (
     | {
@@ -121,6 +171,7 @@ type IconButtonProps = Omit<ButtonProps, "children" | "icon" | "aria-label"> & {
         label: string;
       }
   );
+/** @deprecated Use Button shape="square" with Button.Icon. */
 export function IconButton({
   "aria-label": ariaLabel,
   label,
@@ -131,11 +182,10 @@ export function IconButton({
   return (
     <Button
       {...props}
-      icon={icon}
+      shape="square"
       aria-label={name}
-      title={name}
-      className={cx("ui-icon-button", props.className)}
-    />
+      className={props.className}
+    ><Button.Icon><Icon name={icon} /></Button.Icon></Button>
   );
 }
 type GroupVariant = "contained" | "plain";
@@ -180,13 +230,30 @@ export function ButtonGroup({
   ...props
 }: ButtonGroupProps) {
   const { reduced, transition } = useUiMotion();
+  const groupRef = useRef<HTMLDivElement>(null);
+  const [iconLimit, setIconLimit] = useState<number>();
+  useLayoutEffect(() => {
+    const node = groupRef.current;
+    if (!node) return;
+    const measure = () => {
+      const css = getComputedStyle(node);
+      const height = node.getBoundingClientRect().height || parseFloat(css.height);
+      const inset = (parseFloat(css.paddingTop) || 0) + (parseFloat(css.paddingBottom) || 0);
+      if (height > inset) setIconLimit((height - inset) * 0.42);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   const name = ariaLabel ?? label;
   const resolved = resolveGroupVariant(variant, tone, "contained");
   return (
     <LayoutGroup>
       <motion.div
         {...props}
-        ref={ref}
+        ref={(node) => { groupRef.current = node; assignRef(ref, node); }}
         role="group"
         aria-label={name}
         className={cx(
@@ -198,7 +265,7 @@ export function ButtonGroup({
         transition={transition}
         style={{ borderRadius: "var(--ui-group-radius)", ...style }}
       >
-        {children}
+        <IconSizeContext.Provider value={{size: iconLimit ?? 15, max: iconLimit}}>{children}</IconSizeContext.Provider>
       </motion.div>
     </LayoutGroup>
   );
@@ -221,12 +288,6 @@ export function Keycap({
     </kbd>
   );
 }
-export type SegmentOption = {
-  value: string;
-  label: string;
-  count?: number;
-  disabled?: boolean;
-};
 type ValueChangeProps = {
   value?: string;
   defaultValue?: string;
@@ -253,112 +314,6 @@ function emitValue(
   if (onValueChange) onValueChange(next);
   else onChange?.(next);
 }
-export function SegmentedControl({
-  "aria-label": ariaLabel,
-  label,
-  options,
-  value,
-  defaultValue,
-  onValueChange,
-  onChange,
-}: {
-  options: SegmentOption[];
-} & ValueChangeProps &
-  RequiredAriaLabel) {
-  const name = ariaLabel ?? label;
-  const [uncontrolled, setUncontrolled] = useState(
-    () =>
-      defaultValue ?? options.find((option) => !option.disabled)?.value ?? "",
-  );
-  const selected = value !== undefined ? value : uncontrolled;
-  const select = (next: string) => {
-    if (value === undefined) setUncontrolled(next);
-    emitValue(next, onValueChange, onChange);
-  };
-  const { reduced, transition } = useUiMotion();
-  const activeIndex = options.findIndex(
-    (option) => option.value === selected && !option.disabled,
-  );
-  const { ref: group, bounds } = useSelectionIndicator(
-    selected,
-    activeIndex,
-    options,
-  );
-  const tabIndex =
-    activeIndex >= 0
-      ? activeIndex
-      : options.findIndex((option) => !option.disabled);
-  return (
-    <motion.div
-      layout={reduced ? false : true}
-      transition={transition}
-      style={{ borderRadius: "var(--ui-selection-radius)" }}
-      className="ui-segments ui-selection-track"
-      role="radiogroup"
-      aria-label={name}
-      ref={group}
-    >
-      <SelectionIndicator bounds={bounds} />
-      {options.map((option, index) => (
-        <motion.button
-          layout={reduced ? false : true}
-          transition={transition}
-          type="button"
-          key={option.value}
-          role="radio"
-          aria-checked={selected === option.value}
-          disabled={option.disabled}
-          tabIndex={index === tabIndex ? 0 : -1}
-          onClick={() => {
-            if (option.value !== selected) select(option.value);
-          }}
-          onKeyDown={(event) => {
-            const enabled = options
-              .map((item, i) => (item.disabled ? -1 : i))
-              .filter((i) => i >= 0);
-            const position = enabled.indexOf(index);
-            const direction = ["ArrowRight", "ArrowDown"].includes(event.key)
-              ? 1
-              : ["ArrowLeft", "ArrowUp"].includes(event.key)
-                ? -1
-                : 0;
-            if (!direction && event.key !== "Home" && event.key !== "End")
-              return;
-            event.preventDefault();
-            const next =
-              event.key === "Home"
-                ? enabled[0]
-                : event.key === "End"
-                  ? enabled.at(-1)!
-                  : enabled[
-                      (position + direction + enabled.length) % enabled.length
-                    ];
-            select(options[next].value);
-            group.current
-              ?.querySelectorAll<HTMLButtonElement>("button")
-              [next]?.focus();
-          }}
-        >
-          <motion.span
-            layout={reduced ? false : "position"}
-            transition={transition}
-          >
-            {option.label}
-          </motion.span>
-          {option.count !== undefined && (
-            <motion.span
-              className="ui-count"
-              layout={reduced ? false : "position"}
-              transition={transition}
-            >
-              {option.count}
-            </motion.span>
-          )}
-        </motion.button>
-      ))}
-    </motion.div>
-  );
-}
 export function SearchField({
   "aria-label": ariaLabel,
   label,
@@ -368,11 +323,20 @@ export function SearchField({
   onChange,
   placeholder,
   shortcut = false,
+  className,
+  style,
+  ref: hostRef,
+  onKeyDown,
+  ...props
 }: {
   placeholder?: string;
   shortcut?: boolean;
 } & ValueChangeProps &
-  RequiredAriaLabel) {
+  RequiredAriaLabel &
+  Omit<
+    ComponentPropsWithRef<"input">,
+    "value" | "defaultValue" | "onChange" | "size" | "type"
+  >) {
   const name = ariaLabel ?? label;
   const [uncontrolled, setUncontrolled] = useState(defaultValue ?? "");
   const current = value !== undefined ? value : uncontrolled;
@@ -384,90 +348,125 @@ export function SearchField({
   const keyboard = useKeyboardFocus();
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (!shortcut) return;
-    const handle = (event: KeyboardEvent) => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (
-        event.key !== "/" ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey ||
-        target?.closest(
-          'input, textarea, select, [role="combobox"], [contenteditable="true"]',
-        )
-      )
-        return;
-      event.preventDefault();
-      ref.current?.focus();
+    const node = ref.current;
+    if (!shortcut || !node) return;
+    searchShortcuts.add(node);
+    ensureSearchShortcut();
+    return () => {
+      searchShortcuts.delete(node);
     };
-    window.addEventListener("keydown", handle);
-    return () => window.removeEventListener("keydown", handle);
   }, [shortcut]);
   return (
     <motion.label
       layout={reduced ? false : true}
       transition={transition}
-      className="ui-search"
+      className={cx("ui-search", className)}
       data-keyboard-focus={keyboard || undefined}
-      style={{ borderRadius: "var(--ui-radius-control)" }}
+      style={{ borderRadius: "var(--ui-radius-control)", ...style }}
     >
       <Icon name="search" size={15} />
       <input
+        {...props}
         type="search"
-        ref={ref}
+        ref={(node) => {
+          ref.current = node;
+          assignRef(hostRef, node);
+        }}
         aria-label={name}
         value={current}
         placeholder={placeholder}
         onChange={(e) => commit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
+        onKeyDown={compose(onKeyDown, (e) => {
+          if (e.key === "Escape" && !e.defaultPrevented) {
             e.preventDefault();
             commit("");
           }
-        }}
+        })}
       />
       {shortcut && <Keycap>/</Keycap>}
     </motion.label>
   );
 }
+export type ExternalLinksItemProps = ComponentPropsWithRef<"a"> & {
+  href: string;
+  children: ReactNode;
+};
+const linkItemRules: readonly SlotRule[] = [
+  { name: "label", min: 1, max: 1 },
+  { name: "icon", min: 0, max: 1 },
+];
+const linkRules: readonly SlotRule[] = [
+  { name: "item", min: 0, max: Number.POSITIVE_INFINITY },
+];
+function ExternalLinksItem({
+  children,
+  className,
+  href,
+  ...props
+}: ExternalLinksItemProps) {
+  const composition = useComposition(
+    "ExternalLinks.Item",
+    linkItemRules,
+  );
+  useSlot("ExternalLinks", "item", { present: hasContent(children) });
+  return (
+    <CompositionRoot value={composition.value}>
+      <a
+        {...props}
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={cx("ui-external ui-pressable", className)}
+      >
+        {children}
+      </a>
+    </CompositionRoot>
+  );
+}
+function ExternalLinksLabel({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"span"> & { children: ReactNode }) {
+  useSlot("ExternalLinks.Item", "label", { present: hasContent(children) });
+  return (
+    <span {...props} className={cx(className)}>
+      {children}
+    </span>
+  );
+}
+function ExternalLinksIcon({ children }: { children: ReactNode }) {
+  useSlot("ExternalLinks.Item", "icon", { present: hasContent(children) });
+  return <span className="ui-external-icon">{children}</span>;
+}
 export function ExternalLinks({
-  links,
+  children,
   className,
   style,
   ref,
   "aria-label": ariaLabel = "外部链接",
   ...props
 }: Omit<ComponentPropsWithRef<"nav">, "children"> & {
-  links: { label: string; href: string; icon: IconName }[];
+  children?: ReactNode;
 }) {
+  const composition = useComposition("ExternalLinks", linkRules);
   return (
-    <nav
-      {...props}
-      ref={ref}
-      className={cx(
-        "ui-external-links",
-        links.length > 1 && "ui-button-group ui-button-group--contained",
-        className,
-      )}
-      style={style}
-      aria-label={ariaLabel}
-    >
-      {links.map((link) => (
-        <a
-          key={link.label}
-          href={link.href}
-          target="_blank"
-          rel="noreferrer"
-          className="ui-icon-button ui-external"
-          aria-label={link.label}
-          title={link.label}
-        >
-          <Icon name={link.icon} size={16} />
-        </a>
-      ))}
-    </nav>
+    <CompositionRoot value={composition.value}>
+      <nav
+        {...props}
+        ref={ref}
+        className={cx("ui-external-links", className)}
+        style={style}
+        aria-label={ariaLabel}
+      >
+        {children}
+      </nav>
+    </CompositionRoot>
   );
 }
+ExternalLinks.Item = ExternalLinksItem;
+ExternalLinks.Label = ExternalLinksLabel;
+ExternalLinks.Icon = ExternalLinksIcon;
 type SurfaceVariant = "soft" | "raised";
 export type SurfaceProps = ComponentPropsWithRef<"div"> & {
   variant?: SurfaceVariant;
@@ -498,320 +497,329 @@ export function Surface({
     </div>
   );
 }
-export function ShowcaseCard({
-  title,
-  description,
-  href,
-  children,
-  externalLink,
-  className,
-  style,
-  ref,
-  ...props
-}: Omit<HTMLAttributes<HTMLElement>, "title" | "children"> & {
-  title: string;
-  description?: string;
-  href: string;
-  children: ReactNode;
-  externalLink?: { href: string; label: string };
-  ref?: Ref<HTMLElement>;
-}) {
-  const art = (
-    <div className="ui-showcase-art" aria-hidden="true">
-      {children}
-    </div>
-  );
-  if (externalLink) {
-    return (
-      <div
-        {...props}
-        ref={(node) => setRef(ref, node)}
-        className={cx("ui-showcase ui-showcase--external", className)}
-        style={style}
-      >
-        <a
-          className="ui-showcase-link"
-          href={href}
-          aria-label={description ? `${title}：${description}` : title}
-        >
-          {art}
-        </a>
-        <a
-          className="ui-showcase-external"
-          href={externalLink.href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {externalLink.label}
-          <Icon name="arrow" size={13} />
-          <span className="ui-sr-only">（在新标签页打开）</span>
-        </a>
-      </div>
-    );
-  }
-  return (
-    <a
-      {...props}
-      ref={(node) => setRef(ref, node)}
-      className={cx("ui-showcase", className)}
-      style={style}
-      href={href}
-    >
-      {art}
-      <div className="ui-showcase-caption">
-        <span>{title}</span>
-      </div>
-      {description && <span className="ui-sr-only">{description}</span>}
-    </a>
-  );
+const showcaseRules: readonly SlotRule[] = [{ name: "title", min: 1, max: 1 }, { name: "description", min: 0, max: 1 }, { name: "media", min: 1, max: 1 }, { name: "external", min: 0, max: 1 }];
+const ShowcaseContext = createContext<{ href: string; titleId: string; descriptionId?: string } | null>(null);
+function ShowcaseTitle({ children }: { children: ReactNode }) {
+  const context = useContext(ShowcaseContext); useSlot("ShowcaseCard", "title", { present: hasContent(children) });
+  return <div className="ui-showcase-caption" id={context?.titleId}>{children}</div>;
 }
-export function CopyButton({
-  text,
-  children,
-  label,
-  icon = "copy",
-  size = "sm",
-  emphasis,
-  variant,
-}: {
-  text: string;
-  children?: ReactNode;
-  /** @deprecated Use `children`. */
-  label?: ReactNode;
-  icon?: IconName;
-  size?: ButtonSize | LegacyButtonSize;
-  emphasis?: ButtonEmphasis;
-  /** @deprecated Use `emphasis`. `soft` maps to `default`, `plain` maps to `quiet`. */
-  variant?: "soft" | "plain";
-}) {
-  const idle = children ?? label ?? "复制";
-  const resolvedEmphasis =
-    emphasis ?? (variant === "plain" ? "quiet" : "default");
-  const [status, setStatus] = useState<
-    "idle" | "pending" | "success" | "error"
-  >("idle");
+function ShowcaseDescription({ children }: { children: ReactNode }) {
+  const context = useContext(ShowcaseContext); useSlot("ShowcaseCard", "description", { present: hasContent(children) });
+  return <span className="ui-sr-only" id={context?.descriptionId}>{children}</span>;
+}
+function ShowcaseMedia({ children }: { children: ReactNode }) {
+  const context = useContext(ShowcaseContext); useSlot("ShowcaseCard", "media", { present: hasContent(children) });
+  return <a className="ui-showcase-link" href={context?.href} aria-labelledby={context?.titleId} aria-describedby={context?.descriptionId}><div className="ui-showcase-art">{children}</div></a>;
+}
+function ShowcaseExternal({ children, className, ...props }: ComponentPropsWithRef<"a"> & { href: string }) {
+  useSlot("ShowcaseCard", "external", { present: hasContent(children) });
+  return <a {...props} target={props.target ?? "_blank"} rel={props.rel ?? "noopener noreferrer"} className={cx("ui-showcase-external ui-pressable", className)}>{children}<Icon name="external-link" /></a>;
+}
+export function ShowcaseCard({ href, children, className, ...props }: Omit<ComponentPropsWithRef<"div">, "children" | "title"> & { href: string; children: ReactNode }) {
+  const id = useId(); const composition = useComposition("ShowcaseCard", showcaseRules);
+  const external = composition.registrations.some(s => s.slot === "external");
+  const description = composition.registrations.some(s => s.slot === "description");
+  return <CompositionRoot value={composition.value}><ShowcaseContext.Provider value={{ href, titleId: `${id}-title`, descriptionId: description ? `${id}-description` : undefined }}>
+    <div {...props} className={cx("ui-showcase", external && "ui-showcase--external", className)}>{children}</div>
+  </ShowcaseContext.Provider></CompositionRoot>;
+}
+ShowcaseCard.Title = ShowcaseTitle;
+ShowcaseCard.Description = ShowcaseDescription;
+ShowcaseCard.Media = ShowcaseMedia;
+ShowcaseCard.ExternalLink = ShowcaseExternal;
+type CopyState = "idle" | "pending" | "success" | "error";
+const CopyContext = createContext<CopyState>("idle");
+const copyRules: readonly SlotRule[] = [
+  { name: "feedback-pending", min: 0, max: 1 },
+  { name: "feedback-success", min: 0, max: 1 },
+  { name: "feedback-error", min: 0, max: 1 },
+];
+function CopyFeedback({ state, children }: { state: Exclude<CopyState, "idle">; children: ReactNode }) {
+  useSlot("CopyButton", `feedback-${state}`, { present: hasContent(children) });
+  const current = useContext(CopyContext);
+  return <span role="status" aria-live="polite" className="ui-sr-only">{current === state ? children : null}</span>;
+}
+export type CopyButtonProps = Omit<ButtonProps, "children"> & { text: string; children: ReactNode };
+export function CopyButton({ text, children, size = "sm", disabled, onClick, busy, className, ...props }: CopyButtonProps) {
+  const [status, setStatus] = useState<CopyState>("idle");
+  const inFlight = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      clearTimeout(timer.current);
-    };
-  }, []);
+  const composition = useComposition("CopyButton", copyRules);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; clearTimeout(timer.current); }; }, []);
   async function copy() {
-    clearTimeout(timer.current);
-    setStatus("pending");
-    try {
-      await navigator.clipboard.writeText(text);
-      if (mounted.current) setStatus("success");
-    } catch {
-      if (mounted.current) setStatus("error");
-    }
-    if (mounted.current)
-      timer.current = setTimeout(() => setStatus("idle"), 2200);
+    if (inFlight.current) return;
+    inFlight.current = true;
+    clearTimeout(timer.current); setStatus("pending");
+    try { await navigator.clipboard.writeText(text); if (mounted.current) setStatus("success"); }
+    catch { if (mounted.current) setStatus("error"); }
+    finally { inFlight.current = false; }
+    if (mounted.current) timer.current = setTimeout(() => setStatus("idle"), 2200);
   }
-  return (
-    <Button
-      size={resolveButtonSize(size)}
-      emphasis={resolvedEmphasis}
-      icon={status === "success" ? "check" : icon}
-      onClick={copy}
-      disabled={status === "pending"}
-      className="ui-copy"
-    >
-      <span role="status" aria-live="polite">
-        {status === "success"
-          ? "Copied"
-          : status === "error"
-            ? "Copy failed"
-            : status === "pending"
-              ? "Copying…"
-              : idle}
-      </span>
+  const custom = composition.registrations.some(s => s.slot === `feedback-${status}`);
+  return <CompositionRoot value={composition.value}><CopyContext.Provider value={status}>
+    <Button {...props} size={size} disabled={disabled} busy={busy || status === "pending"}
+      onClick={compose(onClick, event => { if (!event.defaultPrevented) void copy(); })}
+      className={cx("ui-copy", className)}>
+      {children}
+      {!custom && <span className="ui-sr-only" role="status" aria-live="polite">{status === "success" ? "已复制" : status === "error" ? "复制失败" : status === "pending" ? "正在复制" : ""}</span>}
     </Button>
-  );
+  </CopyContext.Provider></CompositionRoot>;
 }
-export function ShareButton({ url }: { url: string }) {
-  return (
-    <CopyButton text={url} icon="share" size="md">
-      分享
-    </CopyButton>
-  );
+CopyButton.Icon = ButtonIcon;
+CopyButton.Label = ButtonLabel;
+CopyButton.Count = ButtonCount;
+CopyButton.Feedback = CopyFeedback;
+export function ShareButton({ url, ...props }: Omit<CopyButtonProps, "text"> & { url: string }) {
+  return <CopyButton {...props} text={url} />;
 }
-export function ExpandableCode({
-  code,
-  expandLabel,
-  label,
-  collapsedHeight = 210,
-}: {
-  code: string;
-  expandLabel?: string;
-  /** @deprecated Use `expandLabel`. */
-  label?: string;
-  collapsedHeight?: number;
-}) {
-  const toggleLabel = expandLabel ?? label ?? "展开全文";
-  const { reduced, transition } = useUiMotion();
-  const [expanded, setExpanded] = useState(false);
-  const id = useId();
-  const content = useRef<HTMLPreElement>(null);
-  const [height, setHeight] = useState(collapsedHeight);
-  useEffect(() => {
-    const update = () =>
-      setHeight(content.current?.scrollHeight ?? collapsedHeight);
+ShareButton.Icon = ButtonIcon;
+ShareButton.Label = ButtonLabel;
+ShareButton.Count = ButtonCount;
+ShareButton.Feedback = CopyFeedback;
+
+const codeRules: readonly SlotRule[] = [
+  { name: "body", min: 1, max: 1 },
+  { name: "copy", min: 0, max: 1 },
+  { name: "expand", min: 0, max: 1 },
+  { name: "collapse", min: 0, max: 1 },
+];
+const CodeContext = createContext<{
+  code: string; expanded: boolean; overflowing: boolean; height: number; collapsedHeight: number;
+  id: string; setCode: (code: string) => void; setHeight: (height: number) => void; setExpanded: (expanded: boolean) => void;
+} | null>(null);
+function useCode() { const value = useContext(CodeContext); if (!value) throw new Error("ExpandableCode 子组件需要根组件"); return value; }
+function CodeBody({ children }: { children: string }) {
+  useSlot("ExpandableCode", "body", { present: hasContent(children) });
+  const context = useCode(); const content = useRef<HTMLPreElement>(null);
+  const { enter, exit } = useUiMotion();
+  const { setCode, setHeight, collapsedHeight } = context;
+  useLayoutEffect(() => { setCode(children); }, [children, setCode]);
+  useLayoutEffect(() => {
+    const update = () => setHeight(content.current?.scrollHeight ?? collapsedHeight);
     update();
+    if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(update);
     if (content.current) observer.observe(content.current);
     return () => observer.disconnect();
-  }, [code, collapsedHeight]);
+  }, [children, collapsedHeight, setHeight]);
+  return <motion.div id={context.id} className="ui-code-content" initial={false}
+    animate={{ height: context.overflowing ? context.expanded ? context.height : collapsedHeight : "auto" }}
+    transition={context.expanded ? enter : exit}>
+    <pre ref={content}>{children}</pre>
+    {context.overflowing && !context.expanded && <div className="ui-code-fade" aria-hidden="true" />}
+  </motion.div>;
+}
+function CodeCopy({ children }: { children: ReactNode }) {
+  useSlot("ExpandableCode", "copy", { present: hasContent(children) });
+  const { code } = useCode();
+  return <div className="ui-code-copy"><CopyButton text={code} emphasis="quiet"><Button.Label>{children}</Button.Label></CopyButton></div>;
+}
+function CodeAction({ children, expand }: { children: ReactNode; expand: boolean }) {
+  const context = useCode(); useSlot("ExpandableCode", expand ? "expand" : "collapse", { present: hasContent(children) });
+  if (!context.overflowing || context.expanded === expand) return null;
+  return <div className="ui-code-toggle"><Button size="sm" emphasis="quiet" aria-expanded={context.expanded}
+    aria-controls={context.id} onClick={() => context.setExpanded(expand)}><Button.Label>{children}</Button.Label>
+    <Button.Icon><Icon name="chevron-down" className={cx("ui-chevron", context.expanded && "ui-chevron--up")} /></Button.Icon>
+  </Button></div>;
+}
+function CodeExpand({ children }: { children: ReactNode }) { return <CodeAction expand>{children}</CodeAction>; }
+function CodeCollapse({ children }: { children: ReactNode }) { return <CodeAction expand={false}>{children}</CodeAction>; }
+export function ExpandableCode({ children, collapsedHeight = 210, className, "aria-label": ariaLabel = "可展开文本", ...props }:
+  Omit<ComponentPropsWithRef<"section">, "children" | "onChange"> & { children: ReactNode; collapsedHeight?: number }) {
+  const [expanded, setExpanded] = useState(false); const [code, setCode] = useState(""); const [height, setHeight] = useState(0); const id = useId();
+  const composition = useComposition("ExpandableCode", codeRules);
+  return <CompositionRoot value={composition.value}><CodeContext.Provider value={{ code, setCode, expanded, setExpanded, height, setHeight, collapsedHeight, id, overflowing: height > collapsedHeight + 1 }}>
+    <section {...props} className={cx("ui-code", className)} aria-label={ariaLabel}>{children}</section>
+  </CodeContext.Provider></CompositionRoot>;
+}
+ExpandableCode.Body = CodeBody;
+ExpandableCode.CopyAction = CodeCopy;
+ExpandableCode.ExpandAction = CodeExpand;
+ExpandableCode.CollapseAction = CodeCollapse;
+export type NavigationItem = { title: string; href: string };
+const pagerRules: readonly SlotRule[] = [{ name: "previous", min: 0, max: 1 }, { name: "next", min: 0, max: 1 }];
+function PagerLink({ direction, children, href, className, ...props }: ComponentPropsWithRef<"a"> & { direction: "previous" | "next" }) {
+  useSlot("Pager", direction, { present: hasContent(children) });
+  const icon = direction === "previous" ? "chevron-left" : "chevron-right";
+  const label = direction === "previous" ? "上一页" : "下一页";
+  if (!href) return <Button shape="square" disabled aria-label={`${label}不可用`}><Button.Icon><Icon name={icon} /></Button.Icon></Button>;
+  return <a {...props} href={href} className={cx("ui-icon-button ui-external ui-pressable", className)}><Icon name={icon} /><span className="ui-sr-only">{label}：{children}</span></a>;
+}
+function PagerPrevious(props: ComponentPropsWithRef<"a">) { return <PagerLink {...props} direction="previous" />; }
+function PagerNext(props: ComponentPropsWithRef<"a">) { return <PagerLink {...props} direction="next" />; }
+export function Pager({ variant = "contained", children, className, "aria-label": ariaLabel = "页面导航", ...props }: ComponentPropsWithRef<"nav"> & { variant?: GroupVariant }) {
+  const composition = useComposition("Pager", pagerRules);
+  return <CompositionRoot value={composition.value}><nav {...props} aria-label={ariaLabel} className={cx("ui-button-group ui-pager", `ui-button-group--${variant}`, className)}>{children}</nav></CompositionRoot>;
+}
+Pager.Previous = PagerPrevious;
+Pager.Next = PagerNext;
+const navigationRules: readonly SlotRule[] = [
+  { name: "title", min: 1, max: 1 },
+  { name: "description", min: 0, max: 1 },
+];
+export type NavigationCardProps = Omit<
+  ComponentPropsWithRef<"a">,
+  "children" | "href" | "title"
+> &
+  Omit<NavigationItem, "title"> & {
+    direction: "previous" | "next";
+    children?: ReactNode;
+  };
+function NavigationCardTitle({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"span"> & { children: ReactNode }) {
+  useSlot("NavigationCard", "title", { present: hasContent(children) });
   return (
-    <section className="ui-code" aria-label="Expandable text">
-      <div className="ui-code-copy">
-        <CopyButton text={code} emphasis="quiet" />
-      </div>
-      <motion.div
-        id={id}
-        className="ui-code-content"
-        initial={false}
-        animate={{ height: expanded ? height : collapsedHeight }}
-        transition={reduced ? { duration: 0 } : transition}
-      >
-        <pre ref={content}>{code}</pre>
-        {!expanded && <div className="ui-code-fade" aria-hidden="true" />}
-      </motion.div>
-      <div className="ui-code-toggle">
-        <Button
-          size="sm"
-          emphasis="quiet"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          aria-controls={id}
-        >
-          {expanded ? "Show less" : toggleLabel}
-          <span className={cx("ui-chevron", expanded && "ui-chevron--up")}>
-            <Icon name="down" size={12} />
-          </span>
-        </Button>
-      </div>
-    </section>
+    <span {...props} className={cx("ui-navigation-title", className)}>
+      {children}
+    </span>
   );
 }
-export type NavigationItem = { title: string; href: string };
-const pageDirectionLabel = { previous: "上一页", next: "下一页" } as const;
-export function Pager({
-  previous,
-  next,
+function NavigationCardDescription({
+  children,
   className,
-  style,
-  ref,
-  "aria-label": ariaLabel = "页面导航",
   ...props
-}: Omit<ComponentPropsWithRef<"nav">, "children"> & {
-  previous?: NavigationItem;
-  next?: NavigationItem;
-}) {
+}: ComponentPropsWithRef<"span"> & { children: ReactNode }) {
+  useSlot("NavigationCard", "description", { present: hasContent(children) });
   return (
-    <nav
-      {...props}
-      ref={ref}
-      aria-label={ariaLabel}
-      className={cx(
-        "ui-button-group ui-button-group--contained ui-pager",
-        className,
-      )}
-      style={style}
-    >
-      {(["previous", "next"] as const).map((direction) => {
-        const item = direction === "previous" ? previous : next;
-        const icon = direction === "previous" ? "left" : "right";
-        const name = pageDirectionLabel[direction];
-        return item ? (
-          <a
-            key={direction}
-            className="ui-icon-button ui-external"
-            href={item.href}
-            aria-label={`${name}：${item.title}`}
-            title={item.title}
-          >
-            <Icon name={icon} size={16} />
-          </a>
-        ) : (
-          <IconButton
-            key={direction}
-            aria-label={`${name}不可用`}
-            icon={icon}
-            disabled
-          />
-        );
-      })}
-    </nav>
+    <span {...props} className={cx("ui-navigation-label", className)}>
+      {children}
+    </span>
   );
 }
 export function NavigationCard({
   direction,
-  directionLabel,
-  title,
+  children,
   href,
   className,
   style,
   ref,
   ...props
-}: Omit<ComponentPropsWithRef<"a">, "children" | "href"> &
-  NavigationItem & {
-    direction: "previous" | "next";
-    directionLabel?: string;
-  }) {
+}: NavigationCardProps) {
+  const composition = useComposition("NavigationCard", navigationRules);
   return (
-    <a
-      {...props}
-      ref={ref}
-      className={cx(
-        "ui-navigation-card",
-        direction === "next" && "ui-navigation-card--next",
-        className,
-      )}
-      style={style}
-      href={href}
-    >
-      <Icon name={direction === "previous" ? "left" : "right"} size={16} />
-      <span>
-        {directionLabel && (
-          <span className="ui-navigation-label">{directionLabel}</span>
+    <CompositionRoot value={composition.value}>
+      <a
+        {...props}
+        ref={ref}
+        className={cx(
+          "ui-navigation-card",
+          direction === "next" && "ui-navigation-card--next",
+          className,
         )}
-        <span className="ui-navigation-title">{title}</span>
-      </span>
-    </a>
+        style={style}
+        href={href}
+      >
+        <Icon
+          name={direction === "previous" ? "chevron-left" : "chevron-right"}
+          size={16}
+        />
+        <span className="ui-navigation-copy">{children}</span>
+      </a>
+    </CompositionRoot>
+  );
+}
+NavigationCard.Title = NavigationCardTitle;
+NavigationCard.Description = NavigationCardDescription;
+const PageShellContext = createContext<{
+  mainId: string;
+  mainAs: "main" | "div";
+} | null>(null);
+const shellRules: readonly SlotRule[] = [
+  { name: "header", min: 0, max: 1 },
+  { name: "body", min: 1, max: 1 },
+  { name: "footer", min: 0, max: 1 },
+];
+function PageShellHeader({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"header"> & { children: ReactNode }) {
+  useSlot("PageShell", "header", { present: hasContent(children) });
+  return (
+    <header {...props} className={cx("ui-header", className)}>
+      <div className="ui-header-inner">{children}</div>
+    </header>
+  );
+}
+function PageShellBody({
+  children,
+  className,
+  ...props
+}: Omit<ComponentPropsWithRef<"main">, "ref"> & { children: ReactNode }) {
+  useSlot("PageShell", "body", { present: hasContent(children) });
+  const context = useContext(PageShellContext);
+  const Main = context?.mainAs ?? "main";
+  return (
+    <Main
+      {...props}
+      id={context?.mainId ?? "main"}
+      tabIndex={-1}
+      className={cx("ui-main", className)}
+    >
+      {children}
+    </Main>
+  );
+}
+function PageShellFooter({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"footer"> & { children: ReactNode }) {
+  useSlot("PageShell", "footer", { present: hasContent(children) });
+  return (
+    <footer {...props} className={cx("ui-footer", className)}>
+      {children}
+    </footer>
   );
 }
 export function PageShell({
-  controls,
   children,
-  footer,
   className,
+  style,
+  ref,
   mainId = "main",
   mainAs = "main",
-}: {
-  controls?: ReactNode;
+  ...props
+}: Omit<ComponentPropsWithRef<"div">, "children"> & {
   children: ReactNode;
-  footer?: ReactNode;
-  className?: string;
   mainId?: string;
   mainAs?: "main" | "div";
 }) {
-  const Main = mainAs;
+  const composition = useComposition("PageShell", shellRules);
   return (
-    <div className={cx("ui-page", className)}>
-      <a className="ui-skip" href={`#${mainId}`}>
-        Skip to content
-      </a>
-      <header className="ui-header">
-        <div className="ui-header-inner">{controls}</div>
-      </header>
-      <Main id={mainId} tabIndex={-1} className="ui-main">
-        {children}
-      </Main>
-      {footer != null && <footer className="ui-footer">{footer}</footer>}
+    <CompositionRoot value={composition.value}>
+      <PageShellContext.Provider value={{ mainId, mainAs }}>
+        <div
+          {...props}
+          ref={ref}
+          className={cx("ui-page", className)}
+          style={style}
+        >
+          <a className="ui-skip" href={`#${mainId}`}>
+            跳到主要内容
+          </a>
+          {children}
+        </div>
+      </PageShellContext.Provider>
+    </CompositionRoot>
+  );
+}
+PageShell.Header = PageShellHeader;
+PageShell.Body = PageShellBody;
+PageShell.Footer = PageShellFooter;
+/** Coordinate independent actions with complete group surfaces. */
+export function ActionRow({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithRef<"div">) {
+  return (
+    <div {...props} className={cx("ui-action-row", className)}>
+      {children}
     </div>
   );
 }

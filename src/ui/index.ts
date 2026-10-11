@@ -8,3 +8,4 @@ export * from "./feedback";
 export * from "./file-dropzone";
 export * from "./color-picker";
 import "./styles.css";
+export * from "./typography";

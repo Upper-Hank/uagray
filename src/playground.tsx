@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from "react";
 import {
   lines,
+  descriptionRows,
   choiceItems,
   exampleArgs,
   normalizeArgs,
@@ -11,6 +12,7 @@ import {
 import { ApiPanel } from "./api-panel";
 import { exampleCode } from "./playground-code";
 import {
+  ActionRow,
   Alert,
   Badge,
   Button,
@@ -21,6 +23,10 @@ import {
   CopyButton,
   Dialog,
   Disclosure,
+  DescriptionList,
+  Heading,
+  Text,
+  TextList,
   Drawer,
   EmptyState,
   ExpandableCode,
@@ -45,11 +51,13 @@ import {
   ShareButton,
   ShowcaseCard,
   Slider,
+  Spinner,
   Surface,
   Switch,
   Tabs,
   Textarea,
   Toast,
+  ToastRegion,
   type ButtonProps,
   type SurfaceProps,
   type FeedbackTone,
@@ -72,12 +80,6 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
   const buttonsAction = s("action");
   const fields = visibleFields(entry, args);
   const choices = (key: string) => choiceItems(args[key]);
-  const feedbackIcon =
-    s("icon") === "none"
-      ? false
-      : s("icon") === "auto"
-        ? undefined
-        : (s("icon") as IconName);
   let node: ReactNode;
   switch (entry.id) {
     case "color-picker":
@@ -94,11 +96,23 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <SegmentedControl
           aria-label={s("aria-label")}
-          options={choices("options")}
           value={s("value")}
           defaultValue={s("defaultValue") || undefined}
           onValueChange={(value) => patch("value", value)}
-        />
+        >
+          {choices("entries").map((item) => (
+            <SegmentedControl.Item
+              key={item.value}
+              value={item.value}
+              disabled={(item as { disabled?: boolean }).disabled}
+            >
+              <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+              {item.count && (
+                <SegmentedControl.Count>{item.count}</SegmentedControl.Count>
+              )}
+            </SegmentedControl.Item>
+          ))}
+        </SegmentedControl>
       );
       break;
     case "search":
@@ -109,6 +123,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           defaultValue={s("defaultValue") || undefined}
           placeholder={s("placeholder")}
           shortcut={b("shortcut")}
+          disabled={b("disabled")}
           onValueChange={(value) => patch("value", value)}
         />
       );
@@ -116,26 +131,15 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
     case "buttons":
       node =
         buttonsAction === "copy" ? (
-          <CopyButton
-            text={s("text")}
-            emphasis={s("emphasis") as ButtonProps["emphasis"]}
-            size={s("size") as ButtonProps["size"]}
-          >
+          <CopyButton text={s("text")} emphasis={s("emphasis") as ButtonProps["emphasis"]} size={s("size") as ButtonProps["size"]}><CopyButton.Label>
             {s("children")}
-          </CopyButton>
+          </CopyButton.Label><CopyButton.Feedback state="success">{s("copiedLabel")}</CopyButton.Feedback><CopyButton.Feedback state="pending">{s("copyingLabel")}</CopyButton.Feedback><CopyButton.Feedback state="error">{s("copyFailedLabel")}</CopyButton.Feedback></CopyButton>
         ) : buttonsAction === "share" ? (
-          <ShareButton url={s("url")} />
+          <ShareButton url={s("url")}><ShareButton.Label>分享</ShareButton.Label><ShareButton.Feedback state="success">已复制</ShareButton.Feedback><ShareButton.Feedback state="pending">正在复制</ShareButton.Feedback><ShareButton.Feedback state="error">复制失败</ShareButton.Feedback></ShareButton>
         ) : (
-          <Button
-            icon={s("icon") === "none" ? undefined : (s("icon") as IconName)}
-            count={b("showCount") ? n("count") : undefined}
-            emphasis={s("emphasis") as ButtonProps["emphasis"]}
-            tone={s("tone") as ButtonProps["tone"]}
-            size={s("size") as ButtonProps["size"]}
-            disabled={b("disabled")}
-          >
+          <Button emphasis={s("emphasis") as ButtonProps["emphasis"]} tone={s("tone") as ButtonProps["tone"]} size={s("size") as ButtonProps["size"]} disabled={b("disabled")} busy={b("busy")}>{((icon) => icon === undefined ? null : <Button.Icon><Icon name={icon as Parameters<typeof Icon>[0]["name"]} /></Button.Icon>)(s("icon") === "none" ? undefined : (s("icon") as IconName))}<Button.Label>
             {s("children")}
-          </Button>
+          </Button.Label>{(b("showCount") ? n("count") : undefined) !== undefined && <Button.Count>{b("showCount") ? n("count") : undefined}</Button.Count>}</Button>
         );
       break;
     case "icon-button":
@@ -147,6 +151,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           emphasis={s("emphasis") as ButtonProps["emphasis"]}
           tone={s("tone") as ButtonProps["tone"]}
           disabled={b("disabled")}
+          busy={b("busy")}
         />
       );
       break;
@@ -207,13 +212,15 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "fields":
       node = (
-        <Field
-          label={s("label")}
-          hint={s("hint") || undefined}
-          error={s("error") || undefined}
-          required={b("required")}
-        >
-          <Input placeholder="请输入…" />
+        <Field required={b("required")}>
+          {s("label") && <Field.Label>{s("label")}</Field.Label>}
+          <Field.Control>
+            <Input placeholder="请输入…" />
+          </Field.Control>
+          {s("description") && (
+            <Field.Description>{s("description")}</Field.Description>
+          )}
+          {s("error") && <Field.Error>{s("error")}</Field.Error>}
         </Field>
       );
       break;
@@ -221,45 +228,60 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       node = (
         <Select
           aria-label="格式"
-          options={choices("options")}
           value={s("value")}
           placeholder={s("placeholder")}
           disabled={b("disabled")}
           required={b("required")}
           onValueChange={(value) => patch("value", value)}
-        />
+        >
+          {choices("entries").map((item) => (
+            <Select.Item
+              key={item.value}
+              value={item.value}
+              disabled={(item as { disabled?: boolean }).disabled}
+            >
+              {item.label}
+            </Select.Item>
+          ))}
+        </Select>
       );
       break;
     case "checkbox":
       node = (
         <Checkbox
-          label={s("label")}
+          aria-label={s("label") ? undefined : "名称"}
           checked={b("checked")}
           disabled={b("disabled")}
           onChange={(event) => patch("checked", event.target.checked)}
-        />
+        >
+          {s("label")}
+        </Checkbox>
       );
       break;
     case "radio":
       node = (
         <Radio
-          label={s("label")}
+          aria-label={s("label") ? undefined : "名称"}
           name="radio-example"
+          value="a"
           checked={b("checked")}
           disabled={b("disabled")}
           onChange={(event) => patch("checked", event.target.checked)}
-        />
+        >
+          {s("label")}
+        </Radio>
       );
       break;
     case "switch":
       node = (
         <Switch
-          label={s("label") || undefined}
           aria-label={s("label") ? undefined : "开关"}
           checked={b("checked")}
           disabled={b("disabled")}
           onChange={(event) => patch("checked", event.target.checked)}
-        />
+        >
+          {s("label")}
+        </Switch>
       );
       break;
     case "slider": {
@@ -267,8 +289,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       const max = n("max");
       node = (
         <Slider
-          label={s("label") || undefined}
-          aria-label={s("label") || "value"}
+          aria-label={s("label") ? undefined : "value"}
           variant={s("variant") as "track" | "filled"}
           layout={s("layout") as "field" | "inline" | "bare"}
           value={n("value")}
@@ -278,7 +299,10 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           disabled={b("disabled")}
           onValueChange={(value) => patch("value", value)}
           formatValue={(value) => `${value}${s("unit")}`}
-        />
+        >
+          {s("label") && <Slider.Label>{s("label")}</Slider.Label>}
+          {b("reading") && <Slider.Value />}
+        </Slider>
       );
       break;
     }
@@ -289,21 +313,39 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           value={s("value")}
           defaultValue={s("defaultValue") || undefined}
           onValueChange={(value) => patch("value", value)}
-          items={choices("items").map((item) => ({
-            ...item,
-            content: item.content || null,
-          }))}
-        />
+        >
+          <Tabs.List>
+            {choices("entries").map((item) => (
+              <Tabs.Trigger
+                key={item.value}
+                value={item.value}
+                disabled={(item as { disabled?: boolean }).disabled}
+              >
+                {item.label}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+          {choices("entries").map((item) =>
+            item.content ? (
+              <Tabs.Content key={item.value} value={item.value}>
+                {item.content}
+              </Tabs.Content>
+            ) : null,
+          )}
+        </Tabs>
       );
       break;
     case "disclosure":
       node = (
         <Disclosure
-          title={s("title")}
           open={b("open")}
           onOpenChange={(open) => patch("open", open)}
         >
-          {s("children")}
+          <Disclosure.Trigger>{s("title")}</Disclosure.Trigger>
+          {s("actions") && (
+            <Disclosure.Actions>{s("actions")}</Disclosure.Actions>
+          )}
+          <Disclosure.Body>{s("body")}</Disclosure.Body>
         </Disclosure>
       );
       break;
@@ -318,14 +360,23 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <Panel
             open={b("open")}
             onOpenChange={(open) => patch("open", open)}
-            title={s("title")}
-            description={s("description") || undefined}
             dismissible={b("dismissible")}
-            footer={
-              <Button onClick={() => patch("open", false)}>关闭示例</Button>
-            }
+            aria-label={s("title") ? undefined : "示例"}
           >
-            {s("children")}
+            {(s("title") || s("description")) && (
+              <Panel.Header>
+                {s("title") && <Panel.Title>{s("title")}</Panel.Title>}
+                {s("description") && (
+                  <Panel.Description>{s("description")}</Panel.Description>
+                )}
+              </Panel.Header>
+            )}
+            {s("body") && <Panel.Body>{s("body")}</Panel.Body>}
+            {b("footer") && (
+              <Panel.Footer>
+                <Button onClick={() => patch("open", false)}>关闭示例</Button>
+              </Panel.Footer>
+            )}
           </Panel>
         </>
       );
@@ -337,39 +388,33 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <Button disabled={b("busy")} onClick={() => patch("open", true)}>
             打开确认框
           </Button>
-          <ConfirmDialog
-            title={s("title")}
-            description={s("description")}
-            open={b("open")}
-            onOpenChange={(open) => patch("open", open)}
-            onConfirm={() => patch("open", false)}
-            busy={b("busy")}
-            tone={s("tone") as "neutral" | "danger"}
-            confirmLabel={s("confirmLabel")}
-            cancelLabel={s("cancelLabel")}
-          />
+          <ConfirmDialog open={b("open")} onOpenChange={(open) => patch("open", open)} onConfirm={() => patch("open", false)} busy={b("busy")} tone={s("tone") as "neutral" | "danger"}><ConfirmDialog.Header><ConfirmDialog.Title>{s("title")}</ConfirmDialog.Title><ConfirmDialog.Description>{s("description")}</ConfirmDialog.Description></ConfirmDialog.Header><ConfirmDialog.Body><span role="status">{s("statusLabel")}</span></ConfirmDialog.Body><ConfirmDialog.Footer><ConfirmDialog.CancelAction>{s("cancelLabel")}</ConfirmDialog.CancelAction><ConfirmDialog.ConfirmAction>{s("confirmLabel")}</ConfirmDialog.ConfirmAction></ConfirmDialog.Footer></ConfirmDialog>
         </>
       );
       break;
     case "badge":
       node = (
         <Badge
-          icon={feedbackIcon}
           tone={s("tone") as FeedbackTone}
           emphasis={s("emphasis") as "default" | "quiet"}
         >
-          {s("children")}
+          {s("icon") && (
+            <Badge.Icon>
+              <Icon name={s("icon") as IconName} size={16} />
+            </Badge.Icon>
+          )}
+          <Badge.Label>{s("label")}</Badge.Label>
         </Badge>
       );
       break;
     case "alert":
       node = (
-        <Alert
-          icon={feedbackIcon}
-          title={s("title")}
-          tone={s("tone") as FeedbackTone}
-        >
-          {s("children")}
+        <Alert tone={s("tone") as FeedbackTone}>
+          <Alert.Icon>
+            <Icon name={(s("icon") || "info") as IconName} size={16} />
+          </Alert.Icon>
+          {s("title") && <Alert.Title>{s("title")}</Alert.Title>}
+          {s("body") && <Alert.Body>{s("body")}</Alert.Body>}
         </Alert>
       );
       break;
@@ -380,48 +425,74 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           <Toast
             open={b("open")}
             onOpenChange={(open) => patch("open", open)}
-            children={s("children")}
-            icon={feedbackIcon}
             tone={s("tone") as FeedbackTone}
             duration={n("duration")}
-          />
+            closeLabel={s("closeLabel")}
+          >
+            {s("icon") && (
+              <Toast.Icon>
+                <Icon name={s("icon") as IconName} size={16} />
+              </Toast.Icon>
+            )}
+            <Toast.Body>{s("body")}</Toast.Body>
+          </Toast>
         </>
+      );
+      break;
+    case "toast-region":
+      node = (
+        <>
+          <Button onClick={() => patch("open", true)}>显示提示</Button>
+          <ToastRegion aria-label={s("aria-label")}>
+            <Toast
+              open={b("open")}
+              onOpenChange={(open) => patch("open", open)}
+            >
+              <Toast.Body>{s("children")}</Toast.Body>
+            </Toast>
+          </ToastRegion>
+        </>
+      );
+      break;
+    case "spinner":
+      node = s("label") ? (
+        <Spinner size={s("size") as "md" | "sm"}>{s("label")}</Spinner>
+      ) : (
+        <Spinner aria-label={s("aria-label")} size={s("size") as "md" | "sm"} />
       );
       break;
     case "progress":
       node = (
         <Progress
-          label={s("label") || undefined}
-          valueLabel={s("valueLabel") || undefined}
+          aria-label={s("aria-label") || undefined}
           value={b("indeterminate") ? undefined : n("value")}
           max={n("max")}
-        />
+        >
+          {s("label") && <Progress.Label>{s("label")}</Progress.Label>}
+          {s("valueLabel") && <Progress.Value>{s("valueLabel")}</Progress.Value>}
+        </Progress>
       );
       break;
     case "empty-state":
       node = (
-        <EmptyState
-          title={s("title")}
-          icon={feedbackIcon}
-          description={s("description") || undefined}
-          actions={
-            b("showActions") ? <Button icon="plus">添加文件</Button> : undefined
-          }
-        />
+        <EmptyState>
+          {s("icon") && (
+            <EmptyState.Icon>
+              <Icon name={s("icon") as IconName} size={16} />
+            </EmptyState.Icon>
+          )}
+          <EmptyState.Title>{s("title")}</EmptyState.Title>
+          {s("description") && (
+            <EmptyState.Description>{s("description")}</EmptyState.Description>
+          )}
+          {b("showActions") && (<EmptyState.Actions><Button><Button.Icon><Icon name="plus" /></Button.Icon><Button.Label>{s("actionLabel")}</Button.Label></Button></EmptyState.Actions>)}
+        </EmptyState>
       );
       break;
     case "upload":
       node = (
         <div className="single-upload">
-          <FileDropzone
-            label={s("label") || undefined}
-            buttonLabel={s("buttonLabel")}
-            accept={s("accept")}
-            multiple={b("multiple")}
-            disabled={b("disabled")}
-            maxSize={n("maxSize")}
-            onFiles={setFiles}
-          />
+          <FileDropzone accept={s("accept")} multiple={b("multiple")} disabled={b("disabled")} maxSize={n("maxSize")} onFiles={setFiles}><FileDropzone.Description>{s("label") || undefined}</FileDropzone.Description><FileDropzone.Trigger>{s("buttonLabel")}</FileDropzone.Trigger><FileDropzone.Error>{s("error") || undefined}</FileDropzone.Error></FileDropzone>
           {files.length > 0 && (
             <span role="status">
               {files.map((file) => file.name).join("、")}
@@ -432,70 +503,130 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
       break;
     case "selection":
       node = (
-        <SelectionBar
-          summary={s("summary") || undefined}
-          variant={s("variant") as "contained" | "plain"}
-          count={n("count")}
-          total={n("total")}
-          busy={b("busy")}
-          onSelectAll={() => patch("count", n("total"))}
-          onClear={() => patch("count", 0)}
-          onDone={() => patch("count", 0)}
-        />
+        <SelectionBar variant={s("variant") as "contained" | "plain"} count={n("count")} total={n("total")} busy={b("busy")} aria-label={s("aria-label") || undefined}><SelectionBar.Description>{s("summary").replaceAll("{count}", String(n("count"))) || undefined}</SelectionBar.Description><SelectionBar.Actions><SelectionBar.SelectAllAction onClick={() => patch("count", n("total"))}>{s("selectAllLabel") || undefined}</SelectionBar.SelectAllAction><SelectionBar.ClearAction onClick={() => patch("count", 0)}>{s("clearLabel") || undefined}</SelectionBar.ClearAction><SelectionBar.DoneAction onClick={() => patch("count", 0)}>{s("doneLabel") || undefined}</SelectionBar.DoneAction></SelectionBar.Actions></SelectionBar>
       );
       break;
     case "text":
       node = (
-        <ExpandableCode
-          code={s("code")}
-          expandLabel={s("expandLabel")}
-          collapsedHeight={n("collapsedHeight")}
-        />
+        <ExpandableCode collapsedHeight={n("collapsedHeight")} aria-label={s("aria-label")}><ExpandableCode.Body>{s("code")}</ExpandableCode.Body><ExpandableCode.CopyAction>复制</ExpandableCode.CopyAction><ExpandableCode.ExpandAction>{s("expandLabel")}</ExpandableCode.ExpandAction><ExpandableCode.CollapseAction>{s("collapseLabel")}</ExpandableCode.CollapseAction></ExpandableCode>
       );
       break;
     case "navigation":
       node = (
-        <Pager
-          previous={
-            b("previous") ? { title: "按钮", href: "#buttons" } : undefined
-          }
-          next={b("next") ? { title: "输入", href: "#input" } : undefined}
-        />
+        <Pager variant={s("variant") as "contained" | "plain"}>{((item) => item && <Pager.Previous href={item.href}>{item.title}</Pager.Previous>)(b("previous") ? { title: "按钮", href: "#buttons" } : undefined)}{((item) => item && <Pager.Next href={item.href}>{item.title}</Pager.Next>)(b("next") ? { title: "输入", href: "#input" } : undefined)}</Pager>
+      );
+      break;
+    case "action-row":
+      node = (
+        <ActionRow>
+          <Button size={s("size") as "md" | "sm"} disabled={b("disabled")}>
+            {s("children")}
+          </Button>
+          <ButtonGroup aria-label="切换项目">
+            <IconButton
+              size={s("size") as "md" | "sm"}
+              icon="chevron-left"
+              aria-label="上一项"
+            />
+            <IconButton
+              size={s("size") as "md" | "sm"}
+              icon="chevron-right"
+              aria-label="下一项"
+              disabled
+            />
+          </ButtonGroup>
+        </ActionRow>
+      );
+      break;
+    case "heading":
+      node = (
+        <Heading
+          level={n("level") as 1 | 2 | 3 | 4 | 5 | 6}
+          variant={s("variant") as "page" | "section"}
+        >
+          {s("children")}
+        </Heading>
+      );
+      break;
+    case "body-text":
+      node = (
+        <Text
+          as={s("as") === "span" ? "span" : "p"}
+          variant={s("variant") as "body" | "supporting"}
+        >
+          {s("children")}
+        </Text>
+      );
+      break;
+    case "text-list":
+      node = (
+        <TextList
+          ordered={b("ordered")}
+          variant={s("variant") as "contained" | "plain"}
+        >
+          {lines(s("children")).map((text, index) => (
+            <li key={index}>{text}</li>
+          ))}
+        </TextList>
+      );
+      break;
+    case "description-list":
+      node = (
+        <DescriptionList variant={s("variant") as "contained" | "plain"}>
+          {descriptionRows(args).map((row, index) => (
+            <div key={index}>
+              <dt>{row.label}</dt>
+              <dd>{row.description}</dd>
+            </div>
+          ))}
+        </DescriptionList>
       );
       break;
     case "cards":
       node = (
         <NavigationCard
-          title={s("title")}
-          directionLabel={s("directionLabel") || undefined}
           direction={s("direction") as "previous" | "next"}
           href={s("href")}
-        />
+        >
+          {s("description") && (
+            <NavigationCard.Description>{s("description")}</NavigationCard.Description>
+          )}
+          <NavigationCard.Title>{s("title")}</NavigationCard.Title>
+        </NavigationCard>
       );
       break;
     case "showcase":
       node = (
-        <ShowcaseCard
-          title={s("title")}
-          description={s("description")}
-          href={s("href")}
-          externalLink={
-            s("externalLabel")
+        <ShowcaseCard href={s("href")}><ShowcaseCard.Title>{s("title")}</ShowcaseCard.Title><ShowcaseCard.Description>{s("description")}</ShowcaseCard.Description><ShowcaseCard.Media>
+          <span
+            style={{
+              whiteSpace: "pre-wrap",
+              fontSize: 24,
+              lineHeight: 1.6,
+              padding: 24,
+            }}
+          >
+            {s("children")}
+          </span>
+        </ShowcaseCard.Media>{((link) => link && <ShowcaseCard.ExternalLink href={link.href}>{link.label}</ShowcaseCard.ExternalLink>)(s("externalLabel")
               ? { label: s("externalLabel"), href: s("externalHref") }
-              : undefined
-          }
-        >
-          <span>{s("children")}</span>
-        </ShowcaseCard>
+              : undefined)}</ShowcaseCard>
       );
       break;
     case "links":
       node = (
-        <ExternalLinks
-          links={[
-            { label: s("label"), href: s("href"), icon: s("icon") as IconName },
-          ]}
-        />
+        <ExternalLinks>
+          {choices("entries").map((item) => (
+            <ExternalLinks.Item key={item.value} href={item.href ?? ""}>
+              <ExternalLinks.Label>{item.label}</ExternalLinks.Label>
+              {item.icon && (
+                <ExternalLinks.Icon>
+                  <Icon name={item.icon as IconName} size={16} />
+                </ExternalLinks.Icon>
+              )}
+            </ExternalLinks.Item>
+          ))}
+        </ExternalLinks>
       );
       break;
     case "surface":
@@ -535,10 +666,18 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           className="embedded-shell"
           mainId="example-main"
           mainAs="div"
-          controls={<span>{s("controls")}</span>}
-          footer={b("footer") ? <span>页脚</span> : undefined}
         >
-          {s("children")}
+          {s("header") && (
+            <PageShell.Header>
+              <span>{s("header")}</span>
+            </PageShell.Header>
+          )}
+          <PageShell.Body>{s("body")}</PageShell.Body>
+          {s("footer") && (
+            <PageShell.Footer>
+              <span>{s("footer")}</span>
+            </PageShell.Footer>
+          )}
         </PageShell>
       );
       break;
@@ -564,12 +703,19 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
               onValueChange={(value) =>
                 setCanvasBackground(value as "base" | "gray" | "white")
               }
-              options={[
-                { value: "base", label: "页面" },
-                { value: "gray", label: "灰区" },
-                { value: "white", label: "白层" },
-              ]}
-            />
+            >
+              {(
+                [
+                  ["base", "页面"],
+                  ["gray", "灰区"],
+                  ["white", "白层"],
+                ] as const
+              ).map(([value, label]) => (
+                <SegmentedControl.Item key={value} value={value}>
+                  <SegmentedControl.Label>{label}</SegmentedControl.Label>
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl>
             <Button
               aria-expanded={apiOpen}
               aria-controls={apiId}
@@ -602,7 +748,7 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
             selectOptions={(field) =>
               ["segments", "tabs", "select"].includes(entry.id) &&
               field.key === "value"
-                ? choices(entry.id === "tabs" ? "items" : "options")
+                ? choices("entries")
                 : (field.options?.map((value) => ({
                     value,
                     label: value,
@@ -618,18 +764,20 @@ export function Playground({ entry }: { entry: ComponentEntry }) {
           />
         </Surface>
       </section>
-      <Disclosure
-        title="用法"
-        className="usage-code"
-        actions={<CopyButton text={code} emphasis="quiet" />}
-      >
-        <pre
-          className="usage-source ui-scroll-area"
-          tabIndex={0}
-          aria-label="示例代码"
-        >
-          {code}
-        </pre>
+      <Disclosure className="usage-code">
+        <Disclosure.Trigger>用法</Disclosure.Trigger>
+        <Disclosure.Actions>
+          <CopyButton text={code} emphasis="quiet"><CopyButton.Label>复制</CopyButton.Label><CopyButton.Feedback state="success">已复制</CopyButton.Feedback><CopyButton.Feedback state="pending">正在复制</CopyButton.Feedback><CopyButton.Feedback state="error">复制失败</CopyButton.Feedback></CopyButton>
+        </Disclosure.Actions>
+        <Disclosure.Body>
+          <pre
+            className="usage-source ui-scroll-area"
+            tabIndex={0}
+            aria-label="示例代码"
+          >
+            {code}
+          </pre>
+        </Disclosure.Body>
       </Disclosure>
     </>
   );

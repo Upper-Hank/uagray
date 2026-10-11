@@ -1,0 +1,26 @@
+.prototype-directory h1,
+.prototype-directory h2 {
+  font-weight: var(--ui-font-weight-medium);
+  color: var(--ui-text);
+}
+.prototype-directory .ui-main {
+  max-width: 960px;
+  padding-block: var(--ui-space-9);
+}
+.prototype-directory .ui-header-inner {
+  justify-content: flex-start;
+}
+.prototype-directory h1 {
+  font-size: var(--ui-font-size-reading-title);
+}
+.prototype-directory h2 {
+  font-size: var(--ui-font-size-md);
+}
+.prototype-directory p {
+  line-height: var(--ui-line-height-reading);
+}
+.prototype-directory-items {
+  display: grid;
+  gap: var(--ui-space-10);
+  margin-top: var(--ui-space-10);
+}

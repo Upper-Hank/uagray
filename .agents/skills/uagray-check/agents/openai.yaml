@@ -1,0 +1,4 @@
+interface:
+  display_name: "Uagray 设计检查"
+  short_description: "检查组件和组合是否落实统一设计规范，运行定向几何与交互核查并说明边界"
+  default_prompt: "使用 $uagray-check 检查当前改动的设计规范执行情况。"

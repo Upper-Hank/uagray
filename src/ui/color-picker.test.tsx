@@ -35,7 +35,7 @@ it("normalizes HEX and rejects unsupported color syntax", () => {
 });
 it("commits valid edits, preserves the selected color on invalid edits and restores on Escape", () => {
   const onValueChange = vi.fn();
-  render(<ColorPicker defaultValue="#123456" onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" defaultValue="#123456" onValueChange={onValueChange} />);
   const input = screen.getByLabelText("颜色 HEX") as HTMLInputElement;
   fireEvent.change(input, { target: { value: "#abc" } });
   fireEvent.keyDown(input, { key: "Enter" });
@@ -53,14 +53,14 @@ it("commits valid edits, preserves the selected color on invalid edits and resto
 it("links native channel controls and external controlled values", () => {
   const onValueChange = vi.fn();
   const { rerender } = render(
-    <ColorPicker defaultValue="#FFFFFF" onValueChange={onValueChange} />,
+    <ColorPicker aria-label="颜色" defaultValue="#FFFFFF" onValueChange={onValueChange} />,
   );
   expect(screen.queryByRole("group", { name: "颜色预设色板" })).toBeNull();
   fireEvent.change(screen.getByRole("slider", { name: /饱和度与明度/ }), {
     target: { value: "100" },
   });
   expect(onValueChange).toHaveBeenLastCalledWith("#FF0000");
-  rerender(<ColorPicker value="#33865C" />);
+  rerender(<ColorPicker aria-label="颜色" value="#33865C" />);
   expect((screen.getByLabelText("颜色 HEX") as HTMLInputElement).value).toBe(
     "#33865C",
   );
@@ -68,7 +68,7 @@ it("links native channel controls and external controlled values", () => {
 it("follows the controlled value when the host rejects or later replaces it", () => {
   const onValueChange = vi.fn();
   const { rerender } = render(
-    <ColorPicker value="#112233" onValueChange={onValueChange} />,
+    <ColorPicker aria-label="颜色" value="#112233" onValueChange={onValueChange} />,
   );
   const input = screen.getByLabelText("颜色 HEX") as HTMLInputElement;
   fireEvent.change(screen.getByRole("slider", { name: /饱和度与明度/ }), {
@@ -80,13 +80,13 @@ it("follows the controlled value when the host rejects or later replaces it", ()
   fireEvent.keyDown(input, { key: "Enter" });
   expect(onValueChange).toHaveBeenLastCalledWith("#ABCDEF");
   expect(input.value).toBe("#112233");
-  rerender(<ColorPicker value="#00FF00" onValueChange={onValueChange} />);
+  rerender(<ColorPicker aria-label="颜色" value="#00FF00" onValueChange={onValueChange} />);
   expect(input.value).toBe("#00FF00");
 });
 
 it("disables all editable controls", () => {
   const onValueChange = vi.fn();
-  render(<ColorPicker disabled onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" disabled onValueChange={onValueChange} />);
   expect(screen.getByLabelText("颜色 HEX").matches(":disabled")).toBe(true);
   expect(
     (screen.getByRole("slider", { name: "色相" }) as HTMLInputElement).disabled,
@@ -99,7 +99,7 @@ it("disables all editable controls", () => {
 
 it("links hue, two dimensional channels and opacity without losing the hue of gray", () => {
   const onValueChange = vi.fn();
-  render(<ColorPicker defaultValue="#FFFFFF" onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" defaultValue="#FFFFFF" onValueChange={onValueChange} />);
   fireEvent.change(screen.getByRole("slider", { name: "色相" }), {
     target: { value: "120" },
   });
@@ -126,7 +126,7 @@ it("samples screen colors while preserving opacity", async () => {
   );
   const onValueChange = vi.fn();
   render(
-    <ColorPicker defaultValue="#FFFFFF80" onValueChange={onValueChange} />,
+    <ColorPicker aria-label="颜色" defaultValue="#FFFFFF80" onValueChange={onValueChange} />,
   );
   fireEvent.click(screen.getByRole("button", { name: "吸管取色" }));
   await vi.waitFor(() =>
@@ -136,7 +136,7 @@ it("samples screen colors while preserving opacity", async () => {
 
 it("switches color formats without changing color and edits individual channels", async () => {
   const onValueChange = vi.fn();
-  render(<ColorPicker defaultValue="#FF0000" onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" defaultValue="#FF0000" onValueChange={onValueChange} />);
   fireEvent.keyDown(screen.getByRole("combobox"), { key: "Enter" });
   fireEvent.keyDown(await screen.findByRole("option", { name: "RGB" }), {
     key: "Enter",
@@ -158,7 +158,7 @@ it("treats cancelling the eyedropper as a normal dismissal", async () => {
     },
   );
   const onValueChange = vi.fn();
-  render(<ColorPicker onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" onValueChange={onValueChange} />);
   fireEvent.click(screen.getByRole("button", { name: "吸管取色" }));
   await vi.waitFor(() =>
     expect(
@@ -172,7 +172,7 @@ it("treats cancelling the eyedropper as a normal dismissal", async () => {
 
 it("exposes HSB and HSL channel editors and keeps the same selected color", async () => {
   const onValueChange = vi.fn();
-  render(<ColorPicker defaultValue="#3765D6" onValueChange={onValueChange} />);
+  render(<ColorPicker aria-label="颜色" defaultValue="#3765D6" onValueChange={onValueChange} />);
   for (const format of ["HSB", "HSL"]) {
     fireEvent.keyDown(screen.getByRole("combobox"), { key: "Enter" });
     fireEvent.keyDown(await screen.findByRole("option", { name: format }), {

@@ -96,9 +96,8 @@ export default function App() {
   const component = componentEntries.find((entry) => entry.id === piece.id);
   const spec = specEntries.find((entry) => entry.id === piece.id);
   return (
-    <PageShell
-      className="workbench-shell"
-      controls={
+    <PageShell className="workbench-shell">
+      <PageShell.Header>
         <div className="workbench-header">
           <div className="workbench-brand">
             <span className="workbench-logo" role="img" aria-label="Uagray" />
@@ -107,78 +106,43 @@ export default function App() {
             <SegmentedControl
               aria-label="展示分类"
               value={category}
-              options={categoryOptions}
               onValueChange={changeCategory}
-            />
+            >
+              {categoryOptions.map((item) => (
+                <SegmentedControl.Item key={item.value} value={item.value}>
+                  <SegmentedControl.Label>{item.label}</SegmentedControl.Label>
+                  <SegmentedControl.Count>{item.count}</SegmentedControl.Count>
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl>
             <ThemeToggle />
           </div>
         </div>
-      }
-    >
+      </PageShell.Header>
+      <PageShell.Body>
       <div className="workbench">
-        <aside
-          className="workbench-sidebar"
-          aria-label={`${section.label}目录`}
-        >
+        <aside className="workbench-sidebar" aria-label={`${section.label}目录`}>
           <div className="directory-heading">
             <h2>{section.label}</h2>
             <Badge>{entries.length} 项</Badge>
           </div>
-          <SearchField
-            aria-label="搜索目录"
-            placeholder={`搜索${section.label}`}
-            value={query}
-            onValueChange={setQuery}
-          />
-          <nav
-            ref={directoryRef}
-            aria-label="条目目录"
-            className="directory-list"
-          >
-            {results.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                aria-current={piece.id === item.id ? "page" : undefined}
-                onClick={() => setLocation(item.id)}
-              >
+          <SearchField aria-label="搜索目录" placeholder={`搜索${section.label}`} value={query} onValueChange={setQuery}/>
+          <nav ref={directoryRef} aria-label="条目目录" className="directory-list">
+            {results.map((item) => (<a key={item.id} href={`#${item.id}`} aria-current={piece.id === item.id ? "page" : undefined} onClick={() => setLocation(item.id)}>
                 {item.title}
-              </a>
-            ))}
+              </a>))}
           </nav>
-          {!results.length && (
-            <EmptyState
-              title="没有匹配条目"
-              actions={
-                <Button size="sm" onClick={() => setQuery("")}>
+          {!results.length && (<EmptyState><EmptyState.Title>没有匹配条目</EmptyState.Title><EmptyState.Actions><Button size="sm" onClick={() => setQuery("")}>
                   清空搜索
-                </Button>
-              }
-            />
-          )}
+                </Button></EmptyState.Actions></EmptyState>)}
         </aside>
-        <article
-          ref={contentRef}
-          className="workbench-content"
-          tabIndex={0}
-          aria-labelledby="practice-title"
-        >
-          {!component && (
-            <header className="practice-heading">
+        <article ref={contentRef} className="workbench-content" tabIndex={0} aria-labelledby="practice-title">
+          {!component && (<header className="practice-heading">
               <h1 id="practice-title">{piece.title}</h1>
-            </header>
-          )}
-          {category === "token" ? (
-            <TokenPractice key={piece.id} id={piece.id} />
-          ) : component ? (
-            <Playground key={component.id} entry={component} />
-          ) : piece.id === "context-matrix" ? (
-            <ContextMatrix />
-          ) : (
-            spec && <SpecPractice key={spec.id} id={spec.id} />
-          )}
+            </header>)}
+          {category === "token" ? (<TokenPractice key={piece.id} id={piece.id}/>) : component ? (<Playground key={component.id} entry={component}/>) : piece.id === "context-matrix" ? (<ContextMatrix />) : (spec && <SpecPractice key={spec.id} id={spec.id}/>)}
         </article>
       </div>
-    </PageShell>
+    </PageShell.Body></PageShell>
   );
 }

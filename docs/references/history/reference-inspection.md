@@ -1,6 +1,7 @@
 # 参考站直接核查记录
 
-核查日期：2026-10-09。来源：[anish’s lab](https://lab.anishfn.ink/)。
+> 历史参考材料：仅保留当时的观察、讨论或实现快照，不作为现行规范。现行设计依据见 [设计参考规范](../../design-system.md)。
+> 核查日期：2026-10-09。来源：[anish’s lab](https://lab.anishfn.ink/)。
 
 这是参考实践的证据记录，不是 Uagray 的规范，也不是原作者设计意图的声明。经用户授权，直接读取页面 DOM、计算样式、公开样式声明，并操作搜索、分段切换、颜色浮层、菜单和展开按钮。没有复制作品、图标路径或页面代码到组件库。
 
@@ -10,19 +11,19 @@
 
 首页以及全部 10 个首页入口均已访问、清点控件：
 
-| 页面 | 本轮核查对象 |
-| --- | --- |
-| [首页](https://lab.anishfn.ink/) | Segmented、搜索、快捷键、清除搜索、外链组、作品卡片 |
-| [Action camera](https://lab.anishfn.ink/action-camera) | 白工具条、Share、翻页组、正文、图组、资料行、导航卡片 |
-| [Handdrawn frames](https://lab.anishfn.ink/handdrawn-frames) | 缩略图选择、色板、颜色浮层、缩放滑块、工具条 |
-| [My icons](https://lab.anishfn.ink/my-icons) | 展开内容、复制/展开按钮、末尾不可用箭头 |
-| [Folder maker](https://lab.anishfn.ink/folder-maker) | 文件入口、白工具条、深色动作、禁用样式、展示列表 |
-| [Dia gradient](https://lab.anishfn.ink/dia-gradient) | 色板选择、计数加减、禁用样式 |
-| [Pixel art 3D](https://lab.anishfn.ink/pixel-art) | 工具选择、禁用动作、网格尺寸菜单、色板 |
-| [Morfe card](https://lab.anishfn.ink/morfe-card) | 缩略图选择与文本动作共用白工具条 |
-| [Video cube](https://lab.anishfn.ink/video-cube) | 色板、持续开关状态、播放按钮、滑块 |
-| [Axolotl pond](https://lab.anishfn.ink/axolotl-pond) | 详情架构、起始分页状态 |
-| [Knob HUD](https://lab.anishfn.ink/knob-hud) | 圆形操作按钮与作品内拟物按钮的区别 |
+| 页面                                                         | 本轮核查对象                                          |
+| ------------------------------------------------------------ | ----------------------------------------------------- |
+| [首页](https://lab.anishfn.ink/)                             | Segmented、搜索、快捷键、清除搜索、外链组、作品卡片   |
+| [Action camera](https://lab.anishfn.ink/action-camera)       | 白工具条、Share、翻页组、正文、图组、资料行、导航卡片 |
+| [Handdrawn frames](https://lab.anishfn.ink/handdrawn-frames) | 缩略图选择、色板、颜色浮层、缩放滑块、工具条          |
+| [My icons](https://lab.anishfn.ink/my-icons)                 | 展开内容、复制/展开按钮、末尾不可用箭头               |
+| [Folder maker](https://lab.anishfn.ink/folder-maker)         | 文件入口、白工具条、深色动作、禁用样式、展示列表      |
+| [Dia gradient](https://lab.anishfn.ink/dia-gradient)         | 色板选择、计数加减、禁用样式                          |
+| [Pixel art 3D](https://lab.anishfn.ink/pixel-art)            | 工具选择、禁用动作、网格尺寸菜单、色板                |
+| [Morfe card](https://lab.anishfn.ink/morfe-card)             | 缩略图选择与文本动作共用白工具条                      |
+| [Video cube](https://lab.anishfn.ink/video-cube)             | 色板、持续开关状态、播放按钮、滑块                    |
+| [Axolotl pond](https://lab.anishfn.ink/axolotl-pond)         | 详情架构、起始分页状态                                |
+| [Knob HUD](https://lab.anishfn.ink/knob-hud)                 | 圆形操作按钮与作品内拟物按钮的区别                    |
 
 清点不等于穷尽所有作品内部状态。未触发上传、分享、下载、麦克风，也未完整运行作品内业务流程。HUD 含独立材质和动态按钮状态，不能用默认一次测量替代所有状态。
 
@@ -46,14 +47,14 @@
 
 证据：首页 `[role="radiogroup"]`、`[role="radio"]` 和选中项子 span。
 
-| 对象 | 测量/声明 |
-| --- | --- |
-| 底座 | #ECECEC，36px 高，4px 内边距，2px 项间距，12px 圆角 |
-| 项 | 28px 高，左右 10px，8px 圆角，透明底色 |
-| 标签 | 13px/19.5px，400；常态 #525252，hover/选中 #171717 |
-| 计数 | 11px，固定 #525252，tabular numbers；与标签分离着色 |
-| 当前项 | 独立白色子层，8px 圆角，公共轻阴影；按钮自己不铺白底 |
-| 颜色过渡 | 150ms，cubic-bezier(.4,0,.2,1)，color/opacity |
+| 对象     | 测量/声明                                            |
+| -------- | ---------------------------------------------------- |
+| 底座     | #ECECEC，36px 高，4px 内边距，2px 项间距，12px 圆角  |
+| 项       | 28px 高，左右 10px，8px 圆角，透明底色               |
+| 标签     | 13px/19.5px，400；常态 #525252，hover/选中 #171717   |
+| 计数     | 11px，固定 #525252，tabular numbers；与标签分离着色  |
+| 当前项   | 独立白色子层，8px 圆角，公共轻阴影；按钮自己不铺白底 |
+| 颜色过渡 | 150ms，cubic-bezier(.4,0,.2,1)，color/opacity        |
 
 操作 Components → All：checked 状态与独立白色子层随当前项改变，计数保留自己的颜色声明。输入搜索后计数会更新，零结果分类成为 disabled；disabled 样式为 opacity .4。这与“hover/选中不改变计数颜色”不是同一个问题。
 
@@ -63,11 +64,11 @@
 
 证据：Action camera 的 Share button、`nav[aria-label="Pieces"]` 和内部链接。
 
-| 对象 | 常态 | hover 声明 | 尺寸 |
-| --- | --- | --- | --- |
-| Share | #ECECEC / #404040 | #E4E4E4 / #171717 | 高 36px、圆角 12px；文本 13px/400 |
-| 翻页组 | #ECECEC | 整体不改变 | 高 36px、圆角 12px、内边距 3px、gap 4px |
-| 内部箭头 | 透明 / #404040 | 黑色 6% 覆盖 / #171717 | 30px 方形、圆角 9px |
+| 对象     | 常态              | hover 声明             | 尺寸                                    |
+| -------- | ----------------- | ---------------------- | --------------------------------------- |
+| Share    | #ECECEC / #404040 | #E4E4E4 / #171717      | 高 36px、圆角 12px；文本 13px/400       |
+| 翻页组   | #ECECEC           | 整体不改变             | 高 36px、圆角 12px、内边距 3px、gap 4px |
+| 内部箭头 | 透明 / #404040    | 黑色 6% 覆盖 / #171717 | 30px 方形、圆角 9px                     |
 
 箭头 hover 约呈 #DEDEDE，但实际声明是透明黑色叠加，不是固定灰值。常态子按钮没有自己的底块。二者颜色过渡均为 150ms，默认曲线 cubic-bezier(.4,0,.2,1)。箭头未声明 active 缩放；Share 点击缩放来自用户观察，本轮未测出其比例或曲线。
 

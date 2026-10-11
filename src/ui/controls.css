@@ -106,7 +106,8 @@
   cursor: pointer;
   transition:
     background var(--ui-fast),
-    color var(--ui-fast);
+    color var(--ui-fast),
+    scale var(--ui-press-duration, var(--ui-fast)) ease-out;
 }
 .ui-number-input-actions > button:hover:not(:disabled) {
   background: var(--ui-overlay-hover);
@@ -344,6 +345,14 @@
 .ui-tab-panel[hidden] {
   display: none;
 }
+.ui-tab-panels {
+  position: relative;
+}
+.ui-tab-panels > .ui-tab-panel[aria-hidden="true"] {
+  position: absolute;
+  inset: 0 0 auto;
+  pointer-events: none;
+}
 .ui-tab-list button:focus-visible,
 .ui-tab-panel:focus-visible {
   outline: 1px solid var(--ui-focus-outline);
@@ -351,6 +360,7 @@
 }
 .ui-disclosure {
   width: 100%;
+  overflow: hidden;
   border-radius: var(--ui-radius-card);
   background: var(--ui-region);
   border: 0;
@@ -364,12 +374,13 @@
   padding-inline-end: var(--ui-space-6);
 }
 .ui-disclosure-trigger {
+  --ui-button-radius: var(--ui-radius-0);
   min-width: 0;
   flex: 1;
   box-shadow: none;
   width: 100%;
   height: var(--ui-size-control-lg);
-  border-radius: var(--ui-radius-card);
+  border-radius: var(--ui-button-radius);
   padding: 0 var(--ui-space-6);
   text-align: left;
   justify-content: space-between;
@@ -379,10 +390,8 @@
   color: var(--ui-body);
 }
 .ui-disclosure-trigger:hover:not(:disabled) {
-  background: var(--ui-overlay-hover);
-}
-.ui-disclosure-trigger:active:not(:disabled) {
-  scale: 1;
+  background: transparent;
+  color: var(--ui-text);
 }
 .ui-disclosure-trigger .ui-button-content {
   width: 100%;
@@ -416,6 +425,18 @@
 }
 .ui-dialog::backdrop {
   background: var(--ui-backdrop);
+  opacity: 0;
+  transition: opacity var(--ui-exit) var(--ui-ease-exit);
+}
+.ui-dialog[data-state="open"]::backdrop {
+  opacity: 1;
+  transition-duration: var(--ui-enter);
+  transition-timing-function: var(--ui-ease);
+}
+@starting-style {
+  .ui-dialog[data-state="open"]::backdrop {
+    opacity: 0;
+  }
 }
 .ui-dialog-inner {
   padding: var(--ui-space-8);
@@ -423,9 +444,9 @@
 }
 .ui-dialog-heading {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ui-space-6);
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 .ui-dialog h2 {
   margin: 0;
@@ -496,10 +517,10 @@
   background: transparent;
 }
 .ui-alert {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  align-items: flex-start;
-  gap: var(--ui-gap-control);
+  align-items: start;
   padding: 14px var(--ui-space-6);
   border-radius: var(--ui-radius-card);
   background: var(--ui-tone-bg);
@@ -507,8 +528,33 @@
   font-size: var(--ui-font-size-control);
   line-height: var(--ui-line-height-reading);
 }
-.ui-alert > svg {
+.ui-alert:has(.ui-alert-icon) {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--ui-gap-control);
+}
+.ui-alert-icon {
+  grid-column: 1;
+  grid-row: 1 / -1;
   margin-top: 3px;
+  display: flex;
+}
+.ui-alert-title,
+.ui-alert-body {
+  grid-column: 1;
+  min-width: 0;
+}
+.ui-alert:has(.ui-alert-icon) .ui-alert-title,
+.ui-alert:has(.ui-alert-icon) .ui-alert-body {
+  grid-column: 2;
+}
+.ui-alert-title {
+  grid-row: 1;
+}
+.ui-alert-body {
+  grid-row: 2;
+}
+.ui-alert:not(:has(.ui-alert-title)) .ui-alert-body {
+  grid-row: 1;
 }
 .ui-alert strong {
   display: block;
@@ -517,6 +563,7 @@
   margin-bottom: var(--ui-space-1);
 }
 .ui-toast {
+  border-radius: var(--ui-radius-card);
   position: fixed;
   z-index: 100;
   bottom: 24px;
@@ -533,7 +580,8 @@
   box-shadow: var(--ui-shadow);
   font-size: var(--ui-font-size-control);
 }
-.ui-toast > span {
+.ui-toast-body {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .ui-toast .ui-icon-button {
@@ -645,6 +693,7 @@
   text-align: center;
 }
 .ui-selection-bar {
+  border-radius: var(--ui-radius-card);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -676,6 +725,10 @@
   --ui-control-hover: var(--ui-overlay-hover);
 }
 @media (prefers-reduced-motion: reduce) {
+  .ui-dialog::backdrop,
+  .ui-dialog[data-state="open"]::backdrop {
+    transition-duration: var(--ui-reduced-fade);
+  }
   .ui-progress progress:indeterminate {
     animation: none;
   }
@@ -732,6 +785,8 @@
   rotate: 180deg;
 }
 .ui-select-menu {
+  --ui-anchor-x: 0px;
+  --ui-anchor-y: calc(-1 * var(--ui-anchor-distance));
   z-index: 200;
   min-width: var(--radix-select-trigger-width);
   max-width: calc(100vw - 24px);
@@ -744,7 +799,22 @@
   font: var(--ui-font-weight-regular)
     var(--ui-font-size-control)/var(--ui-line-height-body) var(--ui-font);
   box-shadow: var(--ui-shadow);
-  animation: ui-select-in 150ms var(--ui-ease);
+}
+.ui-select-menu[data-side="top"] {
+  --ui-anchor-y: var(--ui-anchor-distance);
+}
+.ui-select-menu[data-side="left"] {
+  --ui-anchor-x: var(--ui-anchor-distance);
+  --ui-anchor-y: 0px;
+}
+.ui-select-menu[data-side="right"] {
+  --ui-anchor-x: calc(-1 * var(--ui-anchor-distance));
+  --ui-anchor-y: 0px;
+}
+/* Radix suspends unmount for this sentinel; Motion owns the visible transition. */
+.ui-select-menu[data-state="closed"] {
+  pointer-events: none;
+  animation: ui-select-exit-lifetime var(--ui-exit);
 }
 .ui-select-option {
   box-sizing: border-box;
@@ -782,14 +852,12 @@
 .ui-select-scroll:first-child svg {
   rotate: 180deg;
 }
-@keyframes ui-select-in {
+@keyframes ui-select-exit-lifetime {
   from {
-    opacity: 0;
-    translate: 0 -4px;
+    visibility: visible;
   }
   to {
-    opacity: 1;
-    translate: 0 0;
+    visibility: visible;
   }
 }
 .ui-slider--filled {
@@ -866,9 +934,77 @@
 .ui-slider--filled:has(input:disabled) {
   opacity: 0.5;
 }
+.ui-toast-region {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 100;
+  bottom: var(--ui-space-8);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-4);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100svh - var(--ui-space-8) * 2);
+  padding: var(--ui-space-2);
+  overflow: visible;
+  overscroll-behavior: contain;
+}
+/* Transforms from enter, exit, and layout must not become scrollable overflow. */
+.ui-toast-region--scroll {
+  overflow-y: auto;
+}
+.ui-toast--stacked {
+  flex-shrink: 0;
+  max-width: 100%;
+  position: static;
+  left: auto;
+  bottom: auto;
+  translate: none;
+  pointer-events: auto;
+}
+.ui-toast-region:focus-visible {
+  outline: 1px solid var(--ui-focus-outline);
+  outline-offset: 2px;
+}
+.ui-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-gap-control);
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-control);
+  font-weight: var(--ui-font-weight-regular);
+}
+.ui-spinner-mark {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ui-range-track);
+  border-top-color: currentColor;
+  border-radius: var(--ui-radius-full);
+  animation: ui-spin 800ms linear infinite;
+}
+.ui-spinner--sm .ui-spinner-mark {
+  width: 14px;
+  height: 14px;
+}
+@keyframes ui-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ui-select-menu {
+  .ui-select-menu[data-state="closed"] {
+    animation-duration: var(--ui-reduced-fade);
+  }
+  .ui-spinner-mark {
     animation: none;
+  }
+  .ui-spinner-mark {
+    border-color: currentColor;
   }
   .ui-select-trigger > svg {
     transition: none;
@@ -894,4 +1030,86 @@
 .ui-input[data-keyboard-focus]:focus {
   outline: 1px solid var(--ui-focus-outline);
   outline-offset: 3px;
+}
+
+/* Custom marks retain shape and state when the OS replaces tonal fills. */
+@media (forced-colors: active) {
+  .ui-checkbox-mark,
+  .ui-radio-mark,
+  .ui-switch-track {
+    forced-color-adjust: none;
+    outline: 1px solid ButtonText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .ui-choice input:checked + .ui-checkbox-mark,
+  .ui-choice input:checked + .ui-radio-mark,
+  .ui-switch input:checked + .ui-switch-track {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .ui-choice input:checked + .ui-radio-mark::after,
+  .ui-switch-thumb {
+    forced-color-adjust: none;
+    background: CanvasText;
+    box-shadow: none;
+  }
+  .ui-choice input:checked + .ui-radio-mark::after,
+  .ui-switch input:checked + .ui-switch-track .ui-switch-thumb {
+    background: HighlightText;
+  }
+  .ui-choice:has(input:disabled),
+  .ui-switch:has(input:disabled) {
+    opacity: 1;
+    color: GrayText;
+  }
+  .ui-choice input:disabled + span,
+  .ui-switch input:disabled + span {
+    outline-color: GrayText;
+  }
+  .ui-choice input:focus-visible + span,
+  .ui-switch input:focus-visible + span {
+    outline: 2px solid Highlight;
+  }
+  .ui-spinner-mark,
+  .ui-button .ui-spinner-mark {
+    forced-color-adjust: none;
+    border-color: GrayText;
+    border-top-color: CanvasText;
+  }
+  .ui-input[aria-invalid="true"] {
+    outline: 2px dashed CanvasText;
+    outline-offset: 2px;
+  }
+}
+
+/* Composed Disclosure regions keep the existing single-surface geometry. */
+.ui-disclosure:has(> .ui-disclosure-trigger) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.ui-disclosure:has(> .ui-disclosure-trigger) > .ui-disclosure-trigger {
+  grid-column: 1;
+  min-width: 0;
+}
+.ui-disclosure:has(> .ui-disclosure-trigger) > .ui-disclosure-actions {
+  grid-column: 2;
+}
+.ui-disclosure:has(> .ui-disclosure-trigger) > .ui-disclosure-content {
+  grid-column: 1 / -1;
+}
+
+/* The system close action is independent of Header composition. */
+.ui-dialog-inner {
+  position: relative;
+}
+.ui-dialog-close {
+  position: absolute;
+  top: var(--ui-space-8);
+  right: var(--ui-space-8);
+  z-index: 1;
+}
+.ui-dialog-heading:has(+ .ui-dialog-description),
+.ui-dialog-heading {
+  padding-inline-end: calc(var(--ui-size-control) + var(--ui-space-4));
 }

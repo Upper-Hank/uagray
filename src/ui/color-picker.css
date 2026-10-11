@@ -5,7 +5,7 @@
   padding: var(--ui-space-6);
   background: var(--ui-raised);
   border: 1px solid var(--ui-border-soft);
-  border-radius: calc(var(--ui-radius-sm) + var(--ui-space-6));
+  border-radius: calc(var(--ui-radius-sm) + var(--ui-space-6) + 1px);
 }
 .ui-color-picker-fields {
   display: grid;

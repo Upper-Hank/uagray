@@ -32,6 +32,6 @@ svg {
   flex-shrink: 0;
 }
 ::selection {
-  background: var(--ui-gray-200);
-  color: var(--ui-text);
+  background: var(--ui-action);
+  color: var(--ui-on-action);
 }

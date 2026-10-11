@@ -63,8 +63,14 @@ jobs:
           for (const file of ['dist/index.js', 'dist/index.d.ts', 'dist/styles.css', 'dist/fonts/fonts.css']) {
             if (!files.includes(file)) throw new Error(`Missing package file: ${file}`);
           }
+          const limit = 18 * 1024 * 1024;
+          if (pack.unpackedSize > limit) {
+            throw new Error(`Package unpacked size ${pack.unpackedSize} exceeds ${limit}`);
+          }
           fs.appendFileSync(process.env.GITHUB_ENV, `NPM_TARBALL=${pack.filename}\n`);
           JS
+      - name: Verify a clean consumer install
+        run: node scripts/verify-consumer.mjs "$NPM_TARBALL"
       - name: Publish using npm Trusted Publishing
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: npm publish "$NPM_TARBALL" --tag "$NPM_TAG" --access public --provenance --ignore-scripts

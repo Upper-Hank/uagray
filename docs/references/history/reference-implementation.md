@@ -1,6 +1,7 @@
 # 参考站公开实现核查
 
-日期：2026-10-09。用户要求进一步确认原站是否有基础 Token、如何实现。
+> 历史参考材料：仅保留当时的观察、讨论或实现快照，不作为现行规范。现行设计依据见 [设计参考规范](../../design-system.md)。
+> 日期：2026-10-09。用户要求进一步确认原站是否有基础 Token、如何实现。
 
 ## 证据范围
 
@@ -21,16 +22,16 @@
 
 CSS :root 明确定义：
 
-| 变量 | 值 | 作用 |
-| --- | --- | --- |
-| --background | #FBFBFB | 页面背景 |
-| --foreground | #707070 | 基础前景 |
-| --surface | #F2F2F2 | 内容/作品表面 |
-| --surface-hover | #E8E8E8 | 表面反馈 |
-| --control | #ECECEC | 控件底座 |
-| --control-hover | #E4E4E4 | 控件反馈 |
-| --chip | #E4E4E4 | 小标签底色，与 hover 同值但角色不同 |
-| --focus | #171717 | 焦点 |
+| 变量            | 值      | 作用                                |
+| --------------- | ------- | ----------------------------------- |
+| --background    | #FBFBFB | 页面背景                            |
+| --foreground    | #707070 | 基础前景                            |
+| --surface       | #F2F2F2 | 内容/作品表面                       |
+| --surface-hover | #E8E8E8 | 表面反馈                            |
+| --control       | #ECECEC | 控件底座                            |
+| --control-hover | #E4E4E4 | 控件反馈                            |
+| --chip          | #E4E4E4 | 小标签底色，与 hover 同值但角色不同 |
+| --focus         | #171717 | 焦点                                |
 
 另外包含 neutral-200 至 neutral-950 的基础灰阶、白/黑、字体、spacing、normal/medium 字重、行高、默认过渡等变量。`--spacing` 为 .25rem。
 
@@ -50,14 +51,14 @@ CSS :root 明确定义：
 
 构建模块导出 easeOut、press、iconSwap、rise、riseGroup、riseIn、riseItem，消费位置明确可见。
 
-| 配置 | 公开实现 |
-| --- | --- |
-| easeOut | [.23, 1, .32, 1] |
-| press | scale .96 |
-| iconSwap | opacity、scale .25→1、blur 4→0；spring duration .3、bounce 0 |
-| rise / riseIn | y 12→0、blur 6→0、opacity 0→1；duration .55 |
-| riseGroup | 上述进入效果，加 stagger .04、delayChildren .06 |
-| riseItem | y 10→0、blur 4→0、opacity 0→1；duration .5 |
+| 配置          | 公开实现                                                     |
+| ------------- | ------------------------------------------------------------ |
+| easeOut       | [.23, 1, .32, 1]                                             |
+| press         | scale .96                                                    |
+| iconSwap      | opacity、scale .25→1、blur 4→0；spring duration .3、bounce 0 |
+| rise / riseIn | y 12→0、blur 6→0、opacity 0→1；duration .55                  |
+| riseGroup     | 上述进入效果，加 stagger .04、delayChildren .06              |
+| riseItem      | y 10→0、blur 4→0、opacity 0→1；duration .5                   |
 
 颜色 feedback 留给 CSS，常用 150ms。移动、进入/退出、按压、图标替换使用 Motion 的 motion 元素和 AnimatePresence。模块使用 useReducedMotion 的位置也存在，但不能因此认定全站每个动画都完整适配减少动态效果。
 

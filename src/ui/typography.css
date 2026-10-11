@@ -1,0 +1,102 @@
+.ui-heading {
+  box-sizing: border-box;
+  margin: 0;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-size-status-title);
+  font-weight: var(--ui-font-weight-medium);
+  line-height: var(--ui-line-height-tight);
+  overflow-wrap: anywhere;
+}
+.ui-heading--page {
+  font-size: var(--ui-font-size-reading-title);
+}
+.ui-text {
+  box-sizing: border-box;
+  margin: 0;
+  color: var(--ui-body);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-size-body);
+  font-weight: var(--ui-font-weight-regular);
+  line-height: var(--ui-line-height-reading);
+  overflow-wrap: anywhere;
+}
+.ui-text--supporting {
+  color: var(--ui-muted);
+  font-size: var(--ui-font-size-control);
+  line-height: var(--ui-line-height-body);
+}
+.ui-text-list {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--ui-space-5) var(--ui-space-5) var(--ui-space-5)
+    var(--ui-space-9);
+  color: var(--ui-body);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-size-control);
+  font-weight: var(--ui-font-weight-regular);
+  line-height: var(--ui-line-height-body);
+}
+.ui-text-list > li {
+  padding-inline-start: var(--ui-space-2);
+  overflow-wrap: anywhere;
+}
+.ui-text-list > li + li {
+  margin-top: var(--ui-space-4);
+}
+.ui-text-list--plain {
+  background: transparent;
+  padding: 0 0 0 var(--ui-space-6);
+  font-size: var(--ui-font-size-body);
+  line-height: var(--ui-line-height-reading);
+}
+.ui-description-list {
+  --ui-description-inset: var(--ui-space-6);
+  --ui-description-inline-inset: var(--ui-space-7);
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--ui-font);
+  color: var(--ui-body);
+  font-size: var(--ui-font-size-control);
+  font-weight: var(--ui-font-weight-regular);
+  line-height: var(--ui-line-height-body);
+}
+.ui-description-list > div {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 10em) minmax(0, 1fr);
+  gap: var(--ui-space-7);
+  padding: var(--ui-description-inset) var(--ui-description-inline-inset);
+}
+.ui-description-list > div + div {
+  border-top: 1px solid var(--ui-border-soft);
+}
+.ui-description-list > div > :is(dt, dd) {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-description-list dt {
+  color: var(--ui-text);
+}
+@media (max-width: 700px) {
+  .ui-description-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ui-space-4);
+  }
+}
+
+.ui-description-list--plain {
+  --ui-description-inset: 0px;
+  --ui-description-inline-inset: 0px;
+  background: transparent;
+  font-size: var(--ui-font-size-body);
+  line-height: var(--ui-line-height-reading);
+}
+.ui-description-list--plain > div {
+  padding-block: var(--ui-space-4);
+}

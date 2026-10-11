@@ -49,6 +49,7 @@ it("filters the directory, recovers from empty results and renders practice", as
   expect(screen.getByText("没有匹配条目")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "清空搜索" }));
   expect(screen.getByRole("link", { name: /Segmented control/ })).toBeTruthy();
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(800);
   window.location.hash = "#text";
   fireEvent(window, new Event("hashchange"));
   await waitFor(() =>
@@ -56,7 +57,9 @@ it("filters the directory, recovers from empty results and renders practice", as
       "Expandable text",
     ),
   );
-  expect(screen.getByRole("button", { name: "Show full prompt" })).toBeTruthy();
+  expect(
+    await screen.findByRole("button", { name: "展开全文" }),
+  ).toBeTruthy();
 });
 
 it("organizes the library into rules, tokens and components and updates the segment example", async () => {

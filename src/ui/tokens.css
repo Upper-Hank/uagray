@@ -145,12 +145,17 @@
   --ui-size-content: 1200px;
   --ui-size-dialog: 480px;
   --ui-size-drawer: 440px;
-  --ui-edge: 0 0 0 1px var(--ui-border-soft);
+  --ui-edge: inset 0 0 0 1px var(--ui-border-soft);
   --ui-elevation: 0 1px 2px -1px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04);
   --ui-shadow: var(--ui-edge), var(--ui-elevation);
   --ui-fast: 150ms;
+  --ui-press: 80ms;
+  --ui-enter: 240ms;
+  --ui-exit: 140ms;
+  --ui-reduced-fade: 100ms;
   --ui-move: 240ms;
   --ui-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ui-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 :root[data-theme="dark"] {
